@@ -50,7 +50,7 @@ export const deleteItem = async (id: string): Promise<void> => {
   await deleteDoc(itemDoc);
 };
 
-export const getItem = async (id: string): Promise<Item | null> => {
+export const getItemById = async (id: string): Promise<Item | null> => {
   const itemDoc = doc(db, "items", id);
   const docSnap = await getDoc(itemDoc);
   if (docSnap.exists() && !docSnap.data().isDeleted) {

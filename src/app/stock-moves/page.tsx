@@ -121,10 +121,25 @@ export default function StockMovesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this stock move?")) {
-      await deleteStockMove(id);
-      fetchStockMoves();
-    }
+    toast("Are you sure you want to delete this stock move?", {
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          toast.promise(deleteStockMove(id), {
+            loading: "Deleting stock move...",
+            success: () => {
+              fetchStockMoves();
+              return "Stock move deleted successfully!";
+            },
+            error: "Failed to delete stock move.",
+          });
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => toast.dismiss(),
+      },
+    });
   };
 
   return (
@@ -322,7 +337,7 @@ export default function StockMovesPage() {
                   {stockMoves.map((stockMove) => (
                     <tr key={stockMove.id}>
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {stockMove.itemName}
+                        {stockMove.itemName || "N/A"}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {stockMove.fromSBU}

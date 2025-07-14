@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
+import { Toaster, toast } from "sonner";
 
 export default function ItemsPage() {
   const { user, loading } = useAuth();
@@ -80,10 +81,25 @@ export default function ItemsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this item?")) {
-      await deleteItem(id);
-      fetchItems();
-    }
+    toast("Are you sure you want to delete this item?", {
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          toast.promise(deleteItem(id), {
+            loading: "Deleting item...",
+            success: () => {
+              fetchItems();
+              return "Item deleted successfully!";
+            },
+            error: "Failed to delete item.",
+          });
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => toast.dismiss(),
+      },
+    });
   };
 
   return (
@@ -231,8 +247,15 @@ export default function ItemsPage() {
                       <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
                         <Button
                           variant="link"
+                          onClick={() => router.push(`/items/${item.id}`)}
+                          className="text-blue-600 p-0 h-auto"
+                        >
+                          Detail
+                        </Button>
+                        <Button
+                          variant="link"
                           onClick={() => handleEdit(item)}
-                          className="text-primary p-0 h-auto"
+                          className="text-primary p-0 h-auto ml-4"
                         >
                           Edit
                         </Button>
@@ -252,6 +275,7 @@ export default function ItemsPage() {
           </CardContent>
         </Card>
       </main>
+      <Toaster />
     </div>
   );
 }

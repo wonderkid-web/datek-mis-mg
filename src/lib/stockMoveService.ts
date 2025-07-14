@@ -1,14 +1,14 @@
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from 'firebase/firestore';
 import { StockMove } from './types';
-import { getItem, updateItem } from './itemService';
+import { getItemById, updateItem } from './itemService';
 
 const stockMovesCollectionRef = collection(db, 'stockMoves');
 
 export const createStockMove = async (stockMove: Omit<StockMove, 'id' | 'createdAt' | 'itemName'>): Promise<string> => {
   const { itemId, quantity } = stockMove;
 
-  const item = await getItem(itemId);
+  const item = await getItemById(itemId);
   if (!item) {
     throw new Error('Item not found');
   }
@@ -29,6 +29,16 @@ export const createStockMove = async (stockMove: Omit<StockMove, 'id' | 'created
   return docRef.id;
 };
 
+export const getStockMovesByItemId = async (itemId: string): Promise<StockMove[]> => {
+  const q = query(stockMovesCollectionRef, where("itemId", "==", itemId), orderBy("createdAt", "desc"));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    moveDate: doc.data().moveDate.toDate(),
+  })) as StockMove[];
+};
+
 export const getStockMoves = async (): Promise<StockMove[]> => {
   const q = query(stockMovesCollectionRef, orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
@@ -39,22 +49,74 @@ export const getStockMoves = async (): Promise<StockMove[]> => {
   })) as StockMove[];
 };
 
-export const updateStockMove = async (id: string, stockMove: Partial<Omit<StockMove, 'id' | 'createdAt'>>): Promise<void> => {
-  const stockMoveDoc = doc(db, 'stockMoves', id);
-  const updatedData = { ...stockMove };
+import { getDoc } from 'firebase/firestore';
+
+export const updateStockMove = async (id: string, stockMove: Partial<Omit<StockMove, 'id' | 'createdAt' | 'itemName'>>): Promise<void> => {
+  const stockMoveDocRef = doc(db, 'stockMoves', id);
+  const stockMoveSnap = await getDoc(stockMoveDocRef);
+
+  if (!stockMoveSnap.exists()) {
+    throw new Error('Stock move not found');
+  }
+
+  const existingStockMove = stockMoveSnap.data() as StockMove;
+
+  let updatedItemName = existingStockMove.itemName;
+  if (stockMove.itemId && stockMove.itemId !== existingStockMove.itemId) {
+    const newItem = await getItemById(stockMove.itemId);
+    if (newItem) {
+      updatedItemName = newItem.name;
+    }
+  }
+
+  const updatedData: Partial<StockMove> = {
+    ...stockMove,
+    itemName: updatedItemName,
+  };
+
   if (stockMove.moveDate) {
     updatedData.moveDate = new Date(stockMove.moveDate);
   }
-  await updateDoc(stockMoveDoc, updatedData);
+
+  await updateDoc(stockMoveDocRef, updatedData);
 };
 
 export const deleteStockMove = async (id: string): Promise<void> => {
-  const stockMoveDoc = doc(db, 'stockMoves', id);
-  await deleteDoc(stockMoveDoc);
+  const stockMoveDocRef = doc(db, 'stockMoves', id);
+  const stockMoveSnap = await getDoc(stockMoveDocRef);
+
+  if (!stockMoveSnap.exists()) {
+    throw new Error('Stock move not found');
+  }
+
+  const stockMoveToDelete = stockMoveSnap.data() as StockMove;
+
+  // Revert item quantity
+  const item = await getItemById(stockMoveToDelete.itemId);
+  if (item) {
+    await updateItem(item.id!, { quantity: item.quantity + stockMoveToDelete.quantity });
+  }
+
+  await deleteDoc(stockMoveDocRef);
 };
 
 export const getStockMoveTrend = async (): Promise<{ date: string; count: number }[]> => {
   const stockMoves = await getStockMoves();
+  const trend = stockMoves.reduce((acc, move) => {
+    const date = move.moveDate.toISOString().split('T')[0];
+    const existing = acc.find(item => item.date === date);
+    if (existing) {
+      existing.count += move.quantity;
+    } else {
+      acc.push({ date, count: move.quantity });
+    }
+    return acc;
+  }, [] as { date: string; count: number }[]);
+  return trend.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+};
+
+export const getStockMoveTrendByItemId = async (itemId: string): Promise<{ date: string; count: number }[]> => {
+  const stockMoves = await getStockMovesByItemId(itemId);
   const trend = stockMoves.reduce((acc, move) => {
     const date = move.moveDate.toISOString().split('T')[0];
     const existing = acc.find(item => item.date === date);
