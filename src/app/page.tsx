@@ -64,55 +64,55 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen max-h-screen overflow-auto bg-gray-50/50">
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen max-h-screen overflow-auto">
+      <main className="container p-4 sm:p-6 lg:p-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dasbor</h1>
-          <p className="text-gray-600">Selamat datang kembali, {user.email}</p>
+          <h1 className="text-3xl font-bold tracking-tight">Dasbor</h1>
+          <p className="text-muted-foreground">Selamat datang kembali, {user.email}</p>
         </div>
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 justify-between">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-500">Total Barang</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Barang</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-gray-900">{totalItems}</p>
+              <p className="text-3xl font-bold">{totalItems}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-500">Total Kuantitas Stok</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Kuantitas Stok</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-gray-900">{totalStockQuantity}</p>
+              <p className="text-3xl font-bold">{totalStockQuantity}</p>
             </CardContent>
           </Card>
           {Object.entries(itemTypeCounts).map(([type, count]) => (
             <Card key={type}>
               <CardHeader>
-                <CardTitle className="text-sm font-medium text-gray-500">Total Item {type}</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Item {type}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-gray-900">{count}</p>
+                <p className="text-3xl font-bold">{count}</p>
               </CardContent>
             </Card>
           ))}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-500">Pergerakan Terbaru</CardTitle>
+              <CardTitle className="text-sm font-medium">Pergerakan Terbaru</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-gray-900">{recentStockMoves.length}</p>
+              <p className="text-3xl font-bold">{recentStockMoves.length}</p>
             </CardContent>
           </Card>
-          <Card className="border-red-500/50">
+          <Card className="border-destructive/50">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-red-600">Peringatan Stok Rendah</CardTitle>
+              <CardTitle className="text-sm font-medium text-destructive">Peringatan Stok Rendah</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-red-600">{lowStockItems.length}</p>
+              <p className="text-3xl font-bold text-destructive">{lowStockItems.length}</p>
             </CardContent>
           </Card>
         </div>

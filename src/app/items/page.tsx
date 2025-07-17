@@ -37,7 +37,7 @@ export default function ItemsPage() {
       router.push("/auth");
     }
     fetchItems();
-  }, []);
+  }, [loading, user, router]);
 
   const fetchItems = async () => {
     setIsLoading(true);

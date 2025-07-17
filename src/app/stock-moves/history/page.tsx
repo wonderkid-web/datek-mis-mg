@@ -194,6 +194,9 @@ export default function StockMoveHistoryPage() {
                         Item
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Merk Barang
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                         From SBU
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -212,6 +215,9 @@ export default function StockMoveHistoryPage() {
                       <tr key={stockMove.id}>
                         <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
                           {items.find((item) => item.id === stockMove.itemId)?.name || "N/A"}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                          {items.find((item) => item.id === stockMove.itemId)?.description || "N/A"}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                           {stockMove.fromSBU}

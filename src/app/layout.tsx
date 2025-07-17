@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Sidebar from "@/components/Sidebar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const geistSans = Geist({
@@ -41,6 +41,11 @@ export default function RootLayout({
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // State for sidebar
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -49,15 +54,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
 
   if (loading) {
-    return <div>Loading...</div>; // Or a proper loading spinner
+    return <div>Memuat...</div>; // Or a proper loading spinner
   }
 
   return (
     <>
-      {user && <Sidebar />}
-      <div className="flex-1 overflow-y-auto">
+      {user && <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />}
+      <div className={`flex-1 overflow-y-auto transition-all duration-300`}> {/* Adjust margin based on sidebar state */}
         {children}
       </div>
     </>
   );
 }
+
