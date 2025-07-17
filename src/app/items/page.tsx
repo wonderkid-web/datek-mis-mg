@@ -11,6 +11,8 @@ import {
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ITEM_TYPES } from "@/lib/constants";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Toaster, toast } from "sonner";
@@ -76,7 +78,7 @@ export default function ItemsPage() {
       name: item.name,
       description: item.description,
       quantity: item.quantity,
-      minQuantity: item.minQuantity || 0, // Set minQuantity for editing
+      minQuantity: item.minQuantity || 0,
     });
   };
 
@@ -105,11 +107,11 @@ export default function ItemsPage() {
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
       <main className="container mx-auto p-8">
-        <h1 className="mb-8 text-3xl font-bold">Manage Items</h1>
+        <h1 className="mb-8 text-3xl font-bold">Kelola Barang</h1>
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>{editingItem ? "Edit Item" : "Add New Item"}</CardTitle>
+            <CardTitle>{editingItem ? "Edit Barang" : "Tambah Barang Baru"}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
@@ -118,24 +120,31 @@ export default function ItemsPage() {
                   htmlFor="name"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Name
+                  Nama
                 </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                <Select
+                  onValueChange={(value) => setForm({ ...form, name: value })}
                   value={form.name}
-                  onChange={handleChange}
                   required
-                />
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih jenis item" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEM_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="mb-4">
                 <label
                   htmlFor="description"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Description
+                  Type/Merk
                 </label>
                 <Textarea
                   id="description"
@@ -150,7 +159,7 @@ export default function ItemsPage() {
                   htmlFor="quantity"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Quantity
+                  Kuantitas
                 </label>
                 <input
                   type="number"
@@ -167,7 +176,7 @@ export default function ItemsPage() {
                   htmlFor="minQuantity"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Minimum Quantity for Alert
+                  Kuantitas Minimum untuk Peringatan
                 </label>
                 <input
                   type="number"
@@ -180,7 +189,7 @@ export default function ItemsPage() {
                 />
               </div>
               <Button type="submit" className="w-full">
-                {editingItem ? "Update Item" : "Add Item"}
+                {editingItem ? "Perbarui Barang" : "Tambah Barang"}
               </Button>
               {editingItem && (
                 <Button
@@ -188,11 +197,11 @@ export default function ItemsPage() {
                   variant="outline"
                   onClick={() => {
                     setEditingItem(null);
-                    setForm({ name: "", description: "", quantity: 0 });
+                    setForm({ name: "", description: "", quantity: 0, minQuantity: 0 });
                   }}
                   className="ml-4"
                 >
-                  Cancel
+                  Batal
                 </Button>
               )}
             </form>
@@ -201,31 +210,31 @@ export default function ItemsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Item List</CardTitle>
+            <CardTitle>Daftar Barang</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p>Loading items...</p>
+              <p>Memuat barang...</p>
             ) : items.length === 0 ? (
-              <p>No items found.</p>
+              <p>Tidak ada barang ditemukan.</p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Name
+                      Nama
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Description
+                      Deskripsi
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Quantity
+                      Kuantitas
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Min Quantity
+                      Kuantitas Min
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Actions
+                      Aksi
                     </th>
                   </tr>
                 </thead>

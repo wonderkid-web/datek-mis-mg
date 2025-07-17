@@ -30,15 +30,15 @@ export default function Sidebar() {
         </Link>
         <Link href="/items" className="flex items-center space-x-3 rounded-md px-3 py-2 text-white hover:bg-gray-700 hover:text-white">
           <Package className="h-5 w-5" />
-          <span>Items</span>
+          <span>Tambah Barang</span>
         </Link>
         <Link href="/stock-moves" className="flex items-center space-x-3 rounded-md px-3 py-2 text-white hover:bg-gray-700 hover:text-white">
           <Repeat className="h-5 w-5" />
-          <span>Stock Moves</span>
+          <span>Pergerakan Stok</span>
         </Link>
         <Link href="/stock-moves/history" className="flex items-center space-x-3 rounded-md px-3 py-2 text-white hover:bg-gray-700 hover:text-white">
           <History className="h-5 w-5" />
-          <span>Stock Move History</span>
+          <span>Riwayat Pergerakan Stok</span>
         </Link>
       </div>
       <button
@@ -46,7 +46,7 @@ export default function Sidebar() {
         className="flex items-center space-x-3 rounded-md bg-red-600 px-3 py-2 text-white hover:bg-red-700"
       >
         <LogOut className="h-5 w-5" />
-        <span>Logout</span>
+        <span>Keluar</span>
       </button>
     </div>
   );

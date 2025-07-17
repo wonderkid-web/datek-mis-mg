@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ITEM_TYPES } from "@/lib/constants";
 
 const sbuOptions = [
   "BIMP",
@@ -36,6 +37,7 @@ export default function StockMovesPage() {
   const [stockMoves, setStockMoves] = useState<StockMove[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>("initial");
   const [form, setForm] = useState<
     Omit<StockMove, "id" | "createdAt" | "moveDate"> & { moveDate: string }
   >({
@@ -80,8 +82,15 @@ export default function StockMovesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const selectedItem = items.find((item) => item.id === form.itemId);
+    if (!selectedItem) {
+      toast.error("Silakan pilih item yang valid.");
+      return;
+    }
+
     const stockMoveData = {
       ...form,
+      itemName: selectedItem.name, // Set itemName from the selected item's name
       quantity: Number(form.quantity),
       moveDate: new Date(form.moveDate),
     };
@@ -101,6 +110,7 @@ export default function StockMovesPage() {
         quantity: 0,
         moveDate: "",
       });
+      setSelectedCategory("initial");
       setEditingStockMove(null);
       fetchStockMoves();
     } catch (error: any) {
@@ -110,10 +120,15 @@ export default function StockMovesPage() {
 
   const handleEdit = (stockMove: StockMove) => {
     setEditingStockMove(stockMove);
+    // Extract category from stockMove.itemName (e.g., "laptop (MacBook Pro)" -> "laptop")
+    const categoryMatch = stockMove.itemName.match(/^([^\s]+)/);
+    const category = categoryMatch ? categoryMatch[1] : "initial";
+    setSelectedCategory(category);
+
     setForm({
       itemId: stockMove.itemId,
       fromSBU: stockMove.fromSBU,
-      itemName: "",
+      itemName: stockMove.itemName,
       toSBU: stockMove.toSBU,
       quantity: stockMove.quantity,
       moveDate: stockMove.moveDate.toISOString().split("T")[0], // Format date for input
@@ -121,22 +136,22 @@ export default function StockMovesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    toast("Are you sure you want to delete this stock move?", {
+    toast("Apakah Anda yakin ingin menghapus pergerakan stok ini?", {
       action: {
-        label: "Delete",
+        label: "Hapus",
         onClick: async () => {
           toast.promise(deleteStockMove(id), {
-            loading: "Deleting stock move...",
+            loading: "Menghapus pergerakan stok...",
             success: () => {
               fetchStockMoves();
-              return "Stock move deleted successfully!";
+              return "Pergerakan stok berhasil dihapus!";
             },
-            error: "Failed to delete stock move.",
+            error: "Gagal menghapus pergerakan stok.",
           });
         },
       },
       cancel: {
-        label: "Cancel",
+        label: "Batal",
         onClick: () => toast.dismiss(),
       },
     });
@@ -145,16 +160,43 @@ export default function StockMovesPage() {
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
       <main className="container mx-auto p-8">
-        <h1 className="mb-8 text-3xl font-bold">Manage Stock Moves</h1>
+        <h1 className="mb-8 text-3xl font-bold">Kelola Pergerakan Stok</h1>
 
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>
-              {editingStockMove ? "Edit Stock Move" : "Add New Stock Move"}
+              {editingStockMove ? "Edit Pergerakan Stok" : "Tambah Pergerakan Stok Baru"}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label
+                  htmlFor="itemCategory"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Kategori Item
+                </label>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={(value) => {
+                    setSelectedCategory(value);
+                    setForm({ ...form, itemId: "initial", itemName: "" }); // Reset item selection when category changes
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih Kategori Item" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="initial">Pilih Kategori Item</SelectItem>
+                    {ITEM_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="mb-4">
                 <label
                   htmlFor="itemId"
@@ -164,22 +206,28 @@ export default function StockMovesPage() {
                 </label>
                 <Select
                   value={form.itemId}
-                  onValueChange={(value) =>
-                    handleChange({
-                      target: { name: "itemId", value },
-                    } as React.ChangeEvent<HTMLSelectElement>)
-                  }
+                  onValueChange={(value) => {
+                    const selectedItem = items.find((item) => item.id === value);
+                    setForm({
+                      ...form,
+                      itemId: value,
+                      itemName: selectedItem ? `${selectedItem.name} (${selectedItem.description})` : "",
+                    });
+                  }}
+                  disabled={selectedCategory === "initial"}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an Item" />
+                    <SelectValue placeholder="Pilih Item" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="initial">Select an Item</SelectItem>
-                    {items.map((item) => (
-                      <SelectItem key={item.id} value={item.id!}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="initial">Pilih Item</SelectItem>
+                    {items
+                      .filter((item) => item.name === selectedCategory)
+                      .map((item) => (
+                        <SelectItem key={item.id} value={item.id!}>
+                          {item.name} ({item.description})
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -188,7 +236,7 @@ export default function StockMovesPage() {
                   htmlFor="toSBU"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  To SBU
+                  Ke SBU
                 </label>
                 <Select
                   value={form.toSBU}
@@ -199,10 +247,10 @@ export default function StockMovesPage() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select SBU" />
+                    <SelectValue placeholder="Pilih SBU" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="initial">Select SBU</SelectItem>
+                    <SelectItem value="initial">Pilih SBU</SelectItem>
                     {sbuOptions.map((sbu) => (
                       <SelectItem key={sbu} value={sbu}>
                         {sbu}
@@ -216,7 +264,7 @@ export default function StockMovesPage() {
                   htmlFor="fromSBU"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  From SBU
+                  Dari SBU
                 </label>
                 <Select
                   value={form.fromSBU}
@@ -227,10 +275,10 @@ export default function StockMovesPage() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select SBU" />
+                    <SelectValue placeholder="Pilih SBU" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="initial">Select SBU</SelectItem>
+                    <SelectItem value="initial">Pilih SBU</SelectItem>
                     {sbuOptions.map((sbu) => (
                       <SelectItem key={sbu} value={sbu}>
                         {sbu}
@@ -245,7 +293,7 @@ export default function StockMovesPage() {
                   htmlFor="quantity"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Quantity
+                  Kuantitas
                 </label>
                 <input
                   type="number"
@@ -262,7 +310,7 @@ export default function StockMovesPage() {
                   htmlFor="moveDate"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Move Date
+                  Tanggal Pergerakan
                 </label>
                 <input
                   type="date"
@@ -275,7 +323,7 @@ export default function StockMovesPage() {
                 />
               </div>
               <Button type="submit">
-                {editingStockMove ? "Update Stock Move" : "Add Stock Move"}
+                {editingStockMove ? "Perbarui Pergerakan Stok" : "Tambah Pergerakan Stok"}
               </Button>
               {editingStockMove && (
                 <button
@@ -293,7 +341,7 @@ export default function StockMovesPage() {
                   }}
                   className="ml-4 rounded-md bg-gray-500 px-4 py-2 text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 >
-                  Cancel
+                  Batal
                 </button>
               )}
             </form>
@@ -302,13 +350,13 @@ export default function StockMovesPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Stock Move List</CardTitle>
+            <CardTitle>Daftar Pergerakan Stok</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p>Loading stock moves...</p>
+              <p>Memuat pergerakan stok...</p>
             ) : stockMoves.length === 0 ? (
-              <p>No stock moves found.</p>
+              <p>Tidak ada pergerakan stok ditemukan.</p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -317,19 +365,19 @@ export default function StockMovesPage() {
                       Item
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      From SBU
+                      Dari SBU
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      To SBU
+                      Ke SBU
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Quantity
+                      Kuantitas
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Move Date
+                      Tanggal Pergerakan
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Actions
+                      Aksi
                     </th>
                   </tr>
                 </thead>
@@ -364,7 +412,7 @@ export default function StockMovesPage() {
                           onClick={() => handleDelete(stockMove.id!)}
                           className="ml-4 text-red-600 p-0 h-auto"
                         >
-                          Delete
+                          Hapus
                         </Button>
                       </td>
                     </tr>
