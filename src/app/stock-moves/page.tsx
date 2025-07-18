@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ITEM_TYPES } from "@/lib/constants";
+import StockMoveList from "@/components/StockMoveList";
 
 const sbuOptions = [
   "BIMP",
@@ -355,70 +356,12 @@ export default function StockMovesPage() {
           <CardContent>
             {isLoading ? (
               <p>Memuat pergerakan stok...</p>
-            ) : stockMoves.length === 0 ? (
-              <p>Tidak ada pergerakan stok ditemukan.</p>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Item
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Dari SBU
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Ke SBU
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Kuantitas
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Tanggal Pergerakan
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {stockMoves.map((stockMove) => (
-                    <tr key={stockMove.id}>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {stockMove.itemName || "N/A"}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {stockMove.fromSBU}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {stockMove.toSBU}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {stockMove.quantity}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {new Date(stockMove.moveDate).toLocaleDateString()}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                        <Button
-                          variant="link"
-                          onClick={() => handleEdit(stockMove)}
-                          className="text-primary p-0 h-auto"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="link"
-                          onClick={() => handleDelete(stockMove.id!)}
-                          className="ml-4 text-red-600 p-0 h-auto"
-                        >
-                          Hapus
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <StockMoveList
+                stockMoves={stockMoves}
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
+              />
             )}
           </CardContent>
         </Card>

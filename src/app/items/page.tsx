@@ -16,6 +16,7 @@ import { ITEM_TYPES } from "@/lib/constants";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Toaster, toast } from "sonner";
+import ItemList from "@/components/ItemList";
 
 export default function ItemsPage() {
   const { user, loading } = useAuth();
@@ -215,71 +216,12 @@ export default function ItemsPage() {
           <CardContent>
             {isLoading ? (
               <p>Memuat barang...</p>
-            ) : items.length === 0 ? (
-              <p>Tidak ada barang ditemukan.</p>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Nama
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Deskripsi
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Kuantitas
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Kuantitas Min
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {item.name}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {item.description}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {item.quantity}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {item.minQuantity}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                        <Button
-                          variant="link"
-                          onClick={() => router.push(`/items/${item.id}`)}
-                          className="text-blue-600 p-0 h-auto"
-                        >
-                          Detail
-                        </Button>
-                        <Button
-                          variant="link"
-                          onClick={() => handleEdit(item)}
-                          className="text-primary p-0 h-auto ml-4"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="link"
-                          onClick={() => handleDelete(item.id!)}
-                          className="ml-4 text-red-600 p-0 h-auto"
-                        >
-                          Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ItemList
+                items={items}
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
+              />
             )}
           </CardContent>
         </Card>

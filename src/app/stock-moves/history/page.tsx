@@ -14,8 +14,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import StockMoveHistoryList from "@/components/StockMoveHistoryList";
+import * as XLSX from "xlsx";
 
-const sbuOptions = ["BIMP", "BIMR", "BIMS", "ISA", "ISAR", "MUL", "KPNJ", "KMA", "MG"];
+const sbuOptions = [
+  "BIMP",
+  "BIMR",
+  "BIMS",
+  "ISA",
+  "ISAR",
+  "MUL",
+  "KPNJ",
+  "KMA",
+  "MG",
+];
 
 export default function StockMoveHistoryPage() {
   const [stockMoves, setStockMoves] = useState<StockMove[]>([]);
@@ -56,9 +68,15 @@ export default function StockMoveHistoryPage() {
       const endDate = filters.endDate ? new Date(filters.endDate) : null;
 
       return (
-        (filters.itemId === "all" || filters.itemId === "" || move.itemId === filters.itemId) &&
-        (filters.fromSBU === "all" || filters.fromSBU === "" || move.fromSBU === filters.fromSBU) &&
-        (filters.toSBU === "all" || filters.toSBU === "" || move.toSBU === filters.toSBU) &&
+        (filters.itemId === "all" ||
+          filters.itemId === "" ||
+          move.itemId === filters.itemId) &&
+        (filters.fromSBU === "all" ||
+          filters.fromSBU === "" ||
+          move.fromSBU === filters.fromSBU) &&
+        (filters.toSBU === "all" ||
+          filters.toSBU === "" ||
+          move.toSBU === filters.toSBU) &&
         (!startDate || moveDate >= startDate) &&
         (!endDate || moveDate <= endDate)
       );
@@ -66,6 +84,31 @@ export default function StockMoveHistoryPage() {
   };
 
   const filteredStockMoves = applyFilters();
+
+  const handleExport = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredStockMoves);
+    const workbook = XLSX.utils.book_new();
+
+    // Add borders to all cells
+    const range = XLSX.utils.decode_range(worksheet["!ref"]!);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = { c: C, r: R };
+        const cell_ref = XLSX.utils.encode_cell(cell_address);
+        if (!worksheet[cell_ref]) continue;
+        if (!worksheet[cell_ref].s) worksheet[cell_ref].s = {};
+        worksheet[cell_ref].s.border = {
+          top: { style: "thin", color: { auto: 1 } },
+          right: { style: "thin", color: { auto: 1 } },
+          bottom: { style: "thin", color: { auto: 1 } },
+          left: { style: "thin", color: { auto: 1 } },
+        };
+      }
+    }
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Move History");
+    XLSX.writeFile(workbook, "stock_move_history.xlsx");
+  };
 
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
@@ -79,7 +122,10 @@ export default function StockMoveHistoryPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="filterItemId" className="mb-2 block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="filterItemId"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
                   Item
                 </label>
                 <Select
@@ -101,12 +147,17 @@ export default function StockMoveHistoryPage() {
               </div>
 
               <div>
-                <label htmlFor="filterFromSBU" className="mb-2 block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="filterFromSBU"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
                   From SBU
                 </label>
                 <Select
                   value={filters.fromSBU}
-                  onValueChange={(value) => handleFilterChange("fromSBU", value)}
+                  onValueChange={(value) =>
+                    handleFilterChange("fromSBU", value)
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select From SBU" />
@@ -123,7 +174,10 @@ export default function StockMoveHistoryPage() {
               </div>
 
               <div>
-                <label htmlFor="filterToSBU" className="mb-2 block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="filterToSBU"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
                   To SBU
                 </label>
                 <Select
@@ -145,33 +199,44 @@ export default function StockMoveHistoryPage() {
               </div>
 
               <div>
-                <label htmlFor="filterStartDate" className="mb-2 block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="filterStartDate"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
                   Start Date
                 </label>
                 <Input
                   type="date"
                   id="filterStartDate"
                   value={filters.startDate}
-                  onChange={(e) => handleFilterChange("startDate", e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("startDate", e.target.value)
+                  }
                 />
               </div>
 
               <div>
-                <label htmlFor="filterEndDate" className="mb-2 block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="filterEndDate"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
                   End Date
                 </label>
                 <Input
                   type="date"
                   id="filterEndDate"
                   value={filters.endDate}
-                  onChange={(e) => handleFilterChange("endDate", e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("endDate", e.target.value)
+                  }
                 />
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex items-center justify-between">
               <Button onClick={() => setFilters({ itemId: "all", fromSBU: "all", toSBU: "all", startDate: "", endDate: "" })}>
                 Clear Filters
               </Button>
+              <Button onClick={handleExport}>Export to Excel</Button>
             </div>
           </CardContent>
         </Card>
@@ -183,59 +248,11 @@ export default function StockMoveHistoryPage() {
           <CardContent>
             {isLoading ? (
               <p>Loading stock move history...</p>
-            ) : filteredStockMoves.length === 0 ? (
-              <p>No stock moves found matching the filters.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        Item
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        Merk Barang
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        From SBU
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        To SBU
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        Quantity
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        Move Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredStockMoves.map((stockMove) => (
-                      <tr key={stockMove.id}>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                          {items.find((item) => item.id === stockMove.itemId)?.name || "N/A"}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {items.find((item) => item.id === stockMove.itemId)?.description || "N/A"}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {stockMove.fromSBU}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {stockMove.toSBU}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {stockMove.quantity}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {new Date(stockMove.moveDate).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <StockMoveHistoryList
+                stockMoves={filteredStockMoves}
+                items={items}
+              />
             )}
           </CardContent>
         </Card>
