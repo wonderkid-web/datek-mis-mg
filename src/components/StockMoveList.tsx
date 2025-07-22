@@ -4,6 +4,13 @@ import { useState } from "react";
 import { StockMove } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import {
   Table,
@@ -27,13 +34,12 @@ export default function StockMoveList({
 }: StockMoveListProps) {
   const [filter, setFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const filteredStockMoves = stockMoves.filter(
     (move) =>
-      move.itemName.toLowerCase().includes(filter.toLowerCase()) ||
-      move.fromSBU.toLowerCase().includes(filter.toLowerCase()) ||
-      move.toSBU.toLowerCase().includes(filter.toLowerCase())
+      move.item.toLowerCase().includes(filter.toLowerCase()) ||
+      move.sbu.toLowerCase().includes(filter.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredStockMoves.length / itemsPerPage);
@@ -77,27 +83,46 @@ export default function StockMoveList({
           onChange={(e) => setFilter(e.target.value)}
           className="max-w-sm"
         />
-        <Button onClick={handleExport}>Export to Excel</Button>
+        <div className="flex items-center space-x-2">
+          <Select
+            value={String(itemsPerPage)}
+            onValueChange={(value) => {
+              setItemsPerPage(Number(value));
+              setCurrentPage(1); // Reset to first page when items per page changes
+            }}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Items per page" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleExport}>Export to Excel</Button>
+        </div>
       </div>
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>No.</TableHead>
             <TableHead>Item</TableHead>
-            <TableHead>From SBU</TableHead>
-            <TableHead>To SBU</TableHead>
+            <TableHead>SBU</TableHead>
             <TableHead>Quantity</TableHead>
             <TableHead>Move Date</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginatedStockMoves.map((move) => (
+          {paginatedStockMoves.map((move, index) => (
             <TableRow key={move.id}>
-              <TableCell>{move.itemName}</TableCell>
-              <TableCell>{move.fromSBU}</TableCell>
-              <TableCell>{move.toSBU}</TableCell>
+              <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+              <TableCell>{move.item}</TableCell>
+              <TableCell>{move.sbu}</TableCell>
               <TableCell>{move.quantity}</TableCell>
-              <TableCell>{new Date(move.moveDate).toLocaleDateString()}</TableCell>
+              <TableCell>{new Date(move.createdAt).toLocaleDateString()}</TableCell>
               <TableCell>
                 <Button
                   variant="link"

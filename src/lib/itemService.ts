@@ -64,15 +64,14 @@ export const getItemsBySbu = async (): Promise<
   { sbu: string; count: number }[]
 > => {
   const stockMoves = await getStockMoves();
-  const itemsBySbu = stockMoves.reduce((acc, move) => {
-    const sbu = move.toSBU;
-    const existing = acc.find((item) => item.sbu === sbu);
-    if (existing) {
-      existing.count += move.quantity;
-    } else {
-      acc.push({ sbu, count: move.quantity });
-    }
-    return acc;
-  }, [] as { sbu: string; count: number }[]);
-  return itemsBySbu;
+  const sbuCounts: { [key: string]: number } = {};
+
+  stockMoves.forEach(move => {
+    sbuCounts[move.sbu] = (sbuCounts[move.sbu] || 0) + 1;
+  });
+
+  return Object.entries(sbuCounts).map(([sbu, count]) => ({
+    sbu,
+    count,
+  }));
 };

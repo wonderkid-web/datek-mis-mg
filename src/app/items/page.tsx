@@ -29,7 +29,8 @@ export default function ItemsPage() {
     name: "",
     description: "",
     quantity: 0,
-    minQuantity: 0, // Added minQuantity
+    minQuantity: 0,
+    isDeleted: false,
   });
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
@@ -68,7 +69,7 @@ export default function ItemsPage() {
     } else {
       await createItem(itemData);
     }
-    setForm({ name: "", description: "", quantity: 0, minQuantity: 0 });
+    setForm({ name: "", description: "", quantity: 0, minQuantity: 0, isDeleted: false });
     setEditingItem(null);
     fetchItems();
   };
@@ -80,6 +81,7 @@ export default function ItemsPage() {
       description: item.description,
       quantity: item.quantity,
       minQuantity: item.minQuantity || 0,
+      isDeleted: item.isDeleted,
     });
   };
 
@@ -198,7 +200,7 @@ export default function ItemsPage() {
                   variant="outline"
                   onClick={() => {
                     setEditingItem(null);
-                    setForm({ name: "", description: "", quantity: 0, minQuantity: 0 });
+                    setForm({ name: "", description: "", quantity: 0, minQuantity: 0, isDeleted: false });
                   }}
                   className="ml-4"
                 >

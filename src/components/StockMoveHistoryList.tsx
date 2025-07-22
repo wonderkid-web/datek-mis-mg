@@ -12,53 +12,78 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { Input } from "@/components/ui/input";
+
 interface StockMoveHistoryListProps {
   stockMoves: StockMove[];
   items: Item[];
 }
 
-export default function StockMoveHistoryList({ stockMoves, items }: StockMoveHistoryListProps) {
+export default function StockMoveHistoryList({ stockMoves }: StockMoveHistoryListProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
 
-  const totalPages = Math.ceil(stockMoves.length / itemsPerPage);
-  const paginatedStockMoves = stockMoves.slice(
+  const filteredStockMoves = stockMoves.filter((move) => {
+    const searchTerm = searchQuery.toLowerCase();
+    return (
+      (move.sbu || "").toLowerCase().includes(searchTerm) ||
+      (move.item || "").toLowerCase().includes(searchTerm) ||
+      (move.assetNumber || "").toLowerCase().includes(searchTerm) ||
+      (move.user || "").toLowerCase().includes(searchTerm) ||
+      (move.department || "").toLowerCase().includes(searchTerm) ||
+      (move.ipAddress || "").toLowerCase().includes(searchTerm) ||
+      (move.remote || "").toLowerCase().includes(searchTerm)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredStockMoves.length / itemsPerPage);
+  const paginatedStockMoves = filteredStockMoves.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  const getItemInfo = (itemId: string) => {
-    return items.find((item) => item.id === itemId);
-  };
 
   return (
     <div>
-      <div className="overflow-x-auto">
-        <Table>
+      <div className="mb-4 flex items-center justify-between">
+        <Input
+          type="text"
+          placeholder="Search by SBU, Item, Asset No., User, Dept., IP, Remote..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+      <div className="overflow-x-auto flex-grow max-h-full">
+        <Table className="h-full">
           <TableHeader>
             <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead>Merk Barang</TableHead>
-              <TableHead>From SBU</TableHead>
-              <TableHead>To SBU</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Move Date</TableHead>
+              <TableHead>Nomor</TableHead>
+              <TableHead>SBU</TableHead>
+              <TableHead>Barang</TableHead>
+              <TableHead>No Asset</TableHead>
+              <TableHead>User</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>IP Address</TableHead>
+              <TableHead>Remote</TableHead>
+              <TableHead>Garansi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedStockMoves.map((stockMove) => {
-              const itemInfo = getItemInfo(stockMove.itemId);
-              return (
-                <TableRow key={stockMove.id}>
-                  <TableCell>{itemInfo?.name || "N/A"}</TableCell>
-                  <TableCell>{itemInfo?.description || "N/A"}</TableCell>
-                  <TableCell>{stockMove.fromSBU}</TableCell>
-                  <TableCell>{stockMove.toSBU}</TableCell>
-                  <TableCell>{stockMove.quantity}</TableCell>
-                  <TableCell>{new Date(stockMove.moveDate).toLocaleDateString()}</TableCell>
-                </TableRow>
-              );
-            })}
+            {paginatedStockMoves.map((stockMove, index) => (
+              <TableRow key={stockMove.id} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
+                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                <TableCell>{stockMove.sbu}</TableCell>
+                <TableCell>{stockMove.itemName} - {stockMove.itemDescription}</TableCell>
+                <TableCell>{stockMove.assetNumber}</TableCell>
+                <TableCell>{stockMove.user}</TableCell>
+                <TableCell>{stockMove.department}</TableCell>
+                <TableCell>{stockMove.ipAddress}</TableCell>
+                <TableCell>{stockMove.remote}</TableCell>
+                <TableCell>{stockMove.guaranteeDate ? new Date(stockMove.guaranteeDate).toLocaleDateString() : 'N/A'}</TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>

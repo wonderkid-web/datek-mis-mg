@@ -69,3 +69,37 @@ Dokumen ini bertujuan untuk memberikan konteks yang diperlukan kepada Gemini aga
 ## 6. Informasi Tambahan
     1. Nama aplikasi: Datek Holding
     2. Warna primer: `#00612c`
+
+
+### SAMPLE DATA ###
+type stockMoves = {
+  assetNumber: string;
+  createdAt: Date;
+  department: string;
+  guaranteeDate: Date;
+  ipAddress: string;
+  item: string;
+  remote: string;
+  sbu: string;
+  user: string;
+};
+
+type Users = {
+    createdAt: Date
+    name: string
+}
+
+type Departments = {
+    createdAt: Date
+    name: string
+}
+
+type Items = {
+  name: string;
+  description: string;
+  quantity: number;
+  minQuantity: number;
+  isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};

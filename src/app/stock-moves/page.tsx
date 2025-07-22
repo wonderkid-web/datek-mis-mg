@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { StockMove, Item } from "@/lib/types";
-import {
-  getStockMoves,
-  createStockMove,
-  updateStockMove,
-  deleteStockMove,
-} from "@/lib/stockMoveService";
+import { Item, StockMove } from "@/lib/types";
+import { createStockMove } from "@/lib/stockMoveService";
 import { getItems } from "@/lib/itemService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ITEM_TYPES } from "@/lib/constants";
-import StockMoveList from "@/components/StockMoveList";
+import { getDepartments } from "@/lib/departmentService";
+import { getUsers } from "@/lib/userService";
+import { Department, User } from "@/lib/types";
 
 const sbuOptions = [
   "BIMP",
@@ -35,45 +31,45 @@ const sbuOptions = [
 ];
 
 export default function StockMovesPage() {
-  const [stockMoves, setStockMoves] = useState<StockMove[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>("initial");
-  const [form, setForm] = useState<
-    Omit<StockMove, "id" | "createdAt" | "moveDate"> & { moveDate: string }
-  >({
-    itemId: "initial",
-    fromSBU: "initial",
-    itemName: "",
-    toSBU: "initial",
+
+  const [form, setForm] = useState<any>({
+    sbu: "",
+    item: "",
+    assetNumber: "",
+    user: "",
+    department: "",
+    ipAddress: "",
+    remote: "",
+    guaranteeDate: "",
     quantity: 0,
-    moveDate: "",
-  });
-  const [editingStockMove, setEditingStockMove] = useState<StockMove | null>(
-    null
-  );
+  })
 
   useEffect(() => {
-    fetchStockMoves();
     fetchItems();
+    fetchUsers();
+    fetchDepartments();
   }, []);
 
-  const fetchStockMoves = async () => {
-    const stockMovesData = await getStockMoves();
-    setStockMoves(stockMovesData);
+  const fetchUsers = async () => {
+    const usersData = await getUsers();
+    setUsers(usersData);
+  };
+
+  const fetchDepartments = async () => {
+    const departmentsData = await getDepartments();
+    setDepartments(departmentsData);
   };
 
   const fetchItems = async () => {
-    setIsLoading(true);
     const itemsData = await getItems();
-    setIsLoading(false);
     setItems(itemsData);
   };
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setForm({
       ...form,
@@ -81,81 +77,60 @@ export default function StockMovesPage() {
     });
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setForm((prevForm:any) => ({
+      ...prevForm,
+      [name]: value,
+    }));
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({
+      ...form,
+      quantity: parseInt(e.target.value),
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedItem = items.find((item) => item.id === form.itemId);
-    if (!selectedItem) {
-      toast.error("Silakan pilih item yang valid.");
+
+    const selectedItem = items.find((i) => i.id === form.item);
+    const selectedUser = users.find((u) => u.id === form.user);
+    const selectedDepartment = departments.find(
+      (d) => d.id === form.department
+    );
+
+    if (!selectedItem || !selectedUser || !selectedDepartment) {
+      toast.error("Please select valid Item, User, and Department.");
       return;
     }
 
-    const stockMoveData = {
+    const stockMoveData: Omit<StockMove, "id" | "createdAt"> = {
       ...form,
-      itemName: selectedItem.name, // Set itemName from the selected item's name
-      quantity: Number(form.quantity),
-      moveDate: new Date(form.moveDate),
+      item: selectedItem.id!,
+      itemName: selectedItem.name,
+      itemDescription: selectedItem.description,
+      user: selectedUser.name,
+      department: selectedDepartment.name,
+      guaranteeDate: new Date(form.guaranteeDate),
     };
     try {
-      if (editingStockMove) {
-        await updateStockMove(editingStockMove.id!, stockMoveData);
-        toast.success("Stock move updated successfully!");
-      } else {
-        await createStockMove(stockMoveData);
-        toast.success("Stock move created successfully!");
-      }
+      await createStockMove(stockMoveData);
+      toast.success("Stock move created successfully!");
       setForm({
-        itemId: "initial",
-        itemName: "",
-        fromSBU: "initial",
-        toSBU: "initial",
+        sbu: "initial",
+        item: "initial",
+        assetNumber: "",
+        user: "initial",
+        department: "initial",
+        ipAddress: "",
+        remote: "",
+        guaranteeDate: "",
         quantity: 0,
-        moveDate: "",
       });
-      setSelectedCategory("initial");
-      setEditingStockMove(null);
-      fetchStockMoves();
     } catch (error: any) {
       toast.error(error.message);
     }
-  };
-
-  const handleEdit = (stockMove: StockMove) => {
-    setEditingStockMove(stockMove);
-    // Extract category from stockMove.itemName (e.g., "laptop (MacBook Pro)" -> "laptop")
-    const categoryMatch = stockMove.itemName.match(/^([^\s]+)/);
-    const category = categoryMatch ? categoryMatch[1] : "initial";
-    setSelectedCategory(category);
-
-    setForm({
-      itemId: stockMove.itemId,
-      fromSBU: stockMove.fromSBU,
-      itemName: stockMove.itemName,
-      toSBU: stockMove.toSBU,
-      quantity: stockMove.quantity,
-      moveDate: stockMove.moveDate.toISOString().split("T")[0], // Format date for input
-    });
-  };
-
-  const handleDelete = async (id: string) => {
-    toast("Apakah Anda yakin ingin menghapus pergerakan stok ini?", {
-      action: {
-        label: "Hapus",
-        onClick: async () => {
-          toast.promise(deleteStockMove(id), {
-            loading: "Menghapus pergerakan stok...",
-            success: () => {
-              fetchStockMoves();
-              return "Pergerakan stok berhasil dihapus!";
-            },
-            error: "Gagal menghapus pergerakan stok.",
-          });
-        },
-      },
-      cancel: {
-        label: "Batal",
-        onClick: () => toast.dismiss(),
-      },
-    });
   };
 
   return (
@@ -165,204 +140,198 @@ export default function StockMovesPage() {
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>
-              {editingStockMove ? "Edit Pergerakan Stok" : "Tambah Pergerakan Stok Baru"}
-            </CardTitle>
+            <CardTitle>Tambah Pergerakan Stok Baru</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label
-                  htmlFor="itemCategory"
+                  htmlFor="sbu"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Kategori Item
+                  SBU
                 </label>
                 <Select
-                  value={selectedCategory}
-                  onValueChange={(value) => {
-                    setSelectedCategory(value);
-                    setForm({ ...form, itemId: "initial", itemName: "" }); // Reset item selection when category changes
-                  }}
+                  value={form.sbu}
+                  onValueChange={(value) => handleSelectChange("sbu", value)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih Kategori Item" />
+                    <SelectValue placeholder="Pilih SBU" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="initial">Pilih Kategori Item</SelectItem>
-                    {ITEM_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
+                    <SelectItem value="initial">Pilih SBU</SelectItem>
+                    {sbuOptions.map((sbu) => (
+                      <SelectItem key={sbu} value={sbu}>
+                        {sbu}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="mb-4">
                 <label
-                  htmlFor="itemId"
+                  htmlFor="item"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Item
+                  Barang
                 </label>
                 <Select
-                  value={form.itemId}
+                  value={form.item}
                   onValueChange={(value) => {
-                    const selectedItem = items.find((item) => item.id === value);
-                    setForm({
-                      ...form,
-                      itemId: value,
-                      itemName: selectedItem ? `${selectedItem.name} (${selectedItem.description})` : "",
-                    });
+                    handleSelectChange("item", value);
                   }}
-                  disabled={selectedCategory === "initial"}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Pilih Item" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="initial">Pilih Item</SelectItem>
-                    {items
-                      .filter((item) => item.name === selectedCategory)
-                      .map((item) => (
-                        <SelectItem key={item.id} value={item.id!}>
-                          {item.name} ({item.description})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="toSBU"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  Ke SBU
-                </label>
-                <Select
-                  value={form.toSBU}
-                  onValueChange={(value) =>
-                    handleChange({
-                      target: { name: "toSBU", value },
-                    } as React.ChangeEvent<HTMLSelectElement>)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih SBU" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="initial">Pilih SBU</SelectItem>
-                    {sbuOptions.map((sbu) => (
-                      <SelectItem key={sbu} value={sbu}>
-                        {sbu}
+                    {items.map((item) => (
+                      <SelectItem key={item.id} value={item.id!}>
+                        {item.name} ({item.description})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="fromSBU"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  Dari SBU
-                </label>
-                <Select
-                  value={form.fromSBU}
-                  onValueChange={(value) =>
-                    handleChange({
-                      target: { name: "fromSBU", value },
-                    } as React.ChangeEvent<HTMLSelectElement>)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih SBU" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="initial">Pilih SBU</SelectItem>
-                    {sbuOptions.map((sbu) => (
-                      <SelectItem key={sbu} value={sbu}>
-                        {sbu}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="mb-4">
                 <label
                   htmlFor="quantity"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Kuantitas
+                  Jumlah
                 </label>
                 <input
                   type="number"
                   id="quantity"
                   name="quantity"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={handleQuantityChange}
                   value={form.quantity}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label
+                  htmlFor="assetNumber"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  No Asset
+                </label>
+                <input
+                  type="text"
+                  id="assetNumber"
+                  name="assetNumber"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onChange={handleChange}
+                  value={form.assetNumber}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label
+                  htmlFor="user"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  User
+                </label>
+                <Select
+                  value={form.user}
+                  onValueChange={(value) => handleSelectChange("user", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih User" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="initial">Pilih User</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id!}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mb-4">
+                <label
+                  htmlFor="department"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Department
+                </label>
+                <Select
+                  value={form.department}
+                  onValueChange={(value) =>
+                    handleSelectChange("department", value)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="initial">Pilih Department</SelectItem>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.id!}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mb-4">
+                <label
+                  htmlFor="ipAddress"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  IP Address
+                </label>
+                <input
+                  type="text"
+                  id="ipAddress"
+                  name="ipAddress"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={handleChange}
+                  value={form.ipAddress}
                   required
                 />
               </div>
               <div className="mb-6">
                 <label
-                  htmlFor="moveDate"
+                  htmlFor="remote"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Tanggal Pergerakan
+                  Remote
+                </label>
+                <input
+                  type="text"
+                  id="remote"
+                  name="remote"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  onChange={handleChange}
+                  value={form.remote}
+                  required
+                />
+              </div>
+              <div className="mb-6">
+                <label
+                  htmlFor="guaranteeDate"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Garansi
                 </label>
                 <input
                   type="date"
-                  id="moveDate"
-                  name="moveDate"
+                  id="guaranteeDate"
+                  name="guaranteeDate"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={form.moveDate}
+                  value={form.guaranteeDate}
                   onChange={handleChange}
                   required
                 />
               </div>
-              <Button type="submit">
-                {editingStockMove ? "Perbarui Pergerakan Stok" : "Tambah Pergerakan Stok"}
-              </Button>
-              {editingStockMove && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingStockMove(null);
-                    setForm({
-                      itemId: "",
-                      fromSBU: "",
-                      toSBU: "",
-                      itemName:"",
-                      quantity: 0,
-                      moveDate: "",
-                    });
-                  }}
-                  className="ml-4 rounded-md bg-gray-500 px-4 py-2 text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                >
-                  Batal
-                </button>
-              )}
+              <Button type="submit">Tambah Pergerakan Stok</Button>
             </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Daftar Pergerakan Stok</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p>Memuat pergerakan stok...</p>
-            ) : (
-              <StockMoveList
-                stockMoves={stockMoves}
-                handleEdit={handleEdit}
-                handleDelete={handleDelete}
-              />
-            )}
           </CardContent>
         </Card>
       </main>
