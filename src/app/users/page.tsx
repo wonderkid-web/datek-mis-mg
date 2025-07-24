@@ -1,19 +1,82 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { User } from '@/lib/types';
-import { createUser, getUsers, updateUser, deleteUser } from '@/lib/userService';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Toaster, toast } from 'sonner';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useEffect, useState } from "react";
+import { User } from "@/lib/types";
+import {
+  createUser,
+  getUsers,
+  updateUser,
+  deleteUser,
+} from "@/lib/userService";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Toaster, toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [form, setForm] = useState<Omit<User, 'id' | 'createdAt'>>({ name: '' });
+  const [form, setForm] = useState<Omit<User, "id" | "createdAt">>({
+    name: "",
+    sbu: "",
+    department: "",
+  });
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [sbus] = useState<string[]>([
+    "PT Berlian Inti Mekar - Palembang",
+    "PT Berlian Inti Mekar - Rengat",
+    "PT Berlian Inti Mekar - Siak",
+    "PT Dumai Paricipta Abadi",
+    "PT Intan Sejati Andalan",
+    "PT Intan Sejati Andalan - Refinery",
+    "PT Karya Mitra Andalan",
+    "PT Karya Pratama NiagaJaya",
+    "PT Mutiara Unggul Lestari",
+    "PT Mahkota Group, Tbk",
+  ]);
+  const namaDepartemen = [
+    "IK Biogas",
+    "Halal",
+    "IK Fraksinasi",
+    "IK Refinery",
+    "IK KCP",
+    "Refinery",
+    "IK-K3",
+    "IK-Lingkungan",
+    "IK-Mutu",
+    "Admin SBU",
+    "Document Control",
+    "Storage Tank",
+    "ISO/SMK3/ISPO",
+    "Estate",
+    "IK Proses PKS",
+    "AUD - Internal Audit",
+    "MS - Management System",
+    "MKT - Marketing",
+    "CS - Corporate Secretariat",
+    "ISO 37001:2016 (SMAP)",
+    "SSL - Social, Secure & License",
+    "FNC - Finance",
+    "HCM - Human Capital Management",
+    "ACC & TAX - Accounting & TAX",
+    "MIS - Manajemen Information System",
+    "MH - Material Handling",
+  ];
 
   useEffect(() => {
     fetchUsers();
@@ -35,12 +98,13 @@ export default function UsersPage() {
     try {
       if (editingUser) {
         await updateUser(editingUser.id!, form);
-        toast.success('User updated successfully!');
+        toast.success("User updated successfully!");
       } else {
         await createUser(form);
-        toast.success('User created successfully!');
+        toast.success("User created successfully!");
       }
-      setForm({ name: '' });
+      // @ts-expect-error gatau-kenapa
+      setForm({ name: "" });
       setEditingUser(null);
       fetchUsers();
     } catch (error: any) {
@@ -50,26 +114,26 @@ export default function UsersPage() {
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    setForm({ name: user.name });
+    setForm({ name: user.name, sbu: user.sbu, department: user.department });
   };
 
   const handleDelete = async (id: string) => {
-    toast('Are you sure you want to delete this user?', {
+    toast("Are you sure you want to delete this user?", {
       action: {
-        label: 'Delete',
+        label: "Delete",
         onClick: async () => {
           toast.promise(deleteUser(id), {
-            loading: 'Deleting user...',
+            loading: "Deleting user...",
             success: () => {
               fetchUsers();
-              return 'User deleted successfully!';
+              return "User deleted successfully!";
             },
-            error: 'Failed to delete user.',
+            error: "Failed to delete user.",
           });
         },
       },
       cancel: {
-        label: 'Cancel',
+        label: "Cancel",
         onClick: () => toast.dismiss(),
       },
     });
@@ -82,17 +146,93 @@ export default function UsersPage() {
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>{editingUser ? 'Edit User' : 'Add New User'}</CardTitle>
+            <CardTitle>{editingUser ? "Edit User" : "Add New User"}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-700">Name</label>
-                <Input type="text" id="name" name="name" value={form.name} onChange={handleChange} required />
+              <div className="flex flex-col space-y-4">
+                <div className="mb-4">
+                  <label
+                    htmlFor="name"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
+                    Name
+                  </label>
+                  <Input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="sbu"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
+                    SBU
+                  </label>
+                  <Select
+                    onValueChange={(value) => setForm({ ...form, sbu: value })}
+                    value={form.sbu}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select SBU" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sbus.map((sbu) => (
+                        <SelectItem key={sbu} value={sbu}>
+                          {sbu}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="department"
+                    className="mb-2 block text-sm font-medium text-gray-700"
+                  >
+                    Department
+                  </label>
+                  <Select
+                    onValueChange={(value) =>
+                      setForm({ ...form, department: value })
+                    }
+                    value={form.department}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {namaDepartemen.map((department) => (
+                        <SelectItem key={department} value={department}>
+                          {department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Button type="submit">{editingUser ? 'Update User' : 'Add User'}</Button>
+              <Button type="submit">
+                {editingUser ? "Update User" : "Add User"}
+              </Button>
               {editingUser && (
-                <Button type="button" onClick={() => { setEditingUser(null); setForm({ name: '' }); }} className="ml-4">Cancel</Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setEditingUser(null);
+                    // @ts-expect-error gatau-kenapa
+                    setForm({ name: "" });
+                  }}
+                  className="ml-4"
+                >
+                  Cancel
+                </Button>
               )}
             </form>
           </CardContent>
@@ -110,16 +250,35 @@ export default function UsersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>SBU</TableHead>
+                    <TableHead>Department</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((user, index) => (
-                    <TableRow key={user.id} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
+                    <TableRow
+                      key={user.id}
+                      className={index % 2 === 0 ? "bg-gray-100" : ""}
+                    >
                       <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.sbu}</TableCell>
+                      <TableCell>{user.department}</TableCell>
                       <TableCell>
-                        <Button variant="link" onClick={() => handleEdit(user)} className="text-primary p-0 h-auto">Edit</Button>
-                        <Button variant="link" onClick={() => handleDelete(user.id!)} className="ml-4 text-red-600 p-0 h-auto">Delete</Button>
+                        <Button
+                          variant="link"
+                          onClick={() => handleEdit(user)}
+                          className="text-primary p-0 h-auto"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="link"
+                          onClick={() => handleDelete(user.id!)}
+                          className="ml-4 text-red-600 p-0 h-auto"
+                        >
+                          Delete
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

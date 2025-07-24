@@ -108,5 +108,16 @@ export const getStockMoveTrendByItemId = async (itemId: string): Promise<{ date:
   }));
 };
 
+export const getUniqueSBUs = async (): Promise<string[]> => {
+  const stockMoves = await getStockMoves();
+  const sbus = new Set<string>();
+  stockMoves.forEach(move => {
+    if (move.sbu) {
+      sbus.add(move.sbu);
+    }
+  });
+  return Array.from(sbus).sort();
+};
+
 
 

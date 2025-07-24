@@ -4,10 +4,11 @@ import Link from "next/link";
 import {
   Home,
   Package,
-  Repeat,
-  History,
   ChevronLeft,
   LogOut,
+  User,
+  List,
+  PlusSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAuth, signOut } from "firebase/auth";
@@ -60,18 +61,10 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             !isOpen && "w-32 pl-1"
           } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
         >
-          <Repeat className="h-6 w-6" />
-          {isOpen && <span>Users</span>}
+          <User className="h-6 w-6" />
+          {isOpen && <span>Employee</span>}
         </Link>
-        <Link
-          href="/departments"
-          className={`${
-            !isOpen && "w-32 pl-1"
-          } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
-        >
-          <History className="h-6 w-6" />
-          {isOpen && <span>Departments</span>}
-        </Link>
+        
         <Link
           href="/items"
           className={`${
@@ -79,7 +72,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
         >
           <Package className="h-6 w-6" />
-          {isOpen && <span>Tambah Barang</span>}
+          {isOpen && <span>Add List Device</span>}
         </Link>
         <Link
           href="/stock-moves"
@@ -87,8 +80,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             !isOpen && "w-32 pl-1"
           } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
         >
-          <Repeat className="h-6 w-6" />
-          {isOpen && <span>Tambah Data</span>}
+          <PlusSquare className="h-6 w-6" />
+          {isOpen && <span>Add Inventory</span>}
         </Link>
         <Link
           href="/stock-moves/history"
@@ -96,8 +89,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             !isOpen && "w-32 pl-1"
           } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
         >
-          <History className="h-6 w-6" />
-          {isOpen && <span>Riwayat Barang</span>}
+          <List className="h-6 w-6" />
+          {isOpen && <span>View Device</span>}
         </Link>
       </div>
       <Button

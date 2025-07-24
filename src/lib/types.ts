@@ -28,11 +28,9 @@ export interface StockMove {
 export interface User {
   id?: string;
   name: string;
+  sbu: string;
+  department: string;
   createdAt: Date;
 }
 
-export interface Department {
-  id?: string;
-  name: string;
-  createdAt: Date;
-}
+

@@ -14,25 +14,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getDepartments } from "@/lib/departmentService";
 import { getUsers } from "@/lib/userService";
-import { Department, User } from "@/lib/types";
+import { User } from "@/lib/types";
 
 const sbuOptions = [
-  "BIMP",
-  "BIMR",
-  "BIMS",
-  "ISA",
-  "ISAR",
-  "MUL",
-  "KPNJ",
-  "KMA",
-  "MG",
+  "PT Berlian Inti Mekar - Palembang",
+  "PT Berlian Inti Mekar - Rengat",
+  "PT Berlian Inti Mekar - Siak",
+  "PT Dumai Paricipta Abadi",
+  "PT Intan Sejati Andalan",
+  "PT Intan Sejati Andalan - Refinery",
+  "PT Karya Mitra Andalan",
+  "PT Karya Pratama NiagaJaya",
+  "PT Mutiara Unggul Lestari",
+  "PT Mahkota Group, Tbk",
 ];
 
 export default function StockMovesPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  
   const [items, setItems] = useState<Item[]>([]);
 
   const [form, setForm] = useState<any>({
@@ -45,22 +45,16 @@ export default function StockMovesPage() {
     remote: "",
     guaranteeDate: "",
     quantity: 0,
-  })
+  });
 
   useEffect(() => {
     fetchItems();
     fetchUsers();
-    fetchDepartments();
   }, []);
 
   const fetchUsers = async () => {
     const usersData = await getUsers();
     setUsers(usersData);
-  };
-
-  const fetchDepartments = async () => {
-    const departmentsData = await getDepartments();
-    setDepartments(departmentsData);
   };
 
   const fetchItems = async () => {
@@ -78,7 +72,7 @@ export default function StockMovesPage() {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setForm((prevForm:any) => ({
+    setForm((prevForm: any) => ({
       ...prevForm,
       [name]: value,
     }));
@@ -96,12 +90,9 @@ export default function StockMovesPage() {
 
     const selectedItem = items.find((i) => i.id === form.item);
     const selectedUser = users.find((u) => u.id === form.user);
-    const selectedDepartment = departments.find(
-      (d) => d.id === form.department
-    );
 
-    if (!selectedItem || !selectedUser || !selectedDepartment) {
-      toast.error("Please select valid Item, User, and Department.");
+    if (!selectedItem || !selectedUser) {
+      toast.error("Please select valid Item and User.");
       return;
     }
 
@@ -111,7 +102,7 @@ export default function StockMovesPage() {
       itemName: selectedItem.name,
       itemDescription: selectedItem.description,
       user: selectedUser.name,
-      department: selectedDepartment.name,
+      department: selectedUser.department,
       guaranteeDate: new Date(form.guaranteeDate),
     };
     try {
@@ -253,32 +244,7 @@ export default function StockMovesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="department"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  Department
-                </label>
-                <Select
-                  value={form.department}
-                  onValueChange={(value) =>
-                    handleSelectChange("department", value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih Department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="initial">Pilih Department</SelectItem>
-                    {departments.map((department) => (
-                      <SelectItem key={department.id} value={department.id!}>
-                        {department.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              
               <div className="mb-4">
                 <label
                   htmlFor="ipAddress"
