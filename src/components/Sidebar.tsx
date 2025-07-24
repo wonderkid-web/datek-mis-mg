@@ -8,7 +8,6 @@ import {
   LogOut,
   User,
   List,
-  PlusSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAuth, signOut } from "firebase/auth";
@@ -83,6 +82,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           <List className="h-6 w-6" />
           {isOpen && <span>View Device</span>}
         </Link>
+        
       </div>
       <Button
         onClick={handleLogout}

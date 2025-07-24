@@ -8,16 +8,67 @@ export const CATEGORIES = [
 ];
 
 export const COMPANIES = [
-  { type: "BIP", description: "PT Berlian Inti Mekar - Palembang" },
-  { type: "BIR", description: "PT Berlian Inti Mekar - Rengat" },
-  { type: "BIS", description: "PT Berlian Inti Mekar - Siak" },
-  { type: "DPA", description: "PT Dumai Paricipta Abadi" },
-  { type: "ISA", description: "PT Intan Sejati Andalan" },
-  { type: "ISR", description: "PT Intan Sejati Andalan - Refinery" },
-  { type: "KMA", description: "PT Karya Mitra Andalan" },
-  { type: "KPN", description: "PT Karya Pratama NiagaJaya" },
-  { type: "MG", description: "PT Mahkota Group, Tbk" },
-  { type: "MUL", description: "PT Mutiara Unggul Lestari" },
+  {
+    type: "BIP",
+    description: "PT Berlian Inti Mekar - Palembang",
+    lintang: "3.596616358026983",
+    bujur: "98.67881535407668",
+  },
+  {
+    type: "BIR",
+    description: "PT Berlian Inti Mekar - Rengat",
+    lintang: "-0.7227579955860218",
+    bujur: "102.62722882710557",
+  },
+  {
+    type: "BIS",
+    description: "PT Berlian Inti Mekar - Siak",
+    lintang: "0.8306309661104908",
+    bujur: "102.06057938495482",
+  },
+  {
+    type: "DPA",
+    description: "PT Dumai Paricipta Abadi",
+    lintang: "1.6852182822272768",
+    bujur: "101.43847955407911",
+  },
+  {
+    type: "ISA",
+    description: "PT Intan Sejati Andalan",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+
+  {
+    type: "ISR",
+    description: "PT Intan Sejati Andalan - Refinery",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+  {
+    type: "KMA",
+    description: "PT Karya Mitra Andalan",
+    lintang: "2.7839220045197",
+    bujur: "99.61802570752778",
+  },
+  {
+    type: "KPN",
+    description: "PT Karya Pratama NiagaJaya",
+    lintang: "3.317950261702866",
+    bujur: "99.31387072337746",
+  },
+  {
+    type: "MG",
+    description: "PT Mahkota Group, Tbk",
+    lintang: "3.5967341427711728",
+    bujur: "98.67877243873158",
+  },
+  {
+    type: "MUL",
+    description: "PT Mutiara Unggul Lestari",
+    lintang: "0.8530849157690351",
+    bujur: "101.30063331965077",
+  },
 ];
 export const DEPARTMENTS = [
   "IK Biogas",

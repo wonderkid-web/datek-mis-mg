@@ -1,35 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Item } from "@/lib/types";
+import { Item, User } from "@/lib/types";
 import {
   getItems,
-  updateItem,
   deleteItem,
 } from "@/lib/itemService";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Toaster, toast } from "sonner";
-import ItemList from "@/components/ItemList";
+import AssetTable from "@/components/AssetTable";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import { getUsers } from "@/lib/userService";
 
 export default function ViewDevicesPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/auth");
     }
-    fetchItems();
+    fetchData();
   }, [loading, user, router]);
 
-  const fetchItems = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     const itemsData = await getItems();
+    const usersData = await getUsers();
     setItems(itemsData);
+    setUsers(usersData);
     setIsLoading(false);
   };
 
@@ -46,7 +49,7 @@ export default function ViewDevicesPage() {
           toast.promise(deleteItem(id), {
             loading: "Deleting item...",
             success: () => {
-              fetchItems();
+              fetchData();
               return "Item deleted successfully!";
             },
             error: "Failed to delete item.",
@@ -73,8 +76,9 @@ export default function ViewDevicesPage() {
             {isLoading ? (
               <p>Memuat aset...</p>
             ) : (
-              <ItemList
+              <AssetTable
                 items={items}
+                users={users}
                 handleEdit={handleEdit}
                 handleDelete={handleDelete}
               />
