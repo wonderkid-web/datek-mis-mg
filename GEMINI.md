@@ -103,3 +103,72 @@ type Items = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+
+
+### FORM INPUT ITEMS
+1. sekarang, form input items ini tidak lagi membutuhkan QTY atau Min QTY.. jadi alur form ini sbnrny gini,
+kita ini engga menambahkan jenis asset baru, karna jenis-jenis asset itu, sudah di tetapkan di variable unit (dibawah ini kan ada aku buat variable Unit).. dimana setiap menambahkan informasi asset baru.. akan ada input2 dibawah ini, dimana masing2 input tersebut berbentuk select ya.. ditambah lagi select user yg didapat dari data user yah..
+
+const Category = [
+  { type: 1, description: "HO" },
+  { type: 2, description: "RO" },
+  { type: 3, description: "MILL" },
+  { type: 4, description: "ESTATE" },
+  { type: 5, description: "RAMP" },
+  { type: 6, description: "REFINERY" }
+];
+
+const Company = [
+  { type: "BIP", description: "BIM PALEMBANG" },
+  { type: "BIR", description: "BIM R" },
+  { type: "BIS", description: "BIM S" },
+  { type: "DPA", description: "DPA" },
+  { type: "ISA", description: "ISA" },
+  { type: "ISR", description: "REFINERY" },
+  { type: "KCR", description: "KCRI" },
+  { type: "KMA", description: "KMA" },
+  { type: "KPN", description: "KPNJ" },
+  { type: "MAS", description: "MAS" },
+  { type: "MGP", description: "MG" },
+  { type: "MUL", description: "MUL" },
+  { type: "YMI", description: "YMI" }
+];
+
+const Department = [
+  { type: "01", description: "PROPERTI UMUM" },
+  { type: "02", description: "MANAGER" },
+  { type: "03", description: "WORKSHOP" },
+  { type: "04", description: "ADM & GENERAL" },
+  { type: "05", description: "MAINTENANCE" },
+  // ...continue until "58": "SMI"
+  { type: "58", description: "SMI" }
+];
+
+const Location = [
+  { type: 1, description: "OFFICE" },
+  { type: 2, description: "MESS" },
+  { type: 3, description: "PABRIK" },
+  { type: 4, description: "KEBUN" },
+  { type: 5, description: "AFDELING OFFICE" },
+  { type: 6, description: "RAMP" },
+  { type: 7, description: "REFINERY" }
+];
+
+const Status = [
+  { type: "01", description: "GOOD" },
+  { type: "02", description: "NEED REPARATION" },
+  { type: "03", description: "BROKEN" },
+  { type: "04", description: "MISSING" },
+  { type: "05", description: "SELL" },
+  { type: "06", description: "LEASED TO SBU" }
+];
+
+const Unit = [
+  { type: "BL-G01", description: "AULA" },
+  { type: "BL-G02", description: "BANGUNAN GUDANG" },
+  { type: "BL-G03", description: "BANGUNAN KANTIN" },
+  { type: "BL-G04", description: "BANGUN KANTOR" },
+  // ... continue all the way to:
+  { type: "MU-G12", description: "LINER" }
+];

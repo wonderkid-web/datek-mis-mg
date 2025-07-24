@@ -4,22 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./context/AuthContext";
 import { getItems } from "@/lib/itemService";
-import { getStockMoves } from "@/lib/stockMoveService";
-import { Item, StockMove } from "@/lib/types";
-import { ITEM_TYPES } from "@/lib/constants";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StockMoveTrendChart } from "@/components/charts/StockMoveTrendChart";
-import { ItemsBySbuChart } from "@/components/charts/ItemsBySbuChart";
-import { FrequentItemsChart } from "@/components/charts/FrequentItemsChart";
+
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   const [totalItems, setTotalItems] = useState(0);
-  const [totalStockQuantity, setTotalStockQuantity] = useState(0);
-  const [recentStockMoves, setRecentStockMoves] = useState<StockMove[]>([]);
-  const [lowStockItems, setLowStockItems] = useState<Item[]>([]);
   const [itemTypeCounts, setItemTypeCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -30,19 +21,12 @@ export default function HomePage() {
     const fetchData = async () => {
       const fetchedItems = await getItems();
       setTotalItems(fetchedItems.length);
-      setTotalStockQuantity(
-        fetchedItems.reduce((sum, item) => sum + item.quantity, 0)
-      );
-      setLowStockItems(
-        fetchedItems.filter(
-          (item) =>
-            item.minQuantity != null && item.quantity <= item.minQuantity
-        )
-      );
 
+      const targetItemNames = ["PRINTER", "laptop", "monitor", "mouse"];
       const counts: Record<string, number> = {};
-      ITEM_TYPES.forEach(type => {
-        counts[type] = fetchedItems.filter(item => item.name === type).length;
+
+      targetItemNames.forEach(name => {
+        counts[name] = fetchedItems.filter(item => item.name.toLowerCase().includes(name.toLowerCase())).length;
       });
       setItemTypeCounts(counts);
 
@@ -81,69 +65,20 @@ export default function HomePage() {
               <p className="text-3xl font-bold">{totalItems}</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Total Kuantitas Stok</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{totalStockQuantity}</p>
-            </CardContent>
-          </Card>
           {Object.entries(itemTypeCounts).map(([type, count]) => (
             <Card key={type}>
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Total Item {type}</CardTitle>
+                <CardTitle className="text-sm font-medium">Total {type}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">{count}</p>
               </CardContent>
             </Card>
           ))}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Pergerakan Terbaru</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{recentStockMoves.length}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-destructive/50">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-destructive">Peringatan Stok Rendah</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-destructive">{lowStockItems.length}</p>
-            </CardContent>
-          </Card>
+          
         </div>
 
-        {/* Charts */}
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Tren Pergerakan Stok</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StockMoveTrendChart />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Item berdasarkan SBU</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ItemsBySbuChart />
-            </CardContent>
-          </Card>
-          <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle>Item yang Paling Sering Dipindahkan</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FrequentItemsChart />
-            </CardContent>
-          </Card>
-        </div>
+        
       </main>
     </div>
   );

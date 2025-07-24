@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
+import { COMPANIES } from "@/lib/constants";
 
 interface ItemListProps {
   items: Item[];
@@ -31,10 +32,10 @@ export default function ItemList({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredItems = items.filter(
-    (item) =>
-      item.name.toLowerCase().includes(filter.toLowerCase()) ||
-      item.description.toLowerCase().includes(filter.toLowerCase())
+  const filteredItems = items.filter((item) =>
+    Object.values(item).some((value) =>
+      String(value).toLowerCase().includes(filter.toLowerCase())
+    )
   );
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
@@ -73,7 +74,7 @@ export default function ItemList({
       <div className="mb-4 flex items-center justify-between">
         <Input
           type="text"
-          placeholder="Filter by name or description..."
+          placeholder="Filter aset..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="max-w-sm"
@@ -83,20 +84,24 @@ export default function ItemList({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Min Quantity</TableHead>
+            <TableHead>Nomor Aset</TableHead>
+            <TableHead>Nama Aset</TableHead>
+            <TableHead>Deskripsi</TableHead>
+            <TableHead>Company</TableHead>
+            <TableHead>Departemen</TableHead>
+            <TableHead>Tanggal Registrasi</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {paginatedItems.map((item) => (
             <TableRow key={item.id}>
+              <TableCell>{item.assetNumber}</TableCell>
               <TableCell>{item.name}</TableCell>
               <TableCell>{item.description}</TableCell>
-              <TableCell>{item.quantity}</TableCell>
-              <TableCell>{item.minQuantity}</TableCell>
+              <TableCell>{COMPANIES.find(com=> com.type == item.company)?.description}</TableCell>
+              <TableCell>{item.department}</TableCell>
+              <TableCell>{item.registrationDate ? new Date(item.registrationDate).toLocaleDateString() : '-'}</TableCell>
               <TableCell>
                 <Button
                   variant="link"

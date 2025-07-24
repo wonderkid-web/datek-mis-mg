@@ -11,7 +11,6 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { Item } from "./types";
-import { getStockMoves } from "./stockMoveService";
 
 const itemsCollectionRef = collection(db, "items");
 
@@ -60,18 +59,4 @@ export const getItemById = async (id: string): Promise<Item | null> => {
   }
 };
 
-export const getItemsBySbu = async (): Promise<
-  { sbu: string; count: number }[]
-> => {
-  const stockMoves = await getStockMoves();
-  const sbuCounts: { [key: string]: number } = {};
 
-  stockMoves.forEach(move => {
-    sbuCounts[move.sbu] = (sbuCounts[move.sbu] || 0) + 1;
-  });
-
-  return Object.entries(sbuCounts).map(([sbu, count]) => ({
-    sbu,
-    count,
-  }));
-};

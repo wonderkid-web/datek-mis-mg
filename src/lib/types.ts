@@ -1,29 +1,32 @@
 export interface Item {
   id?: string;
-  name: string;
-  description: string;
-  quantity: number;
-  minQuantity: number;
+  name: string; // This will be the description from the Unit data, e.g., "AULA", "LAPTOP"
+  description: string; // For specific details like Brand/Model/Serial Number
+
+  // Fields from the new form, representing the current state of the asset
+  unit: string; // The type from the Unit data, e.g., "BL-G01"
+  category: string;
+  company: string;
+  department: string;
+  location: string;
+  status: string;
+  user: string; // User ID
+
+  // Other asset-specific details
+  assetNumber: string; // This should be unique.
+  guaranteeDate?: Date;
+  registrationDate?: Date;
+  acquisitionDate?: Date;
+  ipAddress?: string;
+  remote?: string;
+
+  // Metadata
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface StockMove {
-  id?: string;
-  assetNumber: string;
-  createdAt: Date;
-  sbu: string;
-  department: string;
-  guaranteeDate: Date;
-  ipAddress: string;
-  item: string; // This will still store the item ID
-  itemName: string; // Denormalized item name
-  itemDescription: string; // Denormalized item description
-  remote: string;
-  user: string;
-  quantity: number;
-}
+
 
 export interface User {
   id?: string;

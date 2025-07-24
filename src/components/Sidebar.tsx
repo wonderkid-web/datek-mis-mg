@@ -75,16 +75,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           {isOpen && <span>Add List Device</span>}
         </Link>
         <Link
-          href="/stock-moves"
-          className={`${
-            !isOpen && "w-32 pl-1"
-          } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
-        >
-          <PlusSquare className="h-6 w-6" />
-          {isOpen && <span>Add Inventory</span>}
-        </Link>
-        <Link
-          href="/stock-moves/history"
+          href="/view-devices"
           className={`${
             !isOpen && "w-32 pl-1"
           } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
