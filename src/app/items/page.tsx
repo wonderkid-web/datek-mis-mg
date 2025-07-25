@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Item, User, ManufacturedItem } from "@/lib/types";
 import { createItem, updateItem, getItemById } from "@/lib/itemService";
 import { getUsers } from "@/lib/userService";
@@ -12,27 +12,26 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ASSET_INFO,
-  CATEGORIES,
-  COMPANIES,
-  DEPARTMENTS,
-  LOCATIONS,
   STATUSES,
   MANUFACTURE_ASSET_TYPES,
 } from "@/lib/constants";
 import { useAuth } from "../context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Toaster, toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const initialFormState: Omit<Item, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   description: "",
   unit: "",
-  category: "",
-  company: "",
+  sbu: "",
   department: "",
-  location: "",
   status: "",
   user: "",
   assetNumber: "",
@@ -60,22 +59,13 @@ export default function ItemsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
-  const [manufacturedItems, setManufacturedItems] = useState<ManufacturedItem[]>([]);
+  const [manufacturedItems, setManufacturedItems] = useState<
+    ManufacturedItem[]
+  >([]);
   const [form, setForm] = useState(initialFormState);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
-  const [selectedManufacturedItem, setSelectedManufacturedItem] = useState<ManufacturedItem | null>(null);
-
-  useEffect(() => {
-    if (!loading && !currentUser) {
-      router.push("/auth");
-    }
-    fetchInitialData();
-
-    const itemId = searchParams.get("id");
-    if (itemId) {
-      fetchItemForEdit(itemId);
-    }
-  }, [loading, currentUser, router, searchParams]);
+  const [selectedManufacturedItem, setSelectedManufacturedItem] =
+    useState<ManufacturedItem | null>(null);
 
   useEffect(() => {
     if (selectedManufacturedItem) {
@@ -123,71 +113,96 @@ export default function ItemsPage() {
     setManufacturedItems(manufacturedItemsData);
   };
 
-  const fetchItemForEdit = async (id: string) => {
-    const item = await getItemById(id);
-    if (item) {
-      setEditingItem(item);
-      setForm({
-        name: item.name,
-        description: item.description,
-        unit: item.unit,
-        category: item.category,
-        company: item.company,
-        department: item.department,
-        location: item.location,
-        status: item.status,
-        user: item.user,
-        assetNumber: item.assetNumber,
-        guaranteeDate: item.guaranteeDate,
-        registrationDate: item.registrationDate,
-        ipAddress: item.ipAddress,
-        remote: item.remote,
-        isDeleted: item.isDeleted,
-        manufacturedItemId: item.manufacturedItemId,
-        brand: item.brand,
-        model: item.model,
-        serialNumber: item.serialNumber,
-        processor: item.processor,
-        storage: item.storage,
-        ram: item.ram,
-        vga: item.vga,
-        screenSize: item.screenSize,
-        color: item.color,
-        macAddressLan: item.macAddressLan,
-        macAddressWlan: item.macAddressWlan,
-      });
-      // If editing an item linked to a manufactured item, set selectedManufacturedItem
-      if (item.manufacturedItemId) {
-        const foundManufacturedItem = manufacturedItems.find(mi => mi.id === item.manufacturedItemId);
-        if (foundManufacturedItem) {
-          setSelectedManufacturedItem(foundManufacturedItem);
+  const fetchItemForEdit = useCallback(
+    async (id: string) => {
+      const item = await getItemById(id);
+      if (item) {
+        setEditingItem(item);
+        setForm({
+          name: item.name,
+          description: item.description,
+          unit: item.unit,
+          sbu: item.sbu,
+          department: item.department,
+          status: item.status,
+          user: item.user,
+          assetNumber: item.assetNumber,
+          guaranteeDate: item.guaranteeDate,
+          registrationDate: item.registrationDate,
+          ipAddress: item.ipAddress,
+          remote: item.remote,
+          isDeleted: item.isDeleted,
+          manufacturedItemId: item.manufacturedItemId,
+          brand: item.brand,
+          model: item.model,
+          serialNumber: item.serialNumber,
+          processor: item.processor,
+          storage: item.storage,
+          ram: item.ram,
+          vga: item.vga,
+          screenSize: item.screenSize,
+          color: item.color,
+          macAddressLan: item.macAddressLan,
+          macAddressWlan: item.macAddressWlan,
+        });
+        // If editing an item linked to a manufactured item, set selectedManufacturedItem
+        if (item.manufacturedItemId) {
+          const foundManufacturedItem = manufacturedItems.find(
+            (mi) => mi.id === item.manufacturedItemId
+          );
+          if (foundManufacturedItem) {
+            setSelectedManufacturedItem(foundManufacturedItem);
+          }
         }
+      } else {
+        toast.error("Item not found.");
+        router.push("/items"); // Redirect back to items list if not found
       }
-    } else {
-      toast.error("Item not found.");
-      router.push("/items"); // Redirect back to items list if not found
-    }
-  };
+    },
+    [manufacturedItems, router]
+  );
 
   const handleSelectChange = (name: keyof typeof form, value: string) => {
     setForm((prevForm) => ({
       ...prevForm,
       [name]: value,
       ...(name === "unit" && {
-        name: ASSET_INFO.find((u) => u.type === value && u.table === "AAM.Unit")?.description || "",
+        name:
+          ASSET_INFO.find((u) => u.type === value && u.table === "AAM.Unit")
+            ?.description || "",
       }),
     }));
 
     if (name === "unit") {
-      const selectedType = MANUFACTURE_ASSET_TYPES.find(type => type.value === value);
+      const selectedType = MANUFACTURE_ASSET_TYPES.find(
+        (type) => type.value === value
+      );
       if (selectedType) {
         // Find manufactured items of the selected type
-        const relevantManufacturedItems = manufacturedItems.filter(mi => mi.type === selectedType.value);
+        const relevantManufacturedItems = manufacturedItems.filter(
+          (mi) => mi.type === selectedType.value
+        );
         // For now, let's just pick the first one if available, or clear if none
-        setSelectedManufacturedItem(relevantManufacturedItems.length > 0 ? relevantManufacturedItems[0] : null);
-      } else {
-        setSelectedManufacturedItem(null);
+        setSelectedManufacturedItem(
+          relevantManufacturedItems.length > 0
+            ? relevantManufacturedItems[0]
+            : null
+        );
       }
+    } else {
+      setSelectedManufacturedItem(null);
+    }
+  };
+
+  const handleUserChange = (userId: string) => {
+    const selectedUser = users.find((u) => u.id === userId);
+    if (selectedUser) {
+      setForm((prevForm) => ({
+        ...prevForm,
+        user: userId,
+        sbu: selectedUser.sbu || "",
+        department: selectedUser.department || "",
+      }));
     }
   };
 
@@ -245,6 +260,18 @@ export default function ItemsPage() {
     }
   };
 
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      router.push("/auth");
+    }
+    fetchInitialData();
+
+    const itemId = searchParams.get("id");
+    if (itemId) {
+      fetchItemForEdit(itemId);
+    }
+  }, [loading, currentUser, router, searchParams, fetchItemForEdit]);
+
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
       <main className="container mx-auto p-8">
@@ -257,263 +284,267 @@ export default function ItemsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-8"
-            >
-              {/* General Information Column */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-800">Informasi Umum</h2>
-                <div>
-                  <Label htmlFor="unit">Unit (Jenis Aset)</Label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("unit", value)}
-                    value={form.unit}
-                    required
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MANUFACTURE_ASSET_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {form.unit && manufacturedItems.filter(mi => mi.type === form.unit).length > 0 && (
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Section 1: General Info & Core Details */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+                  Informasi Umum & Detail Aset
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
+                  {/* Fields arranged in a 2-column grid */}
                   <div>
-                    <Label htmlFor="manufacturedItem">Pilih Item Manufaktur</Label>
+                    <Label htmlFor="unit">Unit (Jenis Aset)</Label>
                     <Select
-                      onValueChange={(value) => {
-                        const selected = manufacturedItems.find(mi => mi.id === value);
-                        setSelectedManufacturedItem(selected || null);
-                      }}
-                      value={selectedManufacturedItem?.id || ""}
+                      onValueChange={(value) => handleSelectChange("unit", value)}
+                      value={form.unit}
+                      required
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Pilih Item Manufaktur" />
+                        <SelectValue placeholder="Pilih Unit" />
                       </SelectTrigger>
                       <SelectContent>
-                        {manufacturedItems
-                          .filter(mi => mi.type === form.unit)
-                          .map((mi) => (
-                            <SelectItem key={mi.id} value={mi.id!}>
-                              {`${mi.brand} ${mi.model} (SN: ${mi.serialNumber})`}
-                            </SelectItem>
-                          ))}
+                        {MANUFACTURE_ASSET_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
 
-                <div>
-                  <Label htmlFor="category">Region</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("category", value)
-                    }
-                    value={form.category}
-                    required
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Region" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.type} value={cat.type}>
-                          {cat.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="company">Perusahaan</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("company", value)
-                    }
-                    value={form.company}
-                    required
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Perusahaan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COMPANIES.map((com) => (
-                        <SelectItem key={com.type} value={com.type}>
-                          {com.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="department">Departemen</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("department", value)
-                    }
-                    value={form.department}
-                    required
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Departemen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DEPARTMENTS.map((dep) => (
-                        <SelectItem key={dep} value={dep}>
-                          {dep}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="location">Lokasi</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("location", value)
-                    }
-                    value={form.location}
-                    required
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Lokasi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LOCATIONS.map((loc) => (
-                        <SelectItem key={loc.type} value={loc.type}>
-                          {loc.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("status", value)
-                    }
-                    value={form.status}
-                    required
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map((stat) => (
-                        <SelectItem key={stat.type} value={stat.type}>
-                          {stat.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {form.unit &&
+                    manufacturedItems.filter((mi) => mi.type === form.unit)
+                      .length > 0 && (
+                      <div>
+                        <Label htmlFor="manufacturedItem">
+                          Pilih Item Manufaktur
+                        </Label>
+                        <Select
+                          onValueChange={(value) => {
+                            const selected = manufacturedItems.find(
+                              (mi) => mi.id === value
+                            );
+                            setSelectedManufacturedItem(selected || null);
+                          }}
+                          value={selectedManufacturedItem?.id || ""}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Pilih Item Manufaktur" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {manufacturedItems
+                              .filter((mi) => mi.type === form.unit)
+                              .map((mi) => (
+                                <SelectItem key={mi.id} value={mi.id!}>
+                                  {`${mi.brand} ${mi.model} (SN: ${mi.serialNumber})`}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                  <div>
+                    <Label htmlFor="assetNumber">Nomor Aset</Label>
+                    <Input
+                      id="assetNumber"
+                      name="assetNumber"
+                      value={form.assetNumber}
+                      onChange={handleInputChange}
+                      placeholder="Nomor Aset Unik"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="user">Pengguna</Label>
+                    <Select
+                      onValueChange={handleUserChange}
+                      value={form.user}
+                      required
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih Pengguna" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((u) => (
+                          <SelectItem key={u.id!} value={u.id!}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>                    <Label htmlFor="sbu">SBU</Label>                    <Input                      id="sbu"                      name="sbu"                      value={form.sbu}                      readOnly                      placeholder="Ditentukan oleh Pengguna"                    />                  </div>
+
+                  <div>
+                    <Label htmlFor="department">Departemen</Label>
+                    <Input
+                      id="department"
+                      name="department"
+                      value={form.department}
+                      readOnly
+                      placeholder="Ditentukan oleh Pengguna"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleSelectChange("status", value)
+                      }
+                      value={form.status}
+                      required
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUSES.map((stat) => (
+                          <SelectItem key={stat.type} value={stat.type}>
+                            {stat.description}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Full-width description */}
+                  <div className="md:col-span-2">
+                    <Label htmlFor="description">
+                      Deskripsi (Merk/Model/SN)
+                    </Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      value={form.description}
+                      onChange={
+                        selectedManufacturedItem ? undefined : handleInputChange
+                      }
+                      placeholder="Detail spesifik aset"
+                      required
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Specific Details Column */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-800">Detail Spesifik</h2>
-                <div>
-                  <Label htmlFor="assetNumber">Nomor Aset</Label>
-                  <Input
-                    id="assetNumber"
-                    name="assetNumber"
-                    value={form.assetNumber}
-                    onChange={handleInputChange}
-                    placeholder="Nomor Aset Unik"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="user">Pengguna</Label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("user", value)}
-                    value={form.user}
-                    required
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Pengguna" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users.map((u) => (
-                        <SelectItem key={u.id!} value={u.id!}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="description">Deskripsi (Merk/Model/SN)</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={form.description}
-                    onChange={selectedManufacturedItem ? undefined : handleInputChange}
-                    placeholder="Detail spesifik aset"
-                    required
-                    readOnly={!!selectedManufacturedItem && !editingItem}
-                  />
-                </div>
-
-                {/* Manufactured Item Fields always visible but readOnly if linked */}
-                <div className="space-y-4 border-t pt-4 mt-4">
-                  <h3 className="text-lg font-medium text-gray-700">Detail Manufaktur</h3>
+              {/* Section 2: Manufactured Details */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+                  Detail Manufaktur
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4 pt-4">
                   <div>
                     <Label htmlFor="brand">Merek</Label>
-                    <Input id="brand" type="text" value={form.brand || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="brand"
+                      type="text"
+                      value={form.brand || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="model">Model</Label>
-                    <Input id="model" type="text" value={form.model || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="model"
+                      type="text"
+                      value={form.model || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="serialNumber">Serial Number</Label>
-                    <Input id="serialNumber" type="text" value={form.serialNumber || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="serialNumber"
+                      type="text"
+                      value={form.serialNumber || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="processor">Processor</Label>
-                    <Input id="processor" type="text" value={form.processor || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="processor"
+                      type="text"
+                      value={form.processor || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="storage">Penyimpanan</Label>
-                    <Input id="storage" type="text" value={form.storage || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="storage"
+                      type="text"
+                      value={form.storage || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="ram">RAM</Label>
-                    <Input id="ram" type="text" value={form.ram || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="ram"
+                      type="text"
+                      value={form.ram || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="vga">VGA</Label>
-                    <Input id="vga" type="text" value={form.vga || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="vga"
+                      type="text"
+                      value={form.vga || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="screenSize">Ukuran Layar</Label>
-                    <Input id="screenSize" type="text" value={form.screenSize || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="screenSize"
+                      type="text"
+                      value={form.screenSize || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="color">Warna</Label>
-                    <Input id="color" type="text" value={form.color || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="color"
+                      type="text"
+                      value={form.color || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="macAddressLan">MAC Address LAN</Label>
-                    <Input id="macAddressLan" type="text" value={form.macAddressLan || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="macAddressLan"
+                      type="text"
+                      value={form.macAddressLan || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="macAddressWlan">MAC Address WLAN</Label>
-                    <Input id="macAddressWlan" type="text" value={form.macAddressWlan || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                    <Input
+                      id="macAddressWlan"
+                      type="text"
+                      value={form.macAddressWlan || ""}
+                      readOnly={!!selectedManufacturedItem && !editingItem}
+                    />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-4 border-t pt-4 mt-4">
-                  <h3 className="text-lg font-medium text-gray-700">Informasi Tambahan</h3>
+              {/* Section 3: Additional Info */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+                  Informasi Tambahan
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4 pt-4">
                   <div>
                     <Label htmlFor="guaranteeDate">Tanggal Garansi</Label>
                     <Input
@@ -531,7 +562,9 @@ export default function ItemsPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="registrationDate">Tanggal Registrasi</Label>
+                    <Label htmlFor="registrationDate">
+                      Tanggal Registrasi
+                    </Label>
                     <Input
                       id="registrationDate"
                       name="registrationDate"
@@ -546,7 +579,6 @@ export default function ItemsPage() {
                       onChange={handleInputChange}
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="ipAddress">Alamat IP</Label>
                     <Input
@@ -572,7 +604,7 @@ export default function ItemsPage() {
               </div>
 
               {/* Submit Button */}
-              <div className="md:col-span-2 flex justify-end space-x-4 mt-6">
+              <div className="flex justify-end space-x-4 pt-6">
                 <Button type="submit" className="w-full md:w-auto">
                   {editingItem ? "Perbarui Aset" : "Tambah Aset"}
                 </Button>

@@ -31,9 +31,7 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import {
   ASSET_INFO,
-  CATEGORIES,
   COMPANIES,
-  LOCATIONS,
   STATUSES,
   UNITS,
 } from "@/lib/constants";
@@ -169,10 +167,12 @@ export default function AssetTable({
       {
         accessorKey: "status",
         header: "Status",
-        cell: (info) =>
+        cell: (info) => (
           <p className="text-center">
-            {STATUSES.find((s) => s.type === info.getValue())?.description || "-"}
-          </p>,
+            {STATUSES.find((s) => s.type === info.getValue())?.description ||
+              "-"}
+          </p>
+        ),
         enableColumnFilter: true,
         enableSorting: true,
       },
@@ -250,13 +250,6 @@ export default function AssetTable({
         "Nomor Aset": item.assetNumber,
         Deskripsi: item.description,
         Unit: UNITS.find((u) => u.type === item.unit)?.description || "-",
-        Region:
-          CATEGORIES.find((c) => c.type === item.category)?.description || "-",
-        Perusahaan:
-          COMPANIES.find((c) => c.type === item.company)?.description || "-",
-        Departemen: item.department,
-        Lokasi:
-          LOCATIONS.find((l) => l.type === item.location)?.description || "-",
         Status:
           STATUSES.find((s) => s.type === item.status)?.description || "-",
         Pengguna: users.find((u) => u.id === item.user)?.name || "-",
@@ -396,6 +389,10 @@ export default function AssetTable({
         </Table>
       </div>
       <div className="mt-4 flex items-center justify-end space-x-2">
+        <div className="flex-1 text-sm text-muted-foreground">
+          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          {table.getPageCount()}
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -404,6 +401,20 @@ export default function AssetTable({
         >
           Previous
         </Button>
+        {[...Array(table.getPageCount()).keys()].map((pageIdx) => (
+          <Button
+            key={pageIdx}
+            variant={
+              table.getState().pagination.pageIndex === pageIdx
+                ? "default"
+                : "outline"
+            }
+            size="sm"
+            onClick={() => table.setPageIndex(pageIdx)}
+          >
+            {pageIdx + 1}
+          </Button>
+        ))}
         <Button
           variant="outline"
           size="sm"

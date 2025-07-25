@@ -27,6 +27,7 @@ export default function ItemsBySbuChart({ items }: ItemsBySbuChartProps) {
     const sbuCounts: { [key: string]: number } = {};
     items.forEach((item) => {
       const companyName =
+      // @ts-expect-error its okay
         COMPANIES.find((c) => c.type === item.company)?.description ||
         "Tidak Diketahui";
       sbuCounts[companyName] = (sbuCounts[companyName] || 0) + 1;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,18 +13,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toaster, toast } from "sonner";
-import {
-  MANUFACTURE_ASSET_TYPES,
-  MANUFACTURE_BRANDS,
-  MANUFACTURE_PROCESSORS,
-  MANUFACTURE_STORAGES,
-  MANUFACTURE_RAMS,
-  MANUFACTURE_VGAS,
-  MANUFACTURE_SCREEN_SIZES,
-  MANUFACTURE_COLORS,
-} from "@/lib/constants";
 import { createManufacturedItem } from "@/lib/manufactureService";
-import { ManufacturedItem } from "@/lib/types";
+import {
+  ManufacturedItem,
+  AssetType,
+  Brand,
+  Processor,
+  Storage,
+  Ram,
+  Vga,
+  ScreenSize,
+  Color,
+} from "@/lib/types";
+import { getAssetTypes } from "@/lib/assetTypeService";
+import { getBrands } from "@/lib/brandService";
+import { getProcessors } from "@/lib/processorService";
+import { getStorages } from "@/lib/storageService";
+import { getRams } from "@/lib/ramService";
+import { getVgas } from "@/lib/vgaService";
+import { getScreenSizes } from "@/lib/screenSizeService";
+import { getColors } from "@/lib/colorService";
 
 export default function ManufakturPage() {
   const [formData, setFormData] = useState<Partial<ManufacturedItem>>({
@@ -43,6 +51,34 @@ export default function ManufakturPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [processors, setProcessors] = useState<Processor[]>([]);
+  const [storages, setStorages] = useState<Storage[]>([]);
+  const [rams, setRams] = useState<Ram[]>([]);
+  const [vgas, setVgas] = useState<Vga[]>([]);
+  const [screenSizes, setScreenSizes] = useState<ScreenSize[]>([]);
+  const [colors, setColors] = useState<Color[]>([]);
+
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        setAssetTypes(await getAssetTypes());
+        setBrands(await getBrands());
+        setProcessors(await getProcessors());
+        setStorages(await getStorages());
+        setRams(await getRams());
+        setVgas(await getVgas());
+        setScreenSizes(await getScreenSizes());
+        setColors(await getColors());
+      } catch (error) {
+        console.error("Error fetching master data:", error);
+        toast.error("Gagal memuat data master.");
+      }
+    };
+    fetchMasterData();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
@@ -56,14 +92,23 @@ export default function ManufakturPage() {
     setIsLoading(true);
 
     // Basic validation
-    if (!formData.type || !formData.brand || !formData.model || !formData.serialNumber) {
-      toast.error("Please fill in all required fields (Type, Brand, Model, Serial Number).");
+    if (
+      !formData.type ||
+      !formData.brand ||
+      !formData.model ||
+      !formData.serialNumber
+    ) {
+      toast.error(
+        "Please fill in all required fields (Type, Brand, Model, Serial Number)."
+      );
       setIsLoading(false);
       return;
     }
 
     try {
-      await createManufacturedItem(formData as Omit<ManufacturedItem, "id" | "createdAt" | "updatedAt">);
+      await createManufacturedItem(
+        formData as Omit<ManufacturedItem, "id" | "createdAt" | "updatedAt">
+      );
       toast.success("Item manufaktur berhasil ditambahkan!");
       setFormData({ // Reset form
         type: "",
@@ -97,20 +142,26 @@ export default function ManufakturPage() {
             <CardTitle className="text-2xl font-bold">Detail Aset</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form
+              onSubmit={handleSubmit}
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            >
               {/* General Information */}
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-800">Informasi Dasar</h2>
                 <div>
                   <Label htmlFor="type">Tipe Aset</Label>
-                  <Select onValueChange={(value) => handleSelectChange("type", value)} value={formData.type}>
+                  <Select
+                    onValueChange={(value) => handleSelectChange("type", value)}
+                    value={formData.type}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih Tipe Aset" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_ASSET_TYPES.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {assetTypes.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -119,14 +170,17 @@ export default function ManufakturPage() {
 
                 <div>
                   <Label htmlFor="brand">Merek</Label>
-                  <Select onValueChange={(value) => handleSelectChange("brand", value)} value={formData.brand}>
+                  <Select
+                    onValueChange={(value) => handleSelectChange("brand", value)}
+                    value={formData.brand}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih Merek" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_BRANDS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {brands.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -135,22 +189,46 @@ export default function ManufakturPage() {
 
                 <div>
                   <Label htmlFor="model">Model</Label>
-                  <Input id="model" type="text" placeholder="Model.." value={formData.model} onChange={handleChange} />
+                  <Input
+                    id="model"
+                    type="text"
+                    placeholder="Model.."
+                    value={formData.model}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div>
                   <Label htmlFor="serialNumber">Serial Number</Label>
-                  <Input id="serialNumber" type="text" placeholder="Serial Number.." value={formData.serialNumber} onChange={handleChange} />
+                  <Input
+                    id="serialNumber"
+                    type="text"
+                    placeholder="Serial Number.."
+                    value={formData.serialNumber}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div>
                   <Label htmlFor="macAddressLan">MAC Address LAN (Opsional)</Label>
-                  <Input id="macAddressLan" type="text" placeholder="MAC Address LAN..." value={formData.macAddressLan} onChange={handleChange} />
+                  <Input
+                    id="macAddressLan"
+                    type="text"
+                    placeholder="MAC Address LAN..."
+                    value={formData.macAddressLan}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div>
                   <Label htmlFor="macAddressWlan">MAC Address WLAN (Opsional)</Label>
-                  <Input id="macAddressWlan" type="text" placeholder="MAC Address WLAN..." value={formData.macAddressWlan} onChange={handleChange} />
+                  <Input
+                    id="macAddressWlan"
+                    type="text"
+                    placeholder="MAC Address WLAN..."
+                    value={formData.macAddressWlan}
+                    onChange={handleChange}
+                  />
                 </div>
               </div>
 
@@ -159,14 +237,19 @@ export default function ManufakturPage() {
                 <h2 className="text-xl font-semibold text-gray-800">Spesifikasi Hardware</h2>
                 <div>
                   <Label htmlFor="processor">Processor</Label>
-                  <Select onValueChange={(value) => handleSelectChange("processor", value)} value={formData.processor}>
+                  <Select
+                    onValueChange={(value) =>
+                      handleSelectChange("processor", value)
+                    }
+                    value={formData.processor}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih Processor" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_PROCESSORS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {processors.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -175,14 +258,17 @@ export default function ManufakturPage() {
 
                 <div>
                   <Label htmlFor="storage">Penyimpanan</Label>
-                  <Select onValueChange={(value) => handleSelectChange("storage", value)} value={formData.storage}>
+                  <Select
+                    onValueChange={(value) => handleSelectChange("storage", value)}
+                    value={formData.storage}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih Penyimpanan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_STORAGES.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {storages.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -191,14 +277,17 @@ export default function ManufakturPage() {
 
                 <div>
                   <Label htmlFor="ram">RAM</Label>
-                  <Select onValueChange={(value) => handleSelectChange("ram", value)} value={formData.ram}>
+                  <Select
+                    onValueChange={(value) => handleSelectChange("ram", value)}
+                    value={formData.ram}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih RAM" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_RAMS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {rams.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -207,14 +296,17 @@ export default function ManufakturPage() {
 
                 <div>
                   <Label htmlFor="vga">VGA (Opsional)</Label>
-                  <Select onValueChange={(value) => handleSelectChange("vga", value)} value={formData.vga}>
+                  <Select
+                    onValueChange={(value) => handleSelectChange("vga", value)}
+                    value={formData.vga}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih VGA" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_VGAS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {vgas.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -223,14 +315,19 @@ export default function ManufakturPage() {
 
                 <div>
                   <Label htmlFor="screenSize">Ukuran Layar (Opsional)</Label>
-                  <Select onValueChange={(value) => handleSelectChange("screenSize", value)} value={formData.screenSize}>
+                  <Select
+                    onValueChange={(value) =>
+                      handleSelectChange("screenSize", value)
+                    }
+                    value={formData.screenSize}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih Ukuran Layar" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_SCREEN_SIZES.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {screenSizes.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -239,14 +336,17 @@ export default function ManufakturPage() {
 
                 <div>
                   <Label htmlFor="color">Warna (Opsional)</Label>
-                  <Select onValueChange={(value) => handleSelectChange("color", value)} value={formData.color}>
+                  <Select
+                    onValueChange={(value) => handleSelectChange("color", value)}
+                    value={formData.color}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih Warna" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MANUFACTURE_COLORS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
+                      {colors.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

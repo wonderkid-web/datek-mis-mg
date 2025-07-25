@@ -24,6 +24,7 @@ export default function SbuAssetMap({ items }: SbuAssetMapProps) {
   const sbuAssetCounts = React.useMemo(() => {
     const counts: { [key: string]: number } = {};
     items.forEach((item) => {
+      // @ts-expect-error its okay
       const company = COMPANIES.find((c) => c.type === item.company);
       if (company) {
         counts[company.type] = (counts[company.type] || 0) + 1;

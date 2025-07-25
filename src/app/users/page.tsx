@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { User } from "@/lib/types";
 import {
   createUser,
@@ -27,6 +27,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { Edit, Trash2 } from "lucide-react";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -64,7 +72,7 @@ export default function UsersPage() {
     "PT Mutiara Unggul Lestari - HO",
   ]);
 
-  const namaDepartemen = [
+  const [namaDepartemen] = useState<string[]>([
     "IK Biogas",
     "Halal",
     "IK Fraksinasi",
@@ -91,19 +99,15 @@ export default function UsersPage() {
     "ACC & TAX - Accounting & TAX",
     "MIS - Manajemen Information System",
     "MH - Material Handling",
-  ];
+  ]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     const usersData = await getUsers();
 
     setUsers(usersData);
     setIsLoading(false);
-  };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -128,32 +132,96 @@ export default function UsersPage() {
     }
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = useCallback((user: User) => {
     setEditingUser(user);
     setForm({ name: user.name, sbu: user.sbu, department: user.department });
-  };
+  }, []);
 
-  const handleDelete = async (id: string) => {
-    toast("Are you sure you want to delete this user?", {
-      action: {
-        label: "Delete",
-        onClick: async () => {
-          toast.promise(deleteUser(id), {
-            loading: "Deleting user...",
-            success: () => {
-              fetchUsers();
-              return "User deleted successfully!";
-            },
-            error: "Failed to delete user.",
-          });
+  const handleDelete = useCallback(
+    async (id: string) => {
+      toast("Are you sure you want to delete this user?", {
+        action: {
+          label: "Delete",
+          onClick: async () => {
+            toast.promise(deleteUser(id), {
+              loading: "Deleting user...",
+              success: () => {
+                fetchUsers();
+                return "User deleted successfully!";
+              },
+              error: "Failed to delete user.",
+            });
+          },
         },
+        cancel: {
+          label: "Cancel",
+          onClick: () => toast.dismiss(),
+        },
+      });
+    },
+    [fetchUsers]
+  );
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const columns: ColumnDef<User>[] = React.useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: (info) => info.getValue(),
       },
-      cancel: {
-        label: "Cancel",
-        onClick: () => toast.dismiss(),
+      {
+        accessorKey: "sbu",
+        header: "SBU",
+        cell: (info) => info.getValue(),
       },
-    });
-  };
+      {
+        accessorKey: "department",
+        header: "Department",
+        cell: (info) => info.getValue(),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex space-x-2 justify-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handleEdit(row.original)}
+              className="bg-green-500 hover:bg-green-600 text-white"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handleDelete(row.original.id!)}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [handleEdit, handleDelete]
+  );
+
+  const table = useReactTable({
+    data: users,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
@@ -262,44 +330,85 @@ export default function UsersPage() {
             {isLoading ? (
               <p>Loading users...</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>SBU</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user, index) => (
-                    <TableRow
-                      key={user.id}
-                      className={index % 2 === 0 ? "bg-gray-100" : ""}
+              <div>
+                <Table>
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows?.length ? (
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow
+                          key={row.id}
+                          data-state={row.getIsSelected() && "selected"}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          className="h-24 text-center"
+                        >
+                          No results.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <div className="mt-4 flex items-center justify-end space-x-2">
+                  <div className="flex-1 text-sm text-muted-foreground">
+                    Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    Previous
+                  </Button>
+                  {[...Array(table.getPageCount()).keys()].map((pageIdx) => (
+                    <Button
+                      key={pageIdx}
+                      variant={table.getState().pagination.pageIndex === pageIdx ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => table.setPageIndex(pageIdx)}
                     >
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.sbu}</TableCell>
-                      <TableCell>{user.department}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="link"
-                          onClick={() => handleEdit(user)}
-                          className="text-primary p-0 h-auto"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="link"
-                          onClick={() => handleDelete(user.id!)}
-                          className="ml-4 text-red-600 p-0 h-auto"
-                        >
-                          Delete
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                      {pageIdx + 1}
+                    </Button>
                   ))}
-                </TableBody>
-              </Table>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>

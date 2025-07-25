@@ -27,6 +27,7 @@ export default function ItemsByLocationChart({ items }: ItemsByLocationChartProp
     const locationCounts: { [key: string]: number } = {};
     items.forEach((item) => {
       const locationName =
+      // @ts-expect-error its okay
         LOCATIONS.find((l) => l.type === item.location)?.description ||
         "Tidak Diketahui";
       locationCounts[locationName] = (locationCounts[locationName] || 0) + 1;

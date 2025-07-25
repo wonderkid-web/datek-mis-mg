@@ -7,14 +7,19 @@ import { Item, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Package, Cpu, HardDrive, MemoryStick, Monitor, Palette, Network, Laptop, Tag, Fingerprint } from "lucide-react";
 import {
-  CATEGORIES,
-  COMPANIES,
-  LOCATIONS,
-  STATUSES,
-  UNITS,
-} from "@/lib/constants";
+  Package,
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Monitor,
+  Palette,
+  Network,
+  Laptop,
+  Tag,
+  Fingerprint,
+} from "lucide-react";
+import { COMPANIES, STATUSES } from "@/lib/constants";
 import { getUsers } from "@/lib/userService";
 import { Toaster } from "sonner";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
@@ -66,24 +71,9 @@ export default function ItemDetailPage() {
     return user ? user.name : "Tidak Diketahui";
   };
 
-  const getUnitDescription = (unitType: string) => {
-    const unit = UNITS.find((u) => u.type === unitType);
-    return unit ? unit.description : "Tidak Diketahui";
-  };
-
-  const getCategoryDescription = (categoryType: string) => {
-    const category = CATEGORIES.find((c) => c.type === categoryType);
-    return category ? category.description : "Tidak Diketahui";
-  };
-
   const getCompanyDescription = (companyType: string) => {
     const company = COMPANIES.find((c) => c.type === companyType);
     return company ? company.description : "Tidak Diketahui";
-  };
-
-  const getLocationDescription = (locationType: string) => {
-    const location = LOCATIONS.find((l) => l.type === locationType);
-    return location ? location.description : "Tidak Diketahui";
   };
 
   const getStatusDescription = (statusCode: string) => {
@@ -94,7 +84,7 @@ export default function ItemDetailPage() {
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
       <main className="container mx-auto p-8">
-        <h1 className="mb-8 text-3xl font-bold flex items-center space-x-3">
+        <h1 className="mb-4 text-3xl font-bold flex items-center space-x-3">
           <Package className="h-8 w-8 text-primary" />
           <span>Detail Aset</span>
         </h1>
@@ -121,26 +111,17 @@ export default function ItemDetailPage() {
                     <TableCell className="font-semibold">Deskripsi:</TableCell>
                     <TableCell>{item.description || "-"}</TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Unit (Jenis Aset):</TableCell>
-                    <TableCell>{getUnitDescription(item.unit)}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Region:</TableCell>
-                    <TableCell>{getCategoryDescription(item.category)}</TableCell>
-                  </TableRow>
+
                   <TableRow>
                     <TableCell className="font-semibold">Perusahaan:</TableCell>
+                    {/* @ts-expect-error its okay */}
                     <TableCell>{getCompanyDescription(item.company)}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-semibold">Departemen:</TableCell>
                     <TableCell>{item.department}</TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Lokasi:</TableCell>
-                    <TableCell>{getLocationDescription(item.location)}</TableCell>
-                  </TableRow>
+
                   <TableRow>
                     <TableCell className="font-semibold">Status:</TableCell>
                     <TableCell>{getStatusDescription(item.status)}</TableCell>
@@ -150,7 +131,9 @@ export default function ItemDetailPage() {
                     <TableCell>{getUserName(item.user)}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-semibold">Tanggal Garansi:</TableCell>
+                    <TableCell className="font-semibold">
+                      Tanggal Garansi:
+                    </TableCell>
                     <TableCell>
                       {item.guaranteeDate
                         ? new Date(item.guaranteeDate).toLocaleDateString()
@@ -158,7 +141,9 @@ export default function ItemDetailPage() {
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-semibold">Tanggal Registrasi:</TableCell>
+                    <TableCell className="font-semibold">
+                      Tanggal Registrasi:
+                    </TableCell>
                     <TableCell>
                       {item.registrationDate
                         ? new Date(item.registrationDate).toLocaleDateString()
@@ -170,12 +155,20 @@ export default function ItemDetailPage() {
                     <TableCell>{item.ipAddress || "-"}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-semibold">Dibuat Pada:</TableCell>
-                    <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+                    <TableCell className="font-semibold">
+                      Dibuat Pada:
+                    </TableCell>
+                    <TableCell>
+                      {new Date(item.createdAt).toLocaleString()}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-semibold">Diperbarui Pada:</TableCell>
-                    <TableCell>{new Date(item.updatedAt).toLocaleString()}</TableCell>
+                    <TableCell className="font-semibold">
+                      Diperbarui Pada:
+                    </TableCell>
+                    <TableCell>
+                      {new Date(item.updatedAt).toLocaleString()}
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -187,9 +180,12 @@ export default function ItemDetailPage() {
               <CardTitle className="text-xl font-bold">QR Code Aset</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col justify-center items-center -mt-8">
-              <QRCodeGenerator value={`${window.location.origin}/items/${itemId}`} size={160} />
-              
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-4">
+              <QRCodeGenerator
+                value={`${window.location.origin}/items/${itemId}`}
+                size={160}
+              />
+
+              <div className="grid grid-cols-1 gap-y-1 mt-4 max-h-48 overflow-y-auto">
                 {item.brand && (
                   <div className="flex items-center space-x-2 text-gray-700">
                     <Tag className="h-5 w-5" />
@@ -264,7 +260,7 @@ export default function ItemDetailPage() {
         <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-8">
           <Button
             onClick={() => router.push(`/items?id=${item.id}`)}
-            className="bg-primary hover:bg-primary-dark text-primary-foreground px-6 py-3 rounded-md shadow-md transition-colors duration-300"
+            className="bg-primary hover:bg-primary-dark text-prima ry-foreground px-6 py-3 rounded-md shadow-md transition-colors duration-300"
           >
             Edit Aset
           </Button>

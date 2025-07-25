@@ -5,10 +5,8 @@ export interface Item {
 
   // Fields from the new form, representing the current state of the asset
   unit: string; // The type from the Unit data, e.g., "BL-G01"
-  category: string;
-  company: string;
+  sbu: string;
   department: string;
-  location: string;
   status: string;
   user: string; // User ID
 
@@ -81,5 +79,21 @@ export interface ManufacturedItem {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface MasterDataItem {
+  id?: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AssetType extends MasterDataItem { _?: string; }
+export interface Brand extends MasterDataItem { _?: string; }
+export interface Processor extends MasterDataItem { _?: string; }
+export interface Storage extends MasterDataItem { _?: string; }
+export interface Ram extends MasterDataItem { _?: string; }
+export interface Vga extends MasterDataItem { _?: string; }
+export interface ScreenSize extends MasterDataItem { _?: string; }
+export interface Color extends MasterDataItem { _?: string; }
 
 
