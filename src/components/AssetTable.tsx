@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Eye, Edit, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import {
@@ -60,28 +60,11 @@ export default function AssetTable({
   const columns: ColumnDef<Item>[] = React.useMemo(
     () => [
       {
-        accessorKey: "assetNumber",
-        header: "Nomor Aset",
-        cell: (info) => info.getValue(),
-        enableColumnFilter: true,
-        enableSorting: true,
-      },
-      
-      {
-        accessorKey: "unit",
-        header: "Unit",
-        cell: (info) =>
-          ASSET_INFO.filter(asset=> asset.table == "AAM.Unit").find((u) => u.type === info.getValue())?.description || "-",
-        enableColumnFilter: true,
-        enableSorting: true,
-      },
-      {
-        accessorKey: "category",
-        header: "Region",
-        cell: (info) =>
-          CATEGORIES.find((c) => c.type === info.getValue())?.description || "-",
-        enableColumnFilter: true,
-        enableSorting: true,
+        id: "no",
+        header: "No",
+        cell: (info) => <div className="text-right">{info.row.index + 1}</div>,
+        enableSorting: false,
+        enableColumnFilter: false,
       },
       {
         accessorKey: "company",
@@ -91,6 +74,23 @@ export default function AssetTable({
         enableColumnFilter: true,
         enableSorting: true,
       },
+      // {
+      //   accessorKey: "category",
+      //   header: "Region",
+      //   cell: (info) =>
+      //     CATEGORIES.find((c) => c.type === info.getValue())?.description ||
+      //     "-",
+      //   enableColumnFilter: true,
+      //   enableSorting: true,
+      // },
+      // {
+      //   accessorKey: "location",
+      //   header: "Lokasi",
+      //   cell: (info) =>
+      //     LOCATIONS.find((l) => l.type === info.getValue())?.description || "-",
+      //   enableColumnFilter: true,
+      //   enableSorting: true,
+      // },
       {
         accessorKey: "department",
         header: "Departemen",
@@ -98,50 +98,30 @@ export default function AssetTable({
         enableColumnFilter: true,
         enableSorting: true,
       },
-      {
-        accessorKey: "location",
-        header: "Lokasi",
-        cell: (info) =>
-          LOCATIONS.find((l) => l.type === info.getValue())?.description || "-",
-        enableColumnFilter: true,
-        enableSorting: true,
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: (info) =>
-          STATUSES.find((s) => s.type === info.getValue())?.description || "-",
-        enableColumnFilter: true,
-        enableSorting: true,
-      },
+
       {
         accessorKey: "user",
         header: "Pengguna",
-        cell: (info) => users.find((u) => u.id === info.getValue())?.name || "-",
+        cell: (info) =>
+          users.find((u) => u.id === info.getValue())?.name || "-",
         enableColumnFilter: true,
         enableSorting: true,
       },
       {
-        accessorKey: "guaranteeDate",
-        header: "Tgl Garansi",
-        cell: (info) => {
-          const dateValue = info.getValue();
-          return dateValue instanceof Date && !isNaN(dateValue.getTime())
-            ? dateValue.toLocaleDateString()
-            : "-";
-        },
+        accessorKey: "unit",
+        header: "Unit",
+        cell: (info) =>
+          ASSET_INFO.filter((asset) => asset.table == "AAM.Unit").find(
+            (u) => u.type === info.getValue()
+          )?.description || "-",
         enableColumnFilter: true,
         enableSorting: true,
       },
       {
-        accessorKey: "registrationDate",
-        header: "Tgl Registrasi",
-        cell: (info) => {
-          const dateValue = info.getValue();
-          return dateValue instanceof Date && !isNaN(dateValue.getTime())
-            ? dateValue.toLocaleDateString()
-            : "-";
-        },
+        accessorKey: "assetNumber",
+        header: "Nomor Aset",
+        // @ts-expect-error its okay
+        cell: (info) => <p className="text-center">{info.getValue()}</p>,
         enableColumnFilter: true,
         enableSorting: true,
       },
@@ -155,35 +135,76 @@ export default function AssetTable({
       {
         accessorKey: "remote",
         header: "Remote",
-        cell: (info) => info.getValue(),
+        // @ts-expect-error its okay
+        cell: (info) => <p className="text-center">{info.getValue()}</p>,
         enableColumnFilter: true,
         enableSorting: true,
       },
+
+      {
+        accessorKey: "guaranteeDate",
+        header: "Tgl Garansi",
+        cell: (info) => {
+          const dateValue = info.getValue();
+          return dateValue instanceof Date && !isNaN(dateValue.getTime())
+            ? dateValue.toLocaleDateString()
+            : "-";
+        },
+        enableColumnFilter: true,
+        enableSorting: true,
+      },
+
+      {
+        accessorKey: "registrationDate",
+        header: "Tgl Pembelian",
+        cell: (info) => {
+          const dateValue = info.getValue();
+          return dateValue instanceof Date && !isNaN(dateValue.getTime())
+            ? dateValue.toLocaleDateString()
+            : "-";
+        },
+        enableColumnFilter: true,
+        enableSorting: true,
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: (info) =>
+          <p className="text-center">
+            {STATUSES.find((s) => s.type === info.getValue())?.description || "-"}
+          </p>,
+        enableColumnFilter: true,
+        enableSorting: true,
+      },
+
       {
         id: "actions",
         header: () => <div className="text-center">Actions</div>,
         cell: ({ row }) => (
           <div className="flex space-x-2 justify-center">
             <Button
-              variant="link"
+              variant="outline"
+              size="icon"
               onClick={() => router.push(`/items/${row.original.id}`)}
-              className="text-blue-600 p-0 h-auto"
+              className="bg-blue-500 hover:bg-blue-600 text-white"
             >
-              Detail
+              <Eye className="h-4 w-4" />
             </Button>
             <Button
-              variant="link"
+              variant="outline"
+              size="icon"
               onClick={() => handleEdit(row.original)}
-              className="text-primary p-0 h-auto"
+              className="bg-green-500 hover:bg-green-600 text-white"
             >
-              Edit
+              <Edit className="h-4 w-4" />
             </Button>
             <Button
-              variant="link"
+              variant="outline"
+              size="icon"
               onClick={() => handleDelete(row.original.id!)}
-              className="text-red-600 p-0 h-auto"
+              className="bg-red-500 hover:bg-red-600 text-white"
             >
-              Delete
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         ),
@@ -229,11 +250,15 @@ export default function AssetTable({
         "Nomor Aset": item.assetNumber,
         Deskripsi: item.description,
         Unit: UNITS.find((u) => u.type === item.unit)?.description || "-",
-        Region: CATEGORIES.find((c) => c.type === item.category)?.description || "-",
-        Perusahaan: COMPANIES.find((c) => c.type === item.company)?.description || "-",
+        Region:
+          CATEGORIES.find((c) => c.type === item.category)?.description || "-",
+        Perusahaan:
+          COMPANIES.find((c) => c.type === item.company)?.description || "-",
         Departemen: item.department,
-        Lokasi: LOCATIONS.find((l) => l.type === item.location)?.description || "-",
-        Status: STATUSES.find((s) => s.type === item.status)?.description || "-",
+        Lokasi:
+          LOCATIONS.find((l) => l.type === item.location)?.description || "-",
+        Status:
+          STATUSES.find((s) => s.type === item.status)?.description || "-",
         Pengguna: users.find((u) => u.id === item.user)?.name || "-",
         "Tanggal Garansi": item.guaranteeDate
           ? new Date(item.guaranteeDate).toLocaleDateString()
@@ -255,7 +280,7 @@ export default function AssetTable({
       <div className="mb-4 flex items-center justify-between">
         <Input
           type="text"
-          placeholder="Filter aset..."
+          placeholder="Apa carik boy..?"
           value={globalFilter ?? ""}
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
@@ -291,7 +316,8 @@ export default function AssetTable({
                     >
                       {header.isPlaceholder ? null : (
                         <div
-                          {...{onClick: header.column.getToggleSortingHandler(),
+                          {...{
+                            onClick: header.column.getToggleSortingHandler(),
                           }}
                           className="flex items-center justify-center"
                         >
@@ -301,7 +327,11 @@ export default function AssetTable({
                           )}
                           {header.column.getCanSort() && (
                             <ArrowUpDown
-                              className={`ml-2 h-4 w-4 ${header.column.getIsSorted() ? "" : "text-gray-400"}`}
+                              className={`ml-2 h-4 w-4 ${
+                                header.column.getIsSorted()
+                                  ? ""
+                                  : "text-gray-400"
+                              }`}
                             />
                           )}
                         </div>
@@ -344,14 +374,20 @@ export default function AssetTable({
                           : ""
                       }
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>

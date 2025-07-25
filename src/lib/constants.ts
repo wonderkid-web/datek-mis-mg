@@ -46,6 +46,42 @@ export const COMPANIES = [
     bujur: "101.28518311965121",
   },
   {
+    type: "ISAKCP",
+    description: "PT Intan Sejati Andalan - KCP",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+  {
+    type: "ISABGS",
+    description: "PT Intan Sejati Andalan - BIOGAS",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+  {
+    type: "ISAFOF",
+    description: "PT Intan Sejati Andalan - FOF",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+  {
+    type: "ISASOLVENT",
+    description: "PT Intan Sejati Andalan - SOLVENT",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+  {
+    type: "ISATC",
+    description: "PT Intan Sejati Andalan - TRAINING CENTER",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+  {
+    type: "ISASSL",
+    description: "PT Intan Sejati Andalan - SSL",
+    lintang: "1.432855904484427",
+    bujur: "101.28518311965121",
+  },
+  {
     type: "KMA",
     description: "PT Karya Mitra Andalan",
     lintang: "2.7839220045197",

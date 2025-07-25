@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getItemById } from "@/lib/itemService";
 import { Item, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Package } from "lucide-react";
 import {
@@ -105,99 +106,83 @@ export default function ItemDetailPage() {
                 {item.name} ({item.assetNumber})
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 text-gray-700 p-6">
-              <div className="space-y-4">
-                <div>
-                  <dt className="font-semibold text-gray-900">Nomor Aset:</dt>
-                  <dd className="ml-2">{item.assetNumber}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Nama Aset:</dt>
-                  <dd className="ml-2">{item.name}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Deskripsi:</dt>
-                  <dd className="ml-2">{item.description || "-"}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">
-                    Unit (Jenis Aset):
-                  </dt>
-                  <dd className="ml-2">{getUnitDescription(item.unit)}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Region:</dt>
-                  <dd className="ml-2">
-                    {getCategoryDescription(item.category)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Perusahaan:</dt>
-                  <dd className="ml-2">{getCompanyDescription(item.company)}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Departemen:</dt>
-                  <dd className="ml-2">{item.department}</dd>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <dt className="font-semibold text-gray-900">Lokasi:</dt>
-                  <dd className="ml-2">
-                    {getLocationDescription(item.location)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Status:</dt>
-                  <dd className="ml-2">{getStatusDescription(item.status)}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Pengguna:</dt>
-                  <dd className="ml-2">{getUserName(item.user)}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">
-                    Tanggal Garansi:
-                  </dt>
-                  <dd className="ml-2">
-                    {item.guaranteeDate
-                      ? new Date(item.guaranteeDate).toLocaleDateString()
-                      : "-"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">
-                    Tanggal Registrasi:
-                  </dt>
-                  <dd className="ml-2">
-                    {item.registrationDate
-                      ? new Date(item.registrationDate).toLocaleDateString()
-                      : "-"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Alamat IP:</dt>
-                  <dd className="ml-2">{item.ipAddress || "-"}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Remote Access:</dt>
-                  <dd className="ml-2">{item.remote || "-"}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Dibuat Pada:</dt>
-                  <dd className="ml-2">
-                    {new Date(item.createdAt).toLocaleString()}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">
-                    Diperbarui Pada:
-                  </dt>
-                  <dd className="ml-2">
-                    {new Date(item.updatedAt).toLocaleString()}
-                  </dd>
-                </div>
-              </div>
+            <CardContent className="p-6">
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-semibold">Nomor Aset:</TableCell>
+                    <TableCell>{item.assetNumber}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Nama Aset:</TableCell>
+                    <TableCell>{item.name}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Deskripsi:</TableCell>
+                    <TableCell>{item.description || "-"}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Unit (Jenis Aset):</TableCell>
+                    <TableCell>{getUnitDescription(item.unit)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Region:</TableCell>
+                    <TableCell>{getCategoryDescription(item.category)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Perusahaan:</TableCell>
+                    <TableCell>{getCompanyDescription(item.company)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Departemen:</TableCell>
+                    <TableCell>{item.department}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Lokasi:</TableCell>
+                    <TableCell>{getLocationDescription(item.location)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Status:</TableCell>
+                    <TableCell>{getStatusDescription(item.status)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Pengguna:</TableCell>
+                    <TableCell>{getUserName(item.user)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Tanggal Garansi:</TableCell>
+                    <TableCell>
+                      {item.guaranteeDate
+                        ? new Date(item.guaranteeDate).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Tanggal Registrasi:</TableCell>
+                    <TableCell>
+                      {item.registrationDate
+                        ? new Date(item.registrationDate).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Alamat IP:</TableCell>
+                    <TableCell>{item.ipAddress || "-"}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Remote Access:</TableCell>
+                    <TableCell>{item.remote || "-"}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Dibuat Pada:</TableCell>
+                    <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Diperbarui Pada:</TableCell>
+                    <TableCell>{new Date(item.updatedAt).toLocaleString()}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 

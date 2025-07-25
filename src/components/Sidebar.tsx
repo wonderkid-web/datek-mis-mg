@@ -8,6 +8,7 @@ import {
   LogOut,
   User,
   List,
+  ToolCaseIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAuth, signOut } from "firebase/auth";
@@ -81,6 +82,15 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         >
           <List className="h-6 w-6" />
           {isOpen && <span>View Device</span>}
+        </Link>
+        <Link
+          href="/service-record"
+          className={`${
+            !isOpen && "w-32 pl-1"
+          } flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-primary-foreground/10 hover:text-primary-foreground`}
+        >
+          <ToolCaseIcon className="h-6 w-6" />
+          {isOpen && <span>Service Record</span>}
         </Link>
         
       </div>

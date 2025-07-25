@@ -38,17 +38,32 @@ export default function UsersPage() {
   });
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [sbus] = useState<string[]>([
-    "PT Berlian Inti Mekar - Palembang",
-    "PT Berlian Inti Mekar - Rengat",
-    "PT Berlian Inti Mekar - Siak",
-    "PT Dumai Paricipta Abadi",
-    "PT Intan Sejati Andalan",
+    "PT Intan Sejati Andalan - PKS",
     "PT Intan Sejati Andalan - Refinery",
+    "PT Intan Sejati Andalan - KCP",
+    "PT Intan Sejati Andalan - TC",
+    "PT Intan Sejati Andalan - Biogas",
+    "PT Intan Sejati Andalan - FOF",
+    "PT Intan Sejati Andalan - Solvent",
+    "PT Intan Sejati Andalan - SSL",
+    "PT Berlian Inti Mekar Palembang",
+    "PT Berlian Inti Mekar Rengat",
+    "PT Berlian Inti Mekar Siak",
+    "PT Dumai Paricipta Abadi",
     "PT Karya Mitra Andalan",
     "PT Karya Pratama NiagaJaya",
     "PT Mutiara Unggul Lestari",
     "PT Mahkota Group, Tbk",
+    "PT Intan Sejati Andalan - HO",
+    "PT Berlian Inti Mekar Palembang - HO",
+    "PT Berlian Inti Mekar Rengat - HO",
+    "PT Berlian Inti Mekar Siak - HO",
+    "PT Dumai Paricipta Abadi - HO",
+    "PT Karya Mitra Andalan - HO",
+    "PT Karya Pratama NiagaJaya - HO",
+    "PT Mutiara Unggul Lestari - HO",
   ]);
+
   const namaDepartemen = [
     "IK Biogas",
     "Halal",
@@ -85,6 +100,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setIsLoading(true);
     const usersData = await getUsers();
+
     setUsers(usersData);
     setIsLoading(false);
   };

@@ -6,7 +6,7 @@ import {
   getItems,
   deleteItem,
 } from "@/lib/itemService";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Toaster, toast } from "sonner";
 import AssetTable from "@/components/AssetTable";
 import { useRouter } from "next/navigation";
@@ -66,12 +66,12 @@ export default function ViewDevicesPage() {
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
       <main className="container mx-auto p-8">
-        <h1 className="mb-8 text-3xl font-bold">Daftar Aset</h1>
+        <h1 className="mb-8 text-3xl font-bold">Data Teknis</h1>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Daftar Aset</CardTitle>
-          </CardHeader>
+          {/* <CardHeader>
+            <CardTitle>List Asset</CardTitle>
+          </CardHeader> */}
           <CardContent>
             {isLoading ? (
               <p>Memuat aset...</p>
