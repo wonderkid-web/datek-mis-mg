@@ -36,4 +36,18 @@ export interface User {
   createdAt: Date;
 }
 
+export interface StockMove {
+  id?: string;
+  itemId: string; // Added to link to the Item
+  assetNumber: string;
+  createdAt: Date;
+  department: string;
+  guaranteeDate?: Date;
+  ipAddress?: string;
+  item: string; // This is likely the item's name
+  remote?: string;
+  sbu: string;
+  user: string;
+}
+
 

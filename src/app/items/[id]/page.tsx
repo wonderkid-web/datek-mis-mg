@@ -16,6 +16,7 @@ import {
 } from "@/lib/constants";
 import { getUsers } from "@/lib/userService";
 import { Toaster } from "sonner";
+import QRCodeGenerator from "@/components/QRCodeGenerator";
 
 export default function ItemDetailPage() {
   const params = useParams();
@@ -97,109 +98,120 @@ export default function ItemDetailPage() {
           <span>Detail Aset</span>
         </h1>
 
-        <Card className="mb-8 shadow-lg rounded-lg overflow-hidden">
-          <CardHeader className="bg-primary text-primary-foreground p-6">
-            <CardTitle className="text-2xl font-bold">
-              {item.name} ({item.assetNumber})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-4 text-gray-700">
-            <div className="space-y-4">
-              <div>
-                <dt className="font-semibold text-gray-900">Nomor Aset:</dt>
-                <dd className="ml-2">{item.assetNumber}</dd>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <Card className="lg:col-span-2 shadow-lg rounded-lg overflow-hidden">
+            <CardHeader className="bg-primary text-primary-foreground p-6">
+              <CardTitle className="text-2xl font-bold">
+                {item.name} ({item.assetNumber})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 text-gray-700 p-6">
+              <div className="space-y-4">
+                <div>
+                  <dt className="font-semibold text-gray-900">Nomor Aset:</dt>
+                  <dd className="ml-2">{item.assetNumber}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Nama Aset:</dt>
+                  <dd className="ml-2">{item.name}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Deskripsi:</dt>
+                  <dd className="ml-2">{item.description || "-"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">
+                    Unit (Jenis Aset):
+                  </dt>
+                  <dd className="ml-2">{getUnitDescription(item.unit)}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Region:</dt>
+                  <dd className="ml-2">
+                    {getCategoryDescription(item.category)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Perusahaan:</dt>
+                  <dd className="ml-2">{getCompanyDescription(item.company)}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Departemen:</dt>
+                  <dd className="ml-2">{item.department}</dd>
+                </div>
               </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Nama Aset:</dt>
-                <dd className="ml-2">{item.name}</dd>
+              <div className="space-y-4">
+                <div>
+                  <dt className="font-semibold text-gray-900">Lokasi:</dt>
+                  <dd className="ml-2">
+                    {getLocationDescription(item.location)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Status:</dt>
+                  <dd className="ml-2">{getStatusDescription(item.status)}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Pengguna:</dt>
+                  <dd className="ml-2">{getUserName(item.user)}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">
+                    Tanggal Garansi:
+                  </dt>
+                  <dd className="ml-2">
+                    {item.guaranteeDate
+                      ? new Date(item.guaranteeDate).toLocaleDateString()
+                      : "-"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">
+                    Tanggal Registrasi:
+                  </dt>
+                  <dd className="ml-2">
+                    {item.registrationDate
+                      ? new Date(item.registrationDate).toLocaleDateString()
+                      : "-"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Alamat IP:</dt>
+                  <dd className="ml-2">{item.ipAddress || "-"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Remote Access:</dt>
+                  <dd className="ml-2">{item.remote || "-"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Dibuat Pada:</dt>
+                  <dd className="ml-2">
+                    {new Date(item.createdAt).toLocaleString()}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">
+                    Diperbarui Pada:
+                  </dt>
+                  <dd className="ml-2">
+                    {new Date(item.updatedAt).toLocaleString()}
+                  </dd>
+                </div>
               </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Deskripsi:</dt>
-                <dd className="ml-2">{item.description || "-"}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">
-                  Unit (Jenis Aset):
-                </dt>
-                <dd className="ml-2">{getUnitDescription(item.unit)}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Region:</dt>
-                <dd className="ml-2">
-                  {getCategoryDescription(item.category)}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Perusahaan:</dt>
-                <dd className="ml-2">{getCompanyDescription(item.company)}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Departemen:</dt>
-                <dd className="ml-2">{item.department}</dd>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <dt className="font-semibold text-gray-900">Lokasi:</dt>
-                <dd className="ml-2">
-                  {getLocationDescription(item.location)}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Status:</dt>
-                <dd className="ml-2">{getStatusDescription(item.status)}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Pengguna:</dt>
-                <dd className="ml-2">{getUserName(item.user)}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">
-                  Tanggal Garansi:
-                </dt>
-                <dd className="ml-2">
-                  {item.guaranteeDate
-                    ? new Date(item.guaranteeDate).toLocaleDateString()
-                    : "-"}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">
-                  Tanggal Registrasi:
-                </dt>
-                <dd className="ml-2">
-                  {item.registrationDate
-                    ? new Date(item.registrationDate).toLocaleDateString()
-                    : "-"}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Alamat IP:</dt>
-                <dd className="ml-2">{item.ipAddress || "-"}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Remote Access:</dt>
-                <dd className="ml-2">{item.remote || "-"}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">Dibuat Pada:</dt>
-                <dd className="ml-2">
-                  {new Date(item.createdAt).toLocaleString()}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-900">
-                  Diperbarui Pada:
-                </dt>
-                <dd className="ml-2">
-                  {new Date(item.updatedAt).toLocaleString()}
-                </dd>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <div className="flex space-x-4 mt-8">
+          <Card className="shadow-lg rounded-lg overflow-hidden flex flex-col justify-center items-center p-6">
+            <CardHeader className="w-full text-center">
+              <CardTitle className="text-xl font-bold">QR Code Aset</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow flex justify-center items-center">
+              <QRCodeGenerator value={`${window.location.origin}/items/${itemId}`} size={200} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-8">
           <Button
             onClick={() => router.push(`/items?id=${item.id}`)}
             className="bg-primary hover:bg-primary-dark text-primary-foreground px-6 py-3 rounded-md shadow-md transition-colors duration-300"

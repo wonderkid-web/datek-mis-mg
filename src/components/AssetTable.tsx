@@ -124,20 +124,24 @@ export default function AssetTable({
       {
         accessorKey: "guaranteeDate",
         header: "Tgl Garansi",
-        cell: (info) =>
-          info.getValue()
-            ? new Date(info.getValue() as Date).toLocaleDateString()
-            : "-",
+        cell: (info) => {
+          const dateValue = info.getValue();
+          return dateValue instanceof Date && !isNaN(dateValue.getTime())
+            ? dateValue.toLocaleDateString()
+            : "-";
+        },
         enableColumnFilter: true,
         enableSorting: true,
       },
       {
         accessorKey: "registrationDate",
         header: "Tgl Registrasi",
-        cell: (info) =>
-          info.getValue()
-            ? new Date(info.getValue() as Date).toLocaleDateString()
-            : "-",
+        cell: (info) => {
+          const dateValue = info.getValue();
+          return dateValue instanceof Date && !isNaN(dateValue.getTime())
+            ? dateValue.toLocaleDateString()
+            : "-";
+        },
         enableColumnFilter: true,
         enableSorting: true,
       },

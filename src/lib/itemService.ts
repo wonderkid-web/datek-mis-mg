@@ -30,10 +30,18 @@ export const createItem = async (
 export const getItems = async (): Promise<Item[]> => {
   const q = query(itemsCollectionRef, orderBy("createdAt", "desc"));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Item[];
+  return querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
+      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
+      guaranteeDate: data.guaranteeDate ? new Date(data.guaranteeDate) : undefined,
+      registrationDate: data.registrationDate ? new Date(data.registrationDate) : undefined,
+      acquisitionDate: data.acquisitionDate ? new Date(data.acquisitionDate) : undefined,
+    } as Item;
+  });
 };
 
 export const updateItem = async (
@@ -53,10 +61,17 @@ export const getItemById = async (id: string): Promise<Item | null> => {
   const itemDoc = doc(db, "items", id);
   const docSnap = await getDoc(itemDoc);
   if (docSnap.exists() && !docSnap.data().isDeleted) {
-    return { id: docSnap.id, ...docSnap.data() } as Item;
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      ...data,
+      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
+      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
+      guaranteeDate: data.guaranteeDate ? new Date(data.guaranteeDate) : undefined,
+      registrationDate: data.registrationDate ? new Date(data.registrationDate) : undefined,
+      acquisitionDate: data.acquisitionDate ? new Date(data.acquisitionDate) : undefined,
+    } as Item;
   } else {
     return null;
   }
 };
-
-
