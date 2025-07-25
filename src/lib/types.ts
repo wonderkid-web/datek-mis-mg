@@ -24,6 +24,20 @@ export interface Item {
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
+
+  // Manufactured Item Details (optional, if linked to a manufactured item)
+  manufacturedItemId?: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
+  processor?: string;
+  storage?: string;
+  ram?: string;
+  vga?: string; // Optional, as not all items might have VGA
+  screenSize?: string;
+  color?: string;
+  macAddressLan?: string;
+  macAddressWlan?: string;
 }
 
 
@@ -48,6 +62,24 @@ export interface StockMove {
   remote?: string;
   sbu: string;
   user: string;
+}
+
+export interface ManufacturedItem {
+  id?: string;
+  type: string;
+  brand: string;
+  model: string;
+  serialNumber: string;
+  processor: string;
+  storage: string;
+  ram: string;
+  vga?: string; // Optional, as not all items might have VGA
+  screenSize?: string; // Optional, specific to laptops/monitors
+  color?: string;
+  macAddressLan?: string;
+  macAddressWlan?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 

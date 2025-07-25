@@ -1998,379 +1998,71 @@ export const ASSET_INFO = [
     type: "TE-M05",
     description: "DISPLAY TIMBANGAN",
   },
-  {
-    table: "AAM.Unit",
-    type: "TE-M06",
-    description: "DUCTING",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M07",
-    description: "HOPPER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M08",
-    description: "INDIKATOR TIMBANGAN",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M09",
-    description: "PIPE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M10",
-    description: "RAIL TRACK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M11",
-    description: "TANKI",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M12",
-    description: "TOWER TANK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M13",
-    description: "VALVE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M14",
-    description: "WATER BASIN",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-M15",
-    description: "WIRE ROPE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T01",
-    description: "BENCH GRINDER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T02",
-    description: "CHAIN KATROL",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T03",
-    description: "FLOWMETER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T04",
-    description: "HACKSAW",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T05",
-    description: "HAND GRINDER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T06",
-    description: "HAND PALLET",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T07",
-    description: "KATROL",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T08",
-    description: "MAL DRAT",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T09",
-    description: "SOLDER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T10",
-    description: "TRAFO CHARGE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TE-T11",
-    description: "TRAFO LAS",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G01",
-    description: "ADAPTOR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G02",
-    description: "ANTI PETIR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G03",
-    description: "CAMERA",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G04",
-    description: "CAMERA CCTV",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G05",
-    description: "CPU",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G06",
-    description: "DVR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G07",
-    description: "FAX",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G08",
-    description: "FLASHDISK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G09",
-    description: "GPS",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G10",
-    description: "HANDIE TALKIE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G11",
-    description: "HANDPHONE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G12",
-    description: "HARDWARE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G13",
-    description: "INVERATOR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G14",
-    description: "KEYBOARD",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G15",
-    description: "KOMPUTER SET",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G16",
-    description: "LAPTOP / NOTEBOOK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G17",
-    description: "MESIN ABSENSI",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G18",
-    description: "MESIN TIK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G19",
-    description: "MODEM / WI-FI",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G20",
-    description: "MONEY COUNTER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G21",
-    description: "MONEY DETECTOR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G22",
-    description: "MONITOR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G23",
-    description: "MOUSE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G24",
-    description: "PABX",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G25",
-    description: "PANEL",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G26",
-    description: "PANEL CCTV",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G27",
-    description: "POINTER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G28",
-    description: "PRINTER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G29",
-    description: "PROYEKTOR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G30",
-    description: "RADIO",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G31",
-    description: "SCANNER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G32",
-    description: "SENSOR",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G33",
-    description: "SOFTWARE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G34",
-    description: "STABILIZER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G35",
-    description: "SWITCH HUB",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G36",
-    description: "TELEPHONE",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G37",
-    description: "TRAFO LISTRIK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G38",
-    description: "TRANSMITTER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G39",
-    description: "UPS",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G40",
-    description: "TOWER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G41",
-    description: "RECORDER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G42",
-    description: "PATROL GUARD",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TS-G43",
-    description: "TOOLS FIBER OPTIK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G01",
-    description: "BUS",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G02",
-    description: "HELICOPTER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G03",
-    description: "MOBIL",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G04",
-    description: "MOBIL DUMPTRUCK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G05",
-    description: "MOBIL TANGKI",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G06",
-    description: "MOBIL TRUCK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G07",
-    description: "MOTOR TRAILER",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G08",
-    description: "PESAWAT TERBANG",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G09",
-    description: "PERAHU / KETEK",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G10",
-    description: "SEPEDA",
-  },
-  {
-    table: "AAM.Unit",
-    type: "TU-G11",
-    description: "SEPEDA MOTOR",
-  },
+];
+
+export const MANUFACTURE_ASSET_TYPES = [
+  { value: "komputer", label: "Komputer" },
+  { value: "laptop", label: "Laptop" },
+  { value: "printer", label: "Printer" },
+  { value: "acc_point", label: "Access Point" },
+  { value: "radio", label: "Radio Link" },
+  { value: "router", label: "Router" },
+  { value: "nvr", label: "NVR" },
+  { value: "cctv", label: "Kamera CCTV" },
+  { value: "switch", label: "Switch" },
+];
+
+export const MANUFACTURE_BRANDS = [
+  { value: "macbook", label: "Macbook" },
+  { value: "acer", label: "Acer" },
+  { value: "asus", label: "Asus" },
+  { value: "lenovo", label: "Lenovo" },
+  { value: "hp", label: "HP" },
+];
+
+export const MANUFACTURE_PROCESSORS = [
+  { value: "intel_pentium", label: "Intel Pentium" },
+  { value: "intel_i3", label: "Intel Core i3" },
+  { value: "intel_i5", label: "Intel Core i5" },
+  { value: "intel_i7", label: "Intel Core i7" },
+  { value: "intel_i9", label: "Intel Core i9" },
+];
+
+export const MANUFACTURE_STORAGES = [
+  { value: "ssd_visipro_128", label: "SSD Visipro 128 Gb" },
+  { value: "ssd_visipro_250", label: "SSD Visipro 250 Gb" },
+  { value: "ssd_visipro_480", label: "SSD Visipro 480 Gb" },
+  { value: "ssd_visipro_512", label: "SSD Visipro 512 Gb" },
+  { value: "ssd_visipro_1tb", label: "SSD Visipro 1 Tb" },
+];
+
+export const MANUFACTURE_RAMS = [
+  { value: "ddr3_1gb", label: "RAM DDR3 1 Gb" },
+  { value: "ddr3_2gb", label: "RAM DDR3 2 Gb" },
+  { value: "ddr3_4gb", label: "RAM DDR3 4 Gb" },
+  { value: "ddr3_8gb", label: "RAM DDR3 8 Gb" },
+  { value: "ddr3_16gb", label: "RAM DDR3 16 Gb" },
+  { value: "ddr3_32gb", label: "RAM DDR3 32 Gb" },
+];
+
+export const MANUFACTURE_VGAS = [
+  { value: "nvidia_1gb", label: "NVidia 1 Gb" },
+  { value: "nvidia_2gb", label: "NVidia 2 Gb" },
+  { value: "nvidia_3gb", label: "NVidia 3 Gb" },
+  { value: "nvidia_4gb", label: "NVidia 4 Gb" },
+  { value: "nvidia_5gb", label: "NVidia 5 Gb" },
+];
+
+export const MANUFACTURE_SCREEN_SIZES = [
+  { value: "12_inch", label: "Laptop 12 Inchi" },
+  { value: "14_inch", label: "Laptop 14 Inchi" },
+  { value: "18_inch", label: "Laptop 18 Inchi" },
+];
+
+export const MANUFACTURE_COLORS = [
+  { value: "red", label: "Red" },
+  { value: "white", label: "White" },
+  { value: "brown", label: "Brown" },
+  { value: "black", label: "Black" },
+  { value: "silver", label: "Silver" },
 ];

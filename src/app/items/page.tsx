@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Item, User } from "@/lib/types";
+import { Item, User, ManufacturedItem } from "@/lib/types";
 import { createItem, updateItem, getItemById } from "@/lib/itemService";
 import { getUsers } from "@/lib/userService";
+import { getManufacturedItems } from "@/lib/manufactureService";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,6 +17,7 @@ import {
   DEPARTMENTS,
   LOCATIONS,
   STATUSES,
+  MANUFACTURE_ASSET_TYPES,
 } from "@/lib/constants";
 import { useAuth } from "../context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -39,6 +41,18 @@ const initialFormState: Omit<Item, "id" | "createdAt" | "updatedAt"> = {
   ipAddress: "",
   remote: "",
   isDeleted: false,
+  manufacturedItemId: undefined,
+  brand: undefined,
+  model: undefined,
+  serialNumber: undefined,
+  processor: undefined,
+  storage: undefined,
+  ram: undefined,
+  vga: undefined,
+  screenSize: undefined,
+  color: undefined,
+  macAddressLan: undefined,
+  macAddressWlan: undefined,
 };
 
 export default function ItemsPage() {
@@ -46,8 +60,10 @@ export default function ItemsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
+  const [manufacturedItems, setManufacturedItems] = useState<ManufacturedItem[]>([]);
   const [form, setForm] = useState(initialFormState);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [selectedManufacturedItem, setSelectedManufacturedItem] = useState<ManufacturedItem | null>(null);
 
   useEffect(() => {
     if (!loading && !currentUser) {
@@ -61,9 +77,50 @@ export default function ItemsPage() {
     }
   }, [loading, currentUser, router, searchParams]);
 
+  useEffect(() => {
+    if (selectedManufacturedItem) {
+      setForm((prevForm) => ({
+        ...prevForm,
+        name: selectedManufacturedItem.type, // Set item name based on manufactured type
+        description: `${selectedManufacturedItem.brand} ${selectedManufacturedItem.model} SN: ${selectedManufacturedItem.serialNumber}`,
+        brand: selectedManufacturedItem.brand,
+        model: selectedManufacturedItem.model,
+        serialNumber: selectedManufacturedItem.serialNumber,
+        processor: selectedManufacturedItem.processor,
+        storage: selectedManufacturedItem.storage,
+        ram: selectedManufacturedItem.ram,
+        vga: selectedManufacturedItem.vga,
+        screenSize: selectedManufacturedItem.screenSize,
+        color: selectedManufacturedItem.color,
+        macAddressLan: selectedManufacturedItem.macAddressLan,
+        macAddressWlan: selectedManufacturedItem.macAddressWlan,
+        manufacturedItemId: selectedManufacturedItem.id,
+      }));
+    } else {
+      // Clear manufactured item specific fields if no manufactured item is selected
+      setForm((prevForm) => ({
+        ...prevForm,
+        brand: undefined,
+        model: undefined,
+        serialNumber: undefined,
+        processor: undefined,
+        storage: undefined,
+        ram: undefined,
+        vga: undefined,
+        screenSize: undefined,
+        color: undefined,
+        macAddressLan: undefined,
+        macAddressWlan: undefined,
+        manufacturedItemId: undefined,
+      }));
+    }
+  }, [selectedManufacturedItem]);
+
   const fetchInitialData = async () => {
     const usersData = await getUsers();
     setUsers(usersData);
+    const manufacturedItemsData = await getManufacturedItems();
+    setManufacturedItems(manufacturedItemsData);
   };
 
   const fetchItemForEdit = async (id: string) => {
@@ -71,11 +128,7 @@ export default function ItemsPage() {
     if (item) {
       setEditingItem(item);
       setForm({
-        name:
-          item.name ||
-          ASSET_INFO.find((u) => u.type === item.unit && u.table === "AAM.Unit")
-            ?.description ||
-          "",
+        name: item.name,
         description: item.description,
         unit: item.unit,
         category: item.category,
@@ -90,7 +143,26 @@ export default function ItemsPage() {
         ipAddress: item.ipAddress,
         remote: item.remote,
         isDeleted: item.isDeleted,
+        manufacturedItemId: item.manufacturedItemId,
+        brand: item.brand,
+        model: item.model,
+        serialNumber: item.serialNumber,
+        processor: item.processor,
+        storage: item.storage,
+        ram: item.ram,
+        vga: item.vga,
+        screenSize: item.screenSize,
+        color: item.color,
+        macAddressLan: item.macAddressLan,
+        macAddressWlan: item.macAddressWlan,
       });
+      // If editing an item linked to a manufactured item, set selectedManufacturedItem
+      if (item.manufacturedItemId) {
+        const foundManufacturedItem = manufacturedItems.find(mi => mi.id === item.manufacturedItemId);
+        if (foundManufacturedItem) {
+          setSelectedManufacturedItem(foundManufacturedItem);
+        }
+      }
     } else {
       toast.error("Item not found.");
       router.push("/items"); // Redirect back to items list if not found
@@ -102,11 +174,21 @@ export default function ItemsPage() {
       ...prevForm,
       [name]: value,
       ...(name === "unit" && {
-        name:
-          ASSET_INFO.find((u) => u.type === value && u.table === "AAM.Unit")
-            ?.description || "",
+        name: ASSET_INFO.find((u) => u.type === value && u.table === "AAM.Unit")?.description || "",
       }),
     }));
+
+    if (name === "unit") {
+      const selectedType = MANUFACTURE_ASSET_TYPES.find(type => type.value === value);
+      if (selectedType) {
+        // Find manufactured items of the selected type
+        const relevantManufacturedItems = manufacturedItems.filter(mi => mi.type === selectedType.value);
+        // For now, let's just pick the first one if available, or clear if none
+        setSelectedManufacturedItem(relevantManufacturedItems.length > 0 ? relevantManufacturedItems[0] : null);
+      } else {
+        setSelectedManufacturedItem(null);
+      }
+    }
   };
 
   const handleInputChange = (
@@ -124,6 +206,18 @@ export default function ItemsPage() {
       unit: form.unit,
       user: form.user,
       assetNumber: form.assetNumber,
+      manufacturedItemId: form.manufacturedItemId,
+      brand: form.brand,
+      model: form.model,
+      serialNumber: form.serialNumber,
+      processor: form.processor,
+      storage: form.storage,
+      ram: form.ram,
+      vga: form.vga,
+      screenSize: form.screenSize,
+      color: form.color,
+      macAddressLan: form.macAddressLan,
+      macAddressWlan: form.macAddressWlan,
     });
     if (!form.unit || !form.user || !form.assetNumber) {
       toast.error("Please fill all required fields.");
@@ -133,16 +227,22 @@ export default function ItemsPage() {
     const itemData = { ...form };
     console.log("Submitting itemData:", itemData);
 
-    if (editingItem) {
-      await updateItem(editingItem.id!, itemData);
-      toast.success("Item updated successfully!");
-    } else {
-      await createItem(itemData);
-      toast.success("Item created successfully!");
+    try {
+      if (editingItem) {
+        await updateItem(editingItem.id!, itemData);
+        toast.success("Item updated successfully!");
+      } else {
+        await createItem(itemData);
+        toast.success("Item created successfully!");
+      }
+      setForm(initialFormState);
+      setEditingItem(null);
+      setSelectedManufacturedItem(null);
+      fetchInitialData();
+    } catch (error) {
+      console.error("Error submitting item:", error);
+      toast.error("Gagal menyimpan item.");
     }
-    setForm(initialFormState);
-    setEditingItem(null);
-    fetchInitialData();
   };
 
   return (
@@ -150,40 +250,68 @@ export default function ItemsPage() {
       <main className="container mx-auto p-8">
         <h1 className="mb-8 text-3xl font-bold">Kelola Aset</h1>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>
+        <Card className="mb-8 shadow-lg rounded-lg">
+          <CardHeader className="bg-primary text-primary-foreground p-6">
+            <CardTitle className="text-2xl font-bold">
               {editingItem ? "Edit Aset" : "Tambah Aset Baru"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <form
               onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
             >
-              {/* Column 1 */}
-              <div className="space-y-4">
+              {/* General Information Column */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-gray-800">Informasi Umum</h2>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Unit (Jenis Aset)
-                  </label>
-                  <Combobox
-                    options={ASSET_INFO.filter(
-                      (asset) => asset.table == "AAM.Unit"
-                    ).map((unit) => ({
-                      value: unit.type,
-                      label: unit.description,
-                    }))}
-                    value={form.unit}
+                  <Label htmlFor="unit">Unit (Jenis Aset)</Label>
+                  <Select
                     onValueChange={(value) => handleSelectChange("unit", value)}
-                    placeholder="Pilih Unit"
-                    searchPlaceholder="Cari Unit..."
-                  />
+                    value={form.unit}
+                    required
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Pilih Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MANUFACTURE_ASSET_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {form.unit && manufacturedItems.filter(mi => mi.type === form.unit).length > 0 && (
+                  <div>
+                    <Label htmlFor="manufacturedItem">Pilih Item Manufaktur</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        const selected = manufacturedItems.find(mi => mi.id === value);
+                        setSelectedManufacturedItem(selected || null);
+                      }}
+                      value={selectedManufacturedItem?.id || ""}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih Item Manufaktur" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {manufacturedItems
+                          .filter(mi => mi.type === form.unit)
+                          .map((mi) => (
+                            <SelectItem key={mi.id} value={mi.id!}>
+                              {`${mi.brand} ${mi.model} (SN: ${mi.serialNumber})`}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Region
-                  </label>
+                  <Label htmlFor="category">Region</Label>
                   <Select
                     onValueChange={(value) =>
                       handleSelectChange("category", value)
@@ -204,9 +332,7 @@ export default function ItemsPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Perusahaan
-                  </label>
+                  <Label htmlFor="company">Perusahaan</Label>
                   <Select
                     onValueChange={(value) =>
                       handleSelectChange("company", value)
@@ -227,9 +353,7 @@ export default function ItemsPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Departemen
-                  </label>
+                  <Label htmlFor="department">Departemen</Label>
                   <Select
                     onValueChange={(value) =>
                       handleSelectChange("department", value)
@@ -250,9 +374,7 @@ export default function ItemsPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Lokasi
-                  </label>
+                  <Label htmlFor="location">Lokasi</Label>
                   <Select
                     onValueChange={(value) =>
                       handleSelectChange("location", value)
@@ -273,9 +395,7 @@ export default function ItemsPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Status
-                  </label>
+                  <Label htmlFor="status">Status</Label>
                   <Select
                     onValueChange={(value) =>
                       handleSelectChange("status", value)
@@ -297,13 +417,13 @@ export default function ItemsPage() {
                 </div>
               </div>
 
-              {/* Column 2 */}
-              <div className="space-y-4">
+              {/* Specific Details Column */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-gray-800">Detail Spesifik</h2>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Nomor Aset
-                  </label>
+                  <Label htmlFor="assetNumber">Nomor Aset</Label>
                   <Input
+                    id="assetNumber"
                     name="assetNumber"
                     value={form.assetNumber}
                     onChange={handleInputChange}
@@ -312,9 +432,7 @@ export default function ItemsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Pengguna
-                  </label>
+                  <Label htmlFor="user">Pengguna</Label>
                   <Select
                     onValueChange={(value) => handleSelectChange("user", value)}
                     value={form.user}
@@ -333,79 +451,128 @@ export default function ItemsPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Deskripsi (Merk/Model/SN)
-                  </label>
+                  <Label htmlFor="description">Deskripsi (Merk/Model/SN)</Label>
                   <Textarea
+                    id="description"
                     name="description"
                     value={form.description}
-                    onChange={handleInputChange}
+                    onChange={selectedManufacturedItem ? undefined : handleInputChange}
                     placeholder="Detail spesifik aset"
                     required
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Tanggal Garansi
-                  </label>
-                  <Input
-                    name="guaranteeDate"
-                    type="date"
-                    value={
-                      form.guaranteeDate
-                        ? new Date(form.guaranteeDate)
-                            .toISOString()
-                            .split("T")[0]
-                        : ""
-                    }
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Tanggal Registrasi
-                  </label>
-                  <Input
-                    name="registrationDate"
-                    type="date"
-                    value={
-                      form.registrationDate
-                        ? new Date(form.registrationDate)
-                            .toISOString()
-                            .split("T")[0]
-                        : ""
-                    }
-                    onChange={handleInputChange}
+                    readOnly={!!selectedManufacturedItem && !editingItem}
                   />
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Alamat IP
-                  </label>
-                  <Input
-                    name="ipAddress"
-                    value={form.ipAddress}
-                    onChange={handleInputChange}
-                    placeholder="Jika ada"
-                    title="Masukkan alamat IP yang valid (contoh: 192.168.1.1)"
-                  />
+                {/* Manufactured Item Fields always visible but readOnly if linked */}
+                <div className="space-y-4 border-t pt-4 mt-4">
+                  <h3 className="text-lg font-medium text-gray-700">Detail Manufaktur</h3>
+                  <div>
+                    <Label htmlFor="brand">Merek</Label>
+                    <Input id="brand" type="text" value={form.brand || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="model">Model</Label>
+                    <Input id="model" type="text" value={form.model || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="serialNumber">Serial Number</Label>
+                    <Input id="serialNumber" type="text" value={form.serialNumber || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="processor">Processor</Label>
+                    <Input id="processor" type="text" value={form.processor || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="storage">Penyimpanan</Label>
+                    <Input id="storage" type="text" value={form.storage || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="ram">RAM</Label>
+                    <Input id="ram" type="text" value={form.ram || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="vga">VGA</Label>
+                    <Input id="vga" type="text" value={form.vga || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="screenSize">Ukuran Layar</Label>
+                    <Input id="screenSize" type="text" value={form.screenSize || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="color">Warna</Label>
+                    <Input id="color" type="text" value={form.color || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="macAddressLan">MAC Address LAN</Label>
+                    <Input id="macAddressLan" type="text" value={form.macAddressLan || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
+                  <div>
+                    <Label htmlFor="macAddressWlan">MAC Address WLAN</Label>
+                    <Input id="macAddressWlan" type="text" value={form.macAddressWlan || ""} readOnly={!!selectedManufacturedItem && !editingItem} />
+                  </div>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Remote Access
-                  </label>
-                  <Input
-                    name="remote"
-                    value={form.remote}
-                    onChange={handleInputChange}
-                    placeholder="Jika ada"
-                  />
+
+                <div className="space-y-4 border-t pt-4 mt-4">
+                  <h3 className="text-lg font-medium text-gray-700">Informasi Tambahan</h3>
+                  <div>
+                    <Label htmlFor="guaranteeDate">Tanggal Garansi</Label>
+                    <Input
+                      id="guaranteeDate"
+                      name="guaranteeDate"
+                      type="date"
+                      value={
+                        form.guaranteeDate
+                          ? new Date(form.guaranteeDate)
+                              .toISOString()
+                              .split("T")[0]
+                          : ""
+                      }
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="registrationDate">Tanggal Registrasi</Label>
+                    <Input
+                      id="registrationDate"
+                      name="registrationDate"
+                      type="date"
+                      value={
+                        form.registrationDate
+                          ? new Date(form.registrationDate)
+                              .toISOString()
+                              .split("T")[0]
+                          : ""
+                      }
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="ipAddress">Alamat IP</Label>
+                    <Input
+                      id="ipAddress"
+                      name="ipAddress"
+                      value={form.ipAddress}
+                      onChange={handleInputChange}
+                      placeholder="Jika ada"
+                      title="Masukkan alamat IP yang valid (contoh: 192.168.1.1)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="remote">Remote Access</Label>
+                    <Input
+                      id="remote"
+                      name="remote"
+                      value={form.remote}
+                      onChange={handleInputChange}
+                      placeholder="Jika ada"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Submit Button */}
-              <div className="md:col-span-2 flex justify-end space-x-4">
+              <div className="md:col-span-2 flex justify-end space-x-4 mt-6">
                 <Button type="submit" className="w-full md:w-auto">
                   {editingItem ? "Perbarui Aset" : "Tambah Aset"}
                 </Button>
@@ -416,6 +583,7 @@ export default function ItemsPage() {
                     onClick={() => {
                       setEditingItem(null);
                       setForm(initialFormState);
+                      setSelectedManufacturedItem(null);
                     }}
                     className="w-full md:w-auto"
                   >

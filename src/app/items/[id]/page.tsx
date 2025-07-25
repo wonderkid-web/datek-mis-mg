@@ -7,7 +7,7 @@ import { Item, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Package } from "lucide-react";
+import { Package, Cpu, HardDrive, MemoryStick, Monitor, Palette, Network, Laptop, Tag, Fingerprint } from "lucide-react";
 import {
   CATEGORIES,
   COMPANIES,
@@ -106,7 +106,7 @@ export default function ItemDetailPage() {
                 {item.name} ({item.assetNumber})
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 max-h-[60vh] overflow-y-auto">
               <Table>
                 <TableBody>
                   <TableRow>
@@ -170,10 +170,6 @@ export default function ItemDetailPage() {
                     <TableCell>{item.ipAddress || "-"}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-semibold">Remote Access:</TableCell>
-                    <TableCell>{item.remote || "-"}</TableCell>
-                  </TableRow>
-                  <TableRow>
                     <TableCell className="font-semibold">Dibuat Pada:</TableCell>
                     <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
                   </TableRow>
@@ -190,8 +186,77 @@ export default function ItemDetailPage() {
             <CardHeader className="w-full text-center">
               <CardTitle className="text-xl font-bold">QR Code Aset</CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow flex justify-center items-center">
-              <QRCodeGenerator value={`${window.location.origin}/items/${itemId}`} size={200} />
+            <CardContent className="flex-grow flex flex-col justify-center items-center -mt-8">
+              <QRCodeGenerator value={`${window.location.origin}/items/${itemId}`} size={160} />
+              
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-4">
+                {item.brand && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Tag className="h-5 w-5" />
+                    <span>Merek: {item.brand}</span>
+                  </div>
+                )}
+                {item.model && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Laptop className="h-5 w-5" />
+                    <span>Model: {item.model}</span>
+                  </div>
+                )}
+                {item.serialNumber && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Fingerprint className="h-5 w-5" />
+                    <span>Serial Number: {item.serialNumber}</span>
+                  </div>
+                )}
+                {item.processor && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Cpu className="h-5 w-5" />
+                    <span>Processor: {item.processor}</span>
+                  </div>
+                )}
+                {item.storage && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <HardDrive className="h-5 w-5" />
+                    <span>Penyimpanan: {item.storage}</span>
+                  </div>
+                )}
+                {item.ram && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <MemoryStick className="h-5 w-5" />
+                    <span>RAM: {item.ram}</span>
+                  </div>
+                )}
+                {item.vga && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Monitor className="h-5 w-5" />
+                    <span>VGA: {item.vga}</span>
+                  </div>
+                )}
+                {item.screenSize && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Monitor className="h-5 w-5" />
+                    <span>Ukuran Layar: {item.screenSize}</span>
+                  </div>
+                )}
+                {item.color && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Palette className="h-5 w-5" />
+                    <span>Warna: {item.color}</span>
+                  </div>
+                )}
+                {item.macAddressLan && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Network className="h-5 w-5" />
+                    <span>MAC Address LAN: {item.macAddressLan}</span>
+                  </div>
+                )}
+                {item.macAddressWlan && (
+                  <div className="flex items-center space-x-2 text-gray-700">
+                    <Network className="h-5 w-5" />
+                    <span>MAC Address WLAN: {item.macAddressWlan}</span>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
