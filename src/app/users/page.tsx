@@ -123,8 +123,7 @@ export default function UsersPage() {
         await createUser(form);
         toast.success("User created successfully!");
       }
-      // @ts-expect-error gatau-kenapa
-      setForm({ name: "" });
+      setForm({ name: "", sbu: "", department: "" });
       setEditingUser(null);
       fetchUsers();
     } catch (error: any) {
@@ -139,25 +138,16 @@ export default function UsersPage() {
 
   const handleDelete = useCallback(
     async (id: string) => {
-      toast("Are you sure you want to delete this user?", {
-        action: {
-          label: "Delete",
-          onClick: async () => {
-            toast.promise(deleteUser(id), {
-              loading: "Deleting user...",
-              success: () => {
-                fetchUsers();
-                return "User deleted successfully!";
-              },
-              error: "Failed to delete user.",
-            });
-          },
-        },
-        cancel: {
-          label: "Cancel",
-          onClick: () => toast.dismiss(),
-        },
-      });
+      if (window.confirm("Apakah Anda yakin ingin menghapus user ini?")) {
+        try {
+          await deleteUser(id);
+          toast.success("User berhasil dihapus!");
+          fetchUsers();
+        } catch (error) {
+          console.error("Error deleting user:", error);
+          toast.error("Gagal menghapus user.");
+        }
+      }
     },
     [fetchUsers]
   );
@@ -233,91 +223,88 @@ export default function UsersPage() {
             <CardTitle>{editingUser ? "Edit User" : "Add New User"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit}>
-              <div className="flex flex-col space-y-4">
-                <div className="mb-4">
-                  <label
-                    htmlFor="name"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
-                    Name
-                  </label>
-                  <Input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="sbu"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
-                    SBU
-                  </label>
-                  <Select
-                    onValueChange={(value) => setForm({ ...form, sbu: value })}
-                    value={form.sbu}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select SBU" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sbus.map((sbu) => (
-                        <SelectItem key={sbu} value={sbu}>
-                          {sbu}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="department"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
-                    Department
-                  </label>
-                  <Select
-                    onValueChange={(value) =>
-                      setForm({ ...form, department: value })
-                    }
-                    value={form.department}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {namaDepartemen.map((department) => (
-                        <SelectItem key={department} value={department}>
-                          {department}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button type="submit">
-                {editingUser ? "Update User" : "Add User"}
-              </Button>
-              {editingUser && (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setEditingUser(null);
-                    // @ts-expect-error gatau-kenapa
-                    setForm({ name: "" });
-                  }}
-                  className="ml-4"
-                >
-                  Cancel
-                </Button>
-              )}
+            <form onSubmit={handleSubmit} className="w-full">
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-semibold w-1/3">Name:</TableCell>
+                    <TableCell className="w-2/3">
+                      <Input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        required
+                        className="w-1/2"
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">SBU:</TableCell>
+                    <TableCell>
+                      <Select
+                        onValueChange={(value) => setForm({ ...form, sbu: value })}
+                        value={form.sbu}
+                        required
+                      >
+                        <SelectTrigger className="w-1/2">
+                          <SelectValue placeholder="Select SBU" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sbus.map((sbu) => (
+                            <SelectItem key={sbu} value={sbu}>
+                              {sbu}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Department:</TableCell>
+                    <TableCell>
+                      <Select
+                        onValueChange={(value) =>
+                          setForm({ ...form, department: value })
+                        }
+                        value={form.department}
+                        required
+                      >
+                        <SelectTrigger className="w-1/2">
+                          <SelectValue placeholder="Select Department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {namaDepartemen.map((department) => (
+                            <SelectItem key={department} value={department}>
+                              {department}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-right">
+                      <Button type="submit">
+                        {editingUser ? "Update User" : "Add User"}
+                      </Button>
+                      {editingUser && (
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            setEditingUser(null);
+                            setForm({ name: "", sbu: "", department: "" });
+                          }}
+                          className="ml-4"
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </form>
           </CardContent>
         </Card>

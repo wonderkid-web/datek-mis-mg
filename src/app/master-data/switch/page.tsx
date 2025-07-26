@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
@@ -11,6 +10,14 @@ import {
 } from "@/components/ui/table";
 import { createSwitch, getSwitches, updateSwitch, deleteSwitch } from "@/lib/switchService";
 import { Switch } from "@/lib/types";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { Edit, Trash2 } from "lucide-react";
 
 export default function SwitchPage() {
   const [formData, setFormData] = useState<Partial<Switch>>({
@@ -94,6 +101,68 @@ export default function SwitchPage() {
     }
   };
 
+  const columns: ColumnDef<Switch>[] = React.useMemo(
+    () => [
+      {
+        accessorKey: "type",
+        header: "Type",
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "brand",
+        header: "Brand",
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "port",
+        header: "Port",
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "power",
+        header: "Power",
+        cell: (info) => info.getValue(),
+      },
+      {
+        id: "actions",
+        header: "Aksi",
+        cell: ({ row }) => (
+          <div className="flex space-x-2 justify-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handleEdit(row.original)}
+              className="bg-green-500 hover:bg-green-600 text-white"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handleDelete(row.original.id!)}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [handleEdit, handleDelete]
+  );
+
+  const table = useReactTable({
+    data: switches,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
+
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
       <main className="container mx-auto p-8">
@@ -104,59 +173,75 @@ export default function SwitchPage() {
             <CardTitle className="text-2xl font-bold">{editingItem ? "Edit Data Switch" : "Tambah Data Switch"}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="type">Type</Label>
-                  <Input
-                    id="type"
-                    type="text"
-                    placeholder="Type..."
-                    value={formData.type}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="brand">Brand</Label>
-                  <Input
-                    id="brand"
-                    type="text"
-                    placeholder="Brand..."
-                    value={formData.brand}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="port">Port</Label>
-                  <Input
-                    id="port"
-                    type="number"
-                    placeholder="Port..."
-                    value={formData.port}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="power">Power</Label>
-                  <Input
-                    id="power"
-                    type="text"
-                    placeholder="Power..."
-                    value={formData.power}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              <div className="md:col-span-2 flex justify-end mt-6">
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Menyimpan..." : editingItem ? "Perbarui Data Switch" : "Simpan Data Switch"}
-                </Button>
-                {editingItem && (
-                  <Button type="button" variant="outline" onClick={handleCancelEdit} className="ml-2">
-                    Batal Edit
-                  </Button>
-                )}
-              </div>
+            <form onSubmit={handleSubmit} className="w-full">
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-semibold w-1/3">Type:</TableCell>
+                    <TableCell className="w-2/3">
+                      <Input
+                        id="type"
+                        type="text"
+                        placeholder="Type..."
+                        value={formData.type}
+                        onChange={handleChange}
+                        className="w-1/2"
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Brand:</TableCell>
+                    <TableCell>
+                      <Input
+                        id="brand"
+                        type="text"
+                        placeholder="Brand..."
+                        value={formData.brand}
+                        onChange={handleChange}
+                        className="w-1/2"
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Port:</TableCell>
+                    <TableCell>
+                      <Input
+                        id="port"
+                        type="number"
+                        placeholder="Port..."
+                        value={formData.port}
+                        onChange={handleChange}
+                        className="w-1/2"
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Power:</TableCell>
+                    <TableCell>
+                      <Input
+                        id="power"
+                        type="text"
+                        placeholder="Power..."
+                        value={formData.power}
+                        onChange={handleChange}
+                        className="w-1/2"
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-right">
+                      <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Menyimpan..." : editingItem ? "Perbarui Data Switch" : "Simpan Data Switch"}
+                      </Button>
+                      {editingItem && (
+                        <Button type="button" variant="outline" onClick={handleCancelEdit} className="ml-2">
+                          Batal Edit
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </form>
           </CardContent>
         </Card>
@@ -167,33 +252,81 @@ export default function SwitchPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Brand</TableHead>
-                    <TableHead>Port</TableHead>
-                    <TableHead>Power</TableHead>
-                    <TableHead>Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {switches.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.type}</TableCell>
-                      <TableCell>{item.brand}</TableCell>
-                      <TableCell>{item.port}</TableCell>
-                      <TableCell>{item.power}</TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="mr-2">
-                          Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id!)}>
-                          Hapus
-                        </Button>
-                      </TableCell>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
                     </TableRow>
                   ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
+              <div className="mt-4 flex items-center justify-end space-x-2">
+                <div className="flex-1 text-sm text-muted-foreground">
+                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  Previous
+                </Button>
+                {[...Array(table.getPageCount()).keys()].map((pageIdx) => (
+                  <Button
+                    key={pageIdx}
+                    variant={table.getState().pagination.pageIndex === pageIdx ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => table.setPageIndex(pageIdx)}
+                  >
+                    {pageIdx + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
