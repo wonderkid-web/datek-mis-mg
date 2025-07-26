@@ -1,11 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  LogOut,
-  ChevronDown,
-  Menu,
-} from "lucide-react";
+import { LogOut, ChevronDown, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -21,7 +17,9 @@ import { navigationItems } from "@/lib/navigation";
 export default function Navbar() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
+  const [openCollapsibleName, setOpenCollapsibleName] = useState<string | null>(
+    null
+  );
 
   const handleLogout = async () => {
     try {
@@ -32,12 +30,12 @@ export default function Navbar() {
     }
   };
 
-  const handleCollapsibleToggle = (itemName: string, isOpen: boolean) => {
-    setOpenCollapsibles(prev => ({ ...prev, [itemName]: isOpen }));
+  const handleCollapsibleToggle = (itemName: string) => {
+    setOpenCollapsibleName(openCollapsibleName === itemName ? null : itemName);
   };
 
-  const handleLinkClick = (itemName: string) => {
-    setOpenCollapsibles(prev => ({ ...prev, [itemName]: false }));
+  const handleLinkClick = () => {
+    setOpenCollapsibleName(null);
     setIsMobileMenuOpen(false); // Close mobile menu as well
   };
 
@@ -63,12 +61,12 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex space-x-4 items-center">
-          {navigationItems.map((item) => (
+          {navigationItems.map((item) =>
             item.children ? (
               <Collapsible
                 key={item.name}
-                open={openCollapsibles[item.name]}
-                onOpenChange={(isOpen) => handleCollapsibleToggle(item.name, isOpen)}
+                open={openCollapsibleName === item.name}
+                onOpenChange={() => handleCollapsibleToggle(item.name)}
               >
                 <CollapsibleTrigger className="flex items-center space-x-1 hover:text-primary-foreground/80">
                   {item.icon && <item.icon className="h-5 w-5" />}
@@ -81,7 +79,7 @@ export default function Navbar() {
                       key={child.name}
                       href={child.href}
                       className="block px-4 py-2 hover:bg-primary-foreground/10"
-                      onClick={() => handleLinkClick(item.name)}
+                      onClick={handleLinkClick}
                     >
                       {child.name}
                     </Link>
@@ -98,8 +96,11 @@ export default function Navbar() {
                 <span>{item.name}</span>
               </Link>
             )
-          ))}
-          <Button onClick={handleLogout} className="bg-destructive hover:bg-destructive/90">
+          )}
+          <Button
+            onClick={handleLogout}
+            className="bg-destructive hover:bg-destructive/90"
+          >
             <LogOut className="h-5 w-5 mr-2" />
             Keluar
           </Button>
@@ -109,12 +110,12 @@ export default function Navbar() {
       {/* Mobile Menu Content */}
       {isMobileMenuOpen && (
         <div className="md:hidden mt-4 space-y-2">
-          {navigationItems.map((item) => (
+          {navigationItems.map((item) =>
             item.children ? (
               <Collapsible
                 key={item.name}
-                open={openCollapsibles[item.name]}
-                onOpenChange={(isOpen) => handleCollapsibleToggle(item.name, isOpen)}
+                open={openCollapsibleName === item.name}
+                onOpenChange={() => handleCollapsibleToggle(item.name)}
               >
                 <CollapsibleTrigger className="flex items-center space-x-2 w-full py-2 px-3 rounded-md hover:bg-primary-foreground/10">
                   {item.icon && <item.icon className="h-5 w-5" />}
@@ -127,7 +128,7 @@ export default function Navbar() {
                       key={child.name}
                       href={child.href}
                       className="block px-4 py-2 hover:bg-primary-foreground/10 rounded-md"
-                      onClick={() => handleLinkClick(item.name)}
+                      onClick={handleLinkClick}
                     >
                       {child.name}
                     </Link>
@@ -139,14 +140,17 @@ export default function Navbar() {
                 key={item.name}
                 href={item.href}
                 className="flex items-center space-x-2 py-2 px-3 rounded-md hover:bg-primary-foreground/10"
-                onClick={() => handleLinkClick(item.name)}
+                onClick={handleLinkClick}
               >
                 {item.icon && <item.icon className="h-5 w-5" />}
                 <span>{item.name}</span>
               </Link>
             )
-          ))}
-          <Button onClick={handleLogout} className="w-full bg-destructive hover:bg-destructive/90 mt-2">
+          )}
+          <Button
+            onClick={handleLogout}
+            className="w-full bg-destructive hover:bg-destructive/90 mt-2"
+          >
             <LogOut className="h-5 w-5 mr-2" />
             Keluar
           </Button>
