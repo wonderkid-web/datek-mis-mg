@@ -4,34 +4,66 @@ import {
   addDoc,
   getDocs,
   query,
-  orderBy,
+  where,
+  Timestamp,
+  doc,
+  getDoc,
+  updateDoc,
 } from "firebase/firestore";
-import { ManufacturedItem } from "./types";
+import { Manufacture } from "./types";
 
-const manufacturedItemsCollectionRef = collection(db, "manufacturedItems");
+const manufactureCollectionRef = collection(db, "manufactures");
 
-export const createManufacturedItem = async (
-  item: Omit<ManufacturedItem, "id" | "createdAt" | "updatedAt">
+export const createManufacture = async (
+  item: Omit<Manufacture, "id" | "createdAt" | "updatedAt">
 ): Promise<string> => {
   const newItem = {
     ...item,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   };
-  const docRef = await addDoc(manufacturedItemsCollectionRef, newItem);
+  const docRef = await addDoc(manufactureCollectionRef, newItem);
   return docRef.id;
 };
 
-export const getManufacturedItems = async (): Promise<ManufacturedItem[]> => {
-  const q = query(manufacturedItemsCollectionRef, orderBy("createdAt", "desc"));
+export const getManufactures = async (assetType: string): Promise<Manufacture[]> => {
+  console.log("Fetching manufactures for assetType:", assetType);
+  const q = query(manufactureCollectionRef, where("assetCategory", "==", assetType));
+
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
+  const manufactures = querySnapshot.docs.map((doc) => {
     const data = doc.data();
     return {
       id: doc.id,
       ...data,
-      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
-      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
-    } as ManufacturedItem;
+      createdAt: data.createdAt.toDate(),
+      updatedAt: data.updatedAt.toDate(),
+    } as Manufacture;
   });
+  console.log("Fetched manufactures data:", manufactures);
+  return manufactures;
+};
+
+export const getManufactureById = async (id: string): Promise<Manufacture | null> => {
+  const docRef = doc(db, "manufactures", id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      ...data,
+      createdAt: data.createdAt.toDate(),
+      updatedAt: data.updatedAt.toDate(),
+    } as Manufacture;
+  } else {
+    return null;
+  }
+};
+
+export const updateManufacture = async (
+  id: string,
+  item: Partial<Omit<Manufacture, "id" | "createdAt">>
+): Promise<void> => {
+  const manufactureDoc = doc(db, "manufactures", id);
+  await updateDoc(manufactureDoc, { ...item, updatedAt: Timestamp.now() });
 };

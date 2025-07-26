@@ -62,20 +62,25 @@ export interface StockMove {
   user: string;
 }
 
-export interface ManufacturedItem {
+export interface Manufacture {
   id?: string;
   type: string;
   brand: string;
-  model: string;
+  model?: string;
   serialNumber: string;
-  processor: string;
-  storage: string;
-  ram: string;
+  processor?: string;
+  storage?: string;
+  ram?: string;
   vga?: string; // Optional, as not all items might have VGA
   screenSize?: string; // Optional, specific to laptops/monitors
   color?: string;
   macAddressLan?: string;
   macAddressWlan?: string;
+  port?: number; // New field for Switch
+  power?: string; // New field for Switch
+  assetCategory: string;
+  assetNumber?: string; // New field for asset number
+  user?: string; // New field for user ID
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,5 +100,15 @@ export interface Ram extends MasterDataItem { _?: string; }
 export interface Vga extends MasterDataItem { _?: string; }
 export interface ScreenSize extends MasterDataItem { _?: string; }
 export interface Color extends MasterDataItem { _?: string; }
+
+export interface Switch {
+  id?: string;
+  type: string;
+  brand: string;
+  port: number;
+  power: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 

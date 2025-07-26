@@ -172,3 +172,80 @@ const Unit = [
   // ... continue all the way to:
   { type: "MU-G12", description: "LINER" }
 ];
+
+
+### Children Master Data
+TELEPON
+
+SYNOLOGY
+
+NVR CCTV
+
+CAMERA CCTV
+
+SCANNER
+
+FINGERPRINT
+
+SWITCH
+  - Type : input
+  - Brand: input
+  - Port: input
+  - Power: input
+
+
+RADIO
+
+UPS
+
+ROUTER
+
+KOMPUTER
+
+ACCESS POINT
+
+PRINTER
+
+LAPTOP
+
+
+
+
+
+
+
+
+###  Children Manufaktur
+TELEPON
+
+SYNOLOGY
+
+NVR CCTV
+
+CAMERA CCTV
+
+SCANNER
+
+FINGERPRINT
+
+SWITCH
+  - Type : dropdown yg data nya diambil dari menu children yg ada pada Master Data Switch
+  - Brand: dropdown yg data nya diambil dari menu children yg ada pada Master Data Switch
+  - Port: dropdown yg data nya diambil dari menu children yg ada pada Master Data Switch
+  - Power: dropdown yg data nya diambil dari menu children yg ada pada Master Data Switch
+Error saving manufactured switch: ReferenceError: createManufacture is not defined
+    at handleSubmit
+
+RADIO
+
+UPS
+
+ROUTER
+
+KOMPUTER
+
+ACCESS POINT
+
+PRINTER
+
+LAPTOP
