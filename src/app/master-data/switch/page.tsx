@@ -1,14 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { createSwitch, getSwitches, updateSwitch, deleteSwitch } from "@/lib/switchService";
+import {
+  createSwitch,
+  getSwitches,
+  updateSwitch,
+  deleteSwitch,
+} from "@/lib/switchService";
 import { Switch } from "@/lib/types";
 import {
   ColumnDef,
@@ -30,11 +40,7 @@ export default function SwitchPage() {
   const [switches, setSwitches] = useState<Switch[]>([]);
   const [editingItem, setEditingItem] = useState<Switch | null>(null);
 
-  useEffect(() => {
-    fetchSwitches();
-  }, []);
-
-  const fetchSwitches = async () => {
+  const fetchSwitches = useCallback(async () => {
     try {
       const data = await getSwitches();
       setSwitches(data);
@@ -42,7 +48,11 @@ export default function SwitchPage() {
       console.error("Error fetching switches:", error);
       toast.error("Gagal memuat data Switch.");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSwitches();
+  }, [fetchSwitches]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -53,8 +63,15 @@ export default function SwitchPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!formData.type || !formData.brand || formData.port === undefined || !formData.power) {
-      toast.error("Harap isi semua kolom yang diperlukan (Type, Brand, Port, Power).");
+    if (
+      !formData.type ||
+      !formData.brand ||
+      formData.port === undefined ||
+      !formData.power
+    ) {
+      toast.error(
+        "Harap isi semua kolom yang diperlukan (Type, Brand, Port, Power)."
+      );
       setIsLoading(false);
       return;
     }
@@ -64,7 +81,9 @@ export default function SwitchPage() {
         await updateSwitch(editingItem.id!, formData as Partial<Switch>);
         toast.success("Data Switch berhasil diperbarui!");
       } else {
-        await createSwitch(formData as Omit<Switch, "id" | "createdAt" | "updatedAt">);
+        await createSwitch(
+          formData as Omit<Switch, "id" | "createdAt" | "updatedAt">
+        );
         toast.success("Data Switch berhasil ditambahkan!");
       }
       setFormData({ type: "", brand: "", port: 0, power: "" });
@@ -78,28 +97,36 @@ export default function SwitchPage() {
     }
   };
 
-  const handleEdit = (item: Switch) => {
+  const handleEdit = useCallback((item: Switch) => {
     setEditingItem(item);
-    setFormData({ type: item.type, brand: item.brand, port: item.port, power: item.power });
-  };
+    setFormData({
+      type: item.type,
+      brand: item.brand,
+      port: item.port,
+      power: item.power,
+    });
+  }, []);
 
   const handleCancelEdit = () => {
     setEditingItem(null);
     setFormData({ type: "", brand: "", port: 0, power: "" });
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus item ini?")) {
-      try {
-        await deleteSwitch(id);
-        toast.success("Data Switch berhasil dihapus!");
-        fetchSwitches();
-      } catch (error) {
-        console.error("Error deleting switch:", error);
-        toast.error("Gagal menghapus data Switch.");
+  const handleDelete = useCallback(
+    async (id: string) => {
+      if (window.confirm("Apakah Anda yakin ingin menghapus item ini?")) {
+        try {
+          await deleteSwitch(id);
+          toast.success("Data Switch berhasil dihapus!");
+          fetchSwitches();
+        } catch (error) {
+          console.error("Error deleting switch:", error);
+          toast.error("Gagal menghapus data Switch.");
+        }
       }
-    }
-  };
+    },
+    [fetchSwitches]
+  );
 
   const columns: ColumnDef<Switch>[] = React.useMemo(
     () => [
@@ -166,11 +193,15 @@ export default function SwitchPage() {
   return (
     <div className="min-h-screen max-h-screen overflow-auto bg-gray-100">
       <main className="container mx-auto p-8">
-        <h1 className="mb-8 text-3xl font-bold">Manajemen Master Data: Switch</h1>
+        <h1 className="mb-8 text-3xl font-bold">
+          Manajemen Master Data: Switch
+        </h1>
 
         <Card className="shadow-lg rounded-lg mb-8">
           <CardHeader className="bg-primary text-primary-foreground p-6">
-            <CardTitle className="text-2xl font-bold">{editingItem ? "Edit Data Switch" : "Tambah Data Switch"}</CardTitle>
+            <CardTitle className="text-2xl font-bold">
+              {editingItem ? "Edit Data Switch" : "Tambah Data Switch"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="w-full">
@@ -231,10 +262,19 @@ export default function SwitchPage() {
                   <TableRow>
                     <TableCell colSpan={2} className="text-right">
                       <Button type="submit" disabled={isLoading}>
-                        {isLoading ? "Menyimpan..." : editingItem ? "Perbarui Data Switch" : "Simpan Data Switch"}
+                        {isLoading
+                          ? "Menyimpan..."
+                          : editingItem
+                          ? "Perbarui Data Switch"
+                          : "Simpan Data Switch"}
                       </Button>
                       {editingItem && (
-                        <Button type="button" variant="outline" onClick={handleCancelEdit} className="ml-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          className="ml-2"
+                        >
                           Batal Edit
                         </Button>
                       )}
@@ -298,7 +338,8 @@ export default function SwitchPage() {
               </Table>
               <div className="mt-4 flex items-center justify-end space-x-2">
                 <div className="flex-1 text-sm text-muted-foreground">
-                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                  Page {table.getState().pagination.pageIndex + 1} of{" "}
+                  {table.getPageCount()}
                 </div>
                 <Button
                   variant="outline"
@@ -311,7 +352,11 @@ export default function SwitchPage() {
                 {[...Array(table.getPageCount()).keys()].map((pageIdx) => (
                   <Button
                     key={pageIdx}
-                    variant={table.getState().pagination.pageIndex === pageIdx ? "default" : "outline"}
+                    variant={
+                      table.getState().pagination.pageIndex === pageIdx
+                        ? "default"
+                        : "outline"
+                    }
                     size="sm"
                     onClick={() => table.setPageIndex(pageIdx)}
                   >

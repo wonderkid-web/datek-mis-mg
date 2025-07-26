@@ -26,7 +26,7 @@ export const createManufacture = async (
   return docRef.id;
 };
 
-export const getManufactures = async (assetType: string): Promise<Manufacture[]> => {
+export const getManufacturesByAssetCategory = async (assetType: string): Promise<Manufacture[]> => {
   console.log("Fetching manufactures for assetType:", assetType);
   const q = query(manufactureCollectionRef, where("assetCategory", "==", assetType));
 

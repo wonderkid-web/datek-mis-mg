@@ -5,21 +5,22 @@ Dokumen ini bertujuan untuk memberikan konteks yang diperlukan kepada Gemini aga
 ## 1. Deskripsi Proyek
 
 *   **Tujuan Utama:**
-    `aku ingin ngebuat aplikasi web yang manage dan monitoring stock move dari suatu barang (umumnya sih barang barang IT di kantor gitu) antar SBU, karna aku ini bekerja di   perusahaan PKS dimana aku ini di holding nya`
-*   **Fitur Inti:** 
+    Aplikasi web ini dirancang untuk mengelola dan memantau pergerakan stok barang (umumnya barang IT kantor) antar Satuan Bisnis Unit (SBU) dalam sebuah perusahaan holding. Aplikasi ini membantu dalam inventarisasi, manajemen aset, dan pelacakan riwayat pergerakan barang.
+*   **Fitur Inti:**
     1.  Authentikasi pengguna.
     2.  Halaman dasbor modern dengan visualisasi data (grafik) untuk memonitor aktivitas stok.
     3.  Manajemen data barang (CRUD).
     4.  Manajemen dan pelacakan riwayat pergerakan stok (CRUD).
-    5.  Peringatan stok rendah.
+    
 
 ## 2. Tumpukan Teknologi (Tech Stack)
 
-*   **Bahasa Pemrograman:** TypeScript
+*   **Bahasa pemrograman:** TypeScript
 *   **Framework/Library Utama:**
     *   Next.js 15 (App Router)
     *   React
     *   Recharts (untuk visualisasi data/grafik)
+    *   @tanstack/react-table (untuk manajemen tabel data)
 *   **Database:** Firestore (dengan operasi data real-time)
 *   **Package Manager:** bun
 *   **Styling:**
@@ -33,20 +34,32 @@ Dokumen ini bertujuan untuk memberikan konteks yang diperlukan kepada Gemini aga
     │   │   ├── (halaman-utama)/
     │   │   │   ├── page.tsx        # Halaman Dasbor Utama
     │   │   ├── items/
-    │   │   │   └── page.tsx        # Halaman Manajemen Item
-    │   │   └── stock-moves/
-    │   │       └── page.tsx        # Halaman Manajemen Pergerakan Stok
+    │   │   │   └── [assetType]/
+    │   │   │       └── page.tsx    # Halaman Manajemen Item
+    │   │   ├── manufaktur/
+    │   │   │   ├── page.tsx
+    │   │   │   └── [assetType]/
+    │   │   │       └── page.tsx    # Halaman Manufaktur Item
+    │   │   ├── master-data/
+    │   │   │   └── [assetType]/
+    │   │   │       └── page.tsx    # Halaman Master Data Item
+    │   │   └── users/
+    │   │       └── page.tsx        # Halaman Manajemen Pengguna
     │   ├── components/
     │   │   ├── charts/             # Komponen grafik Recharts
     │   │   │   ├── ItemsBySbuChart.tsx
     │   │   │   ├── FrequentItemsChart.tsx
     │   │   │   └── StockMoveTrendChart.tsx
     │   │   └── ui/                 # Komponen dari shadcn/ui
-    │   └── lib/
-    │       ├── firebase.ts         # Konfigurasi koneksi Firebase
-    │       ├── itemService.ts      # Logika bisnis untuk data item
-    │       ├── stockMoveService.ts # Logika bisnis untuk pergerakan stok
-    │       └── types.ts            # Definisi tipe data TypeScript
+    │   ├── lib/
+    │   │   ├── firebase.ts         # Konfigurasi koneksi Firebase
+    │   │   ├── itemService.ts      # Logika bisnis untuk data item
+    │   │   ├── stockMoveService.ts # Logika bisnis untuk pergerakan stok
+    │   │   ├── userService.ts      # Logika bisnis untuk data pengguna
+    │   │   ├── switchService.ts    # Logika bisnis untuk data switch
+    │   │   ├── manufactureService.ts # Logika bisnis untuk data manufaktur
+    │   │   ├── navigation.ts       # Data navigasi untuk Navbar
+    │   │   └── types.ts            # Definisi tipe data TypeScript
     ├── public/
     └── package.json
 
@@ -72,18 +85,6 @@ Dokumen ini bertujuan untuk memberikan konteks yang diperlukan kepada Gemini aga
 
 
 ### SAMPLE DATA ###
-type stockMoves = {
-  assetNumber: string;
-  createdAt: Date;
-  department: string;
-  guaranteeDate: Date;
-  ipAddress: string;
-  item: string;
-  remote: string;
-  sbu: string;
-  user: string;
-};
-
 type Users = {
     createdAt: Date
     name: string
@@ -93,17 +94,6 @@ type Departments = {
     createdAt: Date
     name: string
 }
-
-type Items = {
-  name: string;
-  description: string;
-  quantity: number;
-  minQuantity: number;
-  isDeleted: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
 
 
 ### FORM INPUT ITEMS
@@ -210,12 +200,7 @@ LAPTOP
 
 
 
-
-
-
-
-
-###  Children Manufaktur
+### Children Manufaktur
 TELEPON
 
 SYNOLOGY
@@ -249,3 +234,30 @@ ACCESS POINT
 PRINTER
 
 LAPTOP
+
+## 7. Koleksi Firestore
+
+Berikut adalah daftar koleksi Firestore yang digunakan dalam aplikasi ini:
+
+*   **`users`**
+    *   **Tujuan:** Menyimpan data pengguna yang dapat mengakses aplikasi.
+    *   **Field Penting:** `name` (nama pengguna), `sbu` (Satuan Bisnis Unit), `department` (departemen).
+
+*   **`switches`**
+    *   **Tujuan:** Menyimpan master data untuk aset Switch. Data ini digunakan sebagai referensi saat menambahkan aset Switch baru ke inventaris.
+    *   **Field Penting:** `type`, `brand`, `port`, `power`.
+
+*   **`manufactures`**
+    *   **Tujuan:** Menyimpan data aset yang telah dimanufaktur atau diinventarisasi. Setiap dokumen merepresentasikan satu unit aset fisik.
+    *   **Field Penting:** `assetCategory` (kategori aset, misal 'switch', 'komputer'), `model`, `serialNumber`, dan field spesifik lainnya sesuai `assetCategory` (misal `type`, `brand`, `port`, `power` untuk Switch).
+
+*   **`service_records`**
+    *   **Tujuan:** Mencatat riwayat servis atau perbaikan untuk aset-aset tertentu.
+    *   **Field Penting:** (Perlu dikonfirmasi dari implementasi, namun umumnya akan ada `assetId`, `description`, `serviceDate`, `status`).
+
+*   **`[assetType]` (Koleksi Master Data Dinamis)**
+    *   **Tujuan:** Koleksi ini akan menyimpan master data untuk setiap jenis aset yang berbeda (misalnya, `printers`, `laptops`, `telepons`, dll.). Setiap koleksi akan memiliki skema data yang unik sesuai dengan atribut spesifik jenis aset tersebut.
+    *   **Contoh:**
+        *   `printers`: `brand`, `model`, `type` (misal, inkjet, laser), `color` (misal, mono, color).
+        *   `laptops`: `brand`, `model`, `processor`, `ram`, `storage`, `screenSize`.
+    *   **Field Penting:** Bergantung pada jenis aset.

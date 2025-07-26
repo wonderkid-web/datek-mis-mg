@@ -111,4 +111,16 @@ export interface Switch {
   updatedAt: Date;
 }
 
+export interface Laptop {
+  id?: string;
+  brand: string;
+  model: string;
+  processor: string;
+  ram: string;
+  storage: string;
+  screenSize: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 

@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getManufactures } from "@/lib/manufactureService";
+import { getManufacturesByAssetCategory } from "@/lib/manufactureService";
 import { getUsers } from "@/lib/userService";
 import { Manufacture, User } from "@/lib/types";
 import { Toaster, toast } from "sonner";
@@ -36,7 +36,7 @@ export default function ViewDeviceAssetPage() {
       try {
         setIsLoading(true);
         const [manufactureData, userData] = await Promise.all([
-          getManufactures(assetType as string),
+          getManufacturesByAssetCategory(assetType as string),
           getUsers(),
         ]);
         const assignedManufactures = manufactureData.filter((man) => man.user);

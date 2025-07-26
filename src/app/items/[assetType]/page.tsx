@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
-import { getManufactures, updateManufacture } from "@/lib/manufactureService";
+import { getManufacturesByAssetCategory, updateManufacture } from "@/lib/manufactureService";
 import { getUsers } from "@/lib/userService";
 import { Manufacture, User } from "@/lib/types";
 import { Toaster, toast } from "sonner";
@@ -35,7 +35,7 @@ export default function ItemPage() {
       try {
         setIsLoading(true);
         const [manufactureData, userData] = await Promise.all([
-          getManufactures(assetType as string),
+          getManufacturesByAssetCategory(assetType as string),
           getUsers(),
         ]);
         const unassignedManufactures = manufactureData.filter(man => !man.user);
@@ -73,7 +73,7 @@ export default function ItemPage() {
       setEditingManufactureId(null);
       setEditedManufactureData({});
       // Re-fetch manufactures to get the latest data
-      const updatedManufactures = await getManufactures(assetType as string);
+      const updatedManufactures = await getManufacturesByAssetCategory(assetType as string);
       setManufactures(updatedManufactures);
     } catch (error) {
       console.error("Error updating manufacture:", error);
