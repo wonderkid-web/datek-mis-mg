@@ -1,53 +1,42 @@
-import { db } from "./firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { Color } from "./types";
+import { prisma } from './prisma';
+import { LaptopColorOption } from '@prisma/client';
+import { MasterDataItem } from './types';
 
-const colorsCollectionRef = collection(db, "colors");
+const mapToMasterDataItem = (colorOption: LaptopColorOption): MasterDataItem => ({
+  id: colorOption.id.toString(),
+  name: colorOption.value,
+});
 
-export const createColor = async (
-  item: Omit<Color, "id" | "createdAt" | "updatedAt">
-): Promise<string> => {
-  const newItem = {
-    ...item,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const docRef = await addDoc(colorsCollectionRef, newItem);
-  return docRef.id;
-};
-
-export const getColors = async (): Promise<Color[]> => {
-  const q = query(colorsCollectionRef, orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
-      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
-    } as Color;
+export const getColors = async (): Promise<MasterDataItem[]> => {
+  const colorOptions = await prisma.laptopColorOption.findMany({
+    orderBy: {
+      value: 'asc'
+    }
   });
+  return colorOptions.map(mapToMasterDataItem);
 };
 
-export const updateColor = async (
-  id: string,
-  item: Partial<Omit<Color, "id" | "createdAt">>
-): Promise<void> => {
-  const itemDoc = doc(db, "colors", id);
-  await updateDoc(itemDoc, { ...item, updatedAt: new Date() });
+export const createColor = async (data: { name: string }): Promise<MasterDataItem> => {
+  const newColorOption = await prisma.laptopColorOption.create({
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(newColorOption);
 };
 
-export const deleteColor = async (id: string): Promise<void> => {
-  const itemDoc = doc(db, "colors", id);
-  await deleteDoc(itemDoc);
+export const updateColor = async (id: number, data: { name: string }): Promise<MasterDataItem> => {
+  const updatedColorOption = await prisma.laptopColorOption.update({
+    where: { id },
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(updatedColorOption);
+};
+
+export const deleteColor = async (id: number): Promise<void> => {
+  await prisma.laptopColorOption.delete({
+    where: { id },
+  });
 };

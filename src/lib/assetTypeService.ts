@@ -1,53 +1,46 @@
-import { db } from "./firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { AssetType } from "./types";
+import { prisma } from './prisma';
+import { AssetCategory } from '@prisma/client';
+import { MasterDataItem } from './types';
 
-const assetTypesCollectionRef = collection(db, "assetTypes");
+const mapToMasterDataItem = (assetType: AssetCategory): MasterDataItem => ({
+  id: assetType.id.toString(),
+  name: assetType.nama,
+  createdAt: assetType.createdAt,
+  updatedAt: assetType.updatedAt,
+});
 
-export const createAssetType = async (
-  item: Omit<AssetType, "id" | "createdAt" | "updatedAt">
-): Promise<string> => {
-  const newItem = {
-    ...item,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const docRef = await addDoc(assetTypesCollectionRef, newItem);
-  return docRef.id;
+// GET all asset types
+export const getAssetTypes = async (): Promise<MasterDataItem[]> => {
+  const assetTypes = await prisma.assetCategory.findMany();
+  return assetTypes.map(mapToMasterDataItem);
 };
 
-export const getAssetTypes = async (): Promise<AssetType[]> => {
-  const q = query(assetTypesCollectionRef, orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
-      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
-    } as AssetType;
+// CREATE asset type
+export const createAssetType = async (data: { name: string }): Promise<MasterDataItem> => {
+  const newAssetType = await prisma.assetCategory.create({
+    data: {
+      nama: data.name,
+      slug: data.name.toLowerCase().replace(/ /g, '-'), // Generate slug from name
+    },
   });
+  return mapToMasterDataItem(newAssetType);
 };
 
-export const updateAssetType = async (
-  id: string,
-  item: Partial<Omit<AssetType, "id" | "createdAt">>
-): Promise<void> => {
-  const itemDoc = doc(db, "assetTypes", id);
-  await updateDoc(itemDoc, { ...item, updatedAt: new Date() });
+// UPDATE asset type
+export const updateAssetType = async (id: number, data: { name: string }): Promise<MasterDataItem> => {
+  const updatedAssetType = await prisma.assetCategory.update({
+    where: { id },
+    data: {
+      nama: data.name,
+      slug: data.name.toLowerCase().replace(/ /g, '-'), // Update slug as well
+    },
+  });
+  return mapToMasterDataItem(updatedAssetType);
 };
 
-export const deleteAssetType = async (id: string): Promise<void> => {
-  const itemDoc = doc(db, "assetTypes", id);
-  await deleteDoc(itemDoc);
+// DELETE asset type
+export const deleteAssetType = async (id: number): Promise<void> => {
+  await prisma.assetCategory.delete({
+    where: { id },
+  });
 };

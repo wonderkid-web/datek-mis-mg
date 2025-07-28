@@ -1,53 +1,44 @@
-import { db } from "./firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { ScreenSize } from "./types";
+import { prisma } from './prisma';
+import { LaptopScreenSizeOption } from '@prisma/client';
+import { MasterDataItem } from './types';
 
-const screenSizesCollectionRef = collection(db, "screenSizes");
+const mapToMasterDataItem = (screenSizeOption: LaptopScreenSizeOption): MasterDataItem => ({
+  id: screenSizeOption.id.toString(),
+  name: screenSizeOption.value,
+  createdAt: screenSizeOption.createdAt,
+  updatedAt: screenSizeOption.updatedAt,
+});
 
-export const createScreenSize = async (
-  item: Omit<ScreenSize, "id" | "createdAt" | "updatedAt">
-): Promise<string> => {
-  const newItem = {
-    ...item,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const docRef = await addDoc(screenSizesCollectionRef, newItem);
-  return docRef.id;
-};
-
-export const getScreenSizes = async (): Promise<ScreenSize[]> => {
-  const q = query(screenSizesCollectionRef, orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
-      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
-    } as ScreenSize;
+export const getScreenSizes = async (): Promise<MasterDataItem[]> => {
+  const screenSizeOptions = await prisma.laptopScreenSizeOption.findMany({
+    orderBy: {
+      value: 'asc'
+    }
   });
+  return screenSizeOptions.map(mapToMasterDataItem);
 };
 
-export const updateScreenSize = async (
-  id: string,
-  item: Partial<Omit<ScreenSize, "id" | "createdAt">>
-): Promise<void> => {
-  const itemDoc = doc(db, "screenSizes", id);
-  await updateDoc(itemDoc, { ...item, updatedAt: new Date() });
+export const createScreenSize = async (data: { name: string }): Promise<MasterDataItem> => {
+  const newScreenSizeOption = await prisma.laptopScreenSizeOption.create({
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(newScreenSizeOption);
 };
 
-export const deleteScreenSize = async (id: string): Promise<void> => {
-  const itemDoc = doc(db, "screenSizes", id);
-  await deleteDoc(itemDoc);
+export const updateScreenSize = async (id: number, data: { name: string }): Promise<MasterDataItem> => {
+  const updatedScreenSizeOption = await prisma.laptopScreenSizeOption.update({
+    where: { id },
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(updatedScreenSizeOption);
+};
+
+export const deleteScreenSize = async (id: number): Promise<void> => {
+  await prisma.laptopScreenSizeOption.delete({
+    where: { id },
+  });
 };

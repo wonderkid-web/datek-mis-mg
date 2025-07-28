@@ -1,0 +1,214 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL") // Pastikan kamu sudah mengatur variabel ini di .env
+
+}
+
+// --- CORE MODELS ---
+
+// Model untuk Data Karyawan / Pengguna
+model User {
+  id               Int      @id @default(autoincrement())
+  nik              String   @unique @db.VarChar(20) // Nomor Induk Karyawan
+  namaLengkap      String   @map("nama_lengkap") @db.VarChar(255)
+  email            String   @unique @db.VarChar(255)
+  departemen       String?  @db.VarChar(100)
+  jabatan          String?  @db.VarChar(100)
+  lokasiKantor     String?  @map("lokasi_kantor") @db.VarChar(100)
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relasi
+  assetAssignments AssetAssignment[] @relation("UserAssetAssignments") // Aset yang dipinjam user ini
+  assignedBy       AssetAssignment[] @relation("AssignedBy")           // Aset yang di-assign oleh user ini (misal: admin IT)
+
+  @@map("users") // Nama tabel di database
+}
+
+// Model untuk Kategori Aset (misal: Laptop, Printer, Komputer)
+model AssetCategory {
+  id    Int      @id @default(autoincrement())
+  nama  String   @unique @db.VarChar(100) // "Laptop", "Printer"
+  slug  String   @unique @db.VarChar(100) // "laptop", "printer" (untuk URL, dll.)
+
+  // Relasi
+  assets Asset[]
+
+  @@map("asset_categories")
+}
+
+// Model untuk Data Aset Umum (termasuk Laptop, Printer, dll.)
+model Asset {
+  id                Int      @id @default(autoincrement())
+  nomorAsset        String   @unique @map("nomor_asset") @db.VarChar(50) // LAPTOP-001, PRINTER-XYZ
+  namaAsset         String   @map("nama_asset") @db.VarChar(255) // "Laptop Dell Latitude 7420"
+  
+  categoryId        Int
+  category          AssetCategory @relation(fields: [categoryId], references: [id]) // FK ke AssetCategory
+
+  merk              String?  @db.VarChar(100)
+  model             String?  @db.VarChar(100)
+  nomorSeri         String   @unique @map("nomor_seri") @db.VarChar(100) // Serial Number
+
+  tanggalPembelian  DateTime? @map("tanggal_pembelian") @db.Date // Hanya tanggal
+  tanggalGaransi    DateTime? @map("tanggal_garansi") @db.Date   // Tambahan dari request kamu
+  nilaiPerolehan    Decimal? @map("nilai_perolehan") @db.Decimal(15,2)
+  statusAsset       String   @map("status_asset") @db.VarChar(50) // "Available", "Assigned", "Under Maintenance", "Retired"
+  lokasiFisik       String?  @map("lokasi_fisik") @db.VarChar(255)
+
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relasi Opsional ke Tabel Spesifikasi Spesifik
+  laptopSpecs       LaptopSpecs? // Hanya ada jika categoryId mengacu ke "Laptop"
+
+  // Relasi ke Assignment History
+  assignments       AssetAssignment[]
+
+  @@map("assets")
+}
+
+// Model untuk Riwayat Peminjaman/Assignment Aset
+model AssetAssignment {
+  id                   Int       @id @default(autoincrement())
+  assetId              Int
+  asset                Asset     @relation(fields: [assetId], references: [id])
+
+  userId               Int
+  user                 User      @relation("UserAssetAssignments", fields: [userId], references: [id])
+
+  tanggalPeminjaman    DateTime  @map("tanggal_peminjaman") @db.DateTime(0) // Termasuk waktu
+  tanggalPengembalian  DateTime? @map("tanggal_pengembalian") @db.DateTime(0) // Null jika masih dipinjam
+
+  kondisiSaatPeminjaman String?   @map("kondisi_saat_peminjaman") @db.Text
+  kondisiSaatPengembalian String?   @map("kondisi_saat_pengembalian") @db.Text
+
+  catatan              String?   @db.Text
+
+  assignedByUserId     Int?
+  assignedBy           User?     @relation("AssignedBy", fields: [assignedByUserId], references: [id])
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("asset_assignments")
+}
+
+// --- LOOKUP TABLES UNTUK SPESIFIKASI LAPTOP YANG STANDARDISASI ---
+
+model LaptopRamOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(50) // "4GB", "8GB", "16GB", "32GB"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_ram_options")
+}
+
+model LaptopProcessorOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(100) // "Intel Core i5", "AMD Ryzen 7"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_processor_options")
+}
+
+model LaptopStorageTypeOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(50) // "SSD", "HDD", "NVMe SSD"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_storage_type_options")
+}
+
+model LaptopOsOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(100) // "Windows 10", "Windows 11", "macOS Sonoma"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_os_options")
+}
+
+// Tambahan dari request kamu
+model LaptopPortOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(100) // "HDMI", "USB-C", "DisplayPort"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_port_options")
+}
+
+model LaptopPowerOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(100) // "65W USB-C", "90W Barrel Jack"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_power_options")
+}
+
+model LaptopMicrosoftOfficeOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(100) // "Office 2019", "Office 365"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_microsoft_office_options")
+}
+
+model LaptopColorOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(50) // "Black", "Silver", "Space Gray"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_color_options")
+}
+
+
+// --- SPESIFIKASI UNTUK ASET JENIS LAPTOP ---
+// Ini akan punya relasi One-to-One dengan model Asset,
+// artinya setiap Asset yang bertipe Laptop hanya punya satu set LaptopSpecs.
+model LaptopSpecs {
+  assetId       Int      @id // Primary Key dan Foreign Key ke Asset
+  asset         Asset    @relation(fields: [assetId], references: [id])
+
+  // Foreign Keys ke Lookup Tables
+  processorOptionId   Int?
+  processorOption     LaptopProcessorOption? @relation(fields: [processorOptionId], references: [id])
+
+  ramOptionId         Int?
+  ramOption           LaptopRamOption? @relation(fields: [ramOptionId], references: [id])
+
+  storageTypeOptionId Int?
+  storageTypeOption   LaptopStorageTypeOption? @relation(fields: [storageTypeOptionId], references: [id])
+
+  osOptionId          Int?
+  osOption            LaptopOsOption? @relation(fields: [osOptionId], references: [id])
+
+  portOptionId        Int? // Tambahan dari request
+  portOption          LaptopPortOption? @relation(fields: [portOptionId], references: [id])
+
+  powerOptionId       Int? // Tambahan dari request
+  powerOption         LaptopPowerOption? @relation(fields: [powerOptionId], references: [id])
+
+  microsoftOfficeOptionId Int? // Tambahan dari request
+  microsoftOfficeOption   LaptopMicrosoftOfficeOption? @relation(fields: [microsoftOfficeOptionId], references: [id])
+
+  colorOptionId       Int? // Tambahan dari request
+  colorOption         LaptopColorOption? @relation(fields: [colorOptionId], references: [id])
+  
+  // MAC Address spesifik untuk Laptop
+  macWlan           String?  @unique @map("mac_wlan") @db.VarChar(17) 
+  macLan            String?  @unique @map("mac_lan") @db.VarChar(17)   
+
+  // Kolom lain yang mungkin berupa input bebas atau angka
+  // Contoh: kamu tidak menyebutkan ukuran layar, tapi bisa ditambahkan di sini
+  // ukuranLayar       Decimal? @db.Decimal(4,2)
+
+  @@map("laptop_specs")
+}

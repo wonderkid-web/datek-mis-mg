@@ -43,10 +43,10 @@ import {
 interface CrudSectionProps<T extends MasterDataItem> {
   title: string;
   service: {
-    create: (item: Omit<T, "id" | "createdAt" | "updatedAt">) => Promise<string>;
+    create: (item: Omit<T, "id" | "createdAt" | "updatedAt">) => Promise<T>;
     getAll: () => Promise<T[]>;
-    update: (id: string, item: Partial<Omit<T, "id" | "createdAt"> | T>) => Promise<void>;
-    delete: (id: string) => Promise<void>;
+    update: (id: number, item: Partial<Omit<T, "id" | "createdAt"> | T>) => Promise<T>;
+    delete: (id: number) => Promise<void>;
   };
   initialFormState: Omit<T, "id" | "createdAt" | "updatedAt">;
 }
@@ -81,8 +81,7 @@ function CrudSection<T extends MasterDataItem>({ title, service, initialFormStat
     setIsLoading(true);
     try {
       if (editingItem) {
-        // @ts-expect-error its okay
-        await service.update(editingItem.id!, form);
+        await service.update(editingItem.id, form);
         toast.success(`${title} berhasil diperbarui!`);
       } else {
         await service.create(form);
@@ -104,7 +103,7 @@ function CrudSection<T extends MasterDataItem>({ title, service, initialFormStat
     setForm(item);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     toast(`Anda yakin ingin menghapus ${title.toLowerCase()} ini?`, {
       action: {
         label: "Hapus",

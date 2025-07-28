@@ -1,11 +1,3 @@
-export const CATEGORIES = [
-  { type: "1", description: "HO" },
-  { type: "2", description: "RO" },
-  { type: "3", description: "MILL" },
-  { type: "4", description: "ESTATE" },
-  { type: "5", description: "RAMP" },
-  { type: "6", description: "REFINERY" },
-];
 
 export const COMPANIES = [
   {
@@ -135,16 +127,6 @@ export const DEPARTMENTS = [
   "MH - Material Handling",
 ];
 
-export const LOCATIONS = [
-  { type: "1", description: "OFFICE" },
-  { type: "2", description: "MESS" },
-  { type: "3", description: "PABRIK" },
-  { type: "4", description: "KEBUN" },
-  { type: "5", description: "AFDELING OFFICE" },
-  { type: "6", description: "RAMP" },
-  { type: "7", description: "REFINERY" },
-];
-
 export const STATUSES = [
   { type: "01", description: "GOOD" },
   { type: "02", description: "NEED REPARATION" },
@@ -152,14 +134,6 @@ export const STATUSES = [
   { type: "04", description: "MISSING" },
   { type: "05", description: "SELL" },
   { type: "06", description: "LEASED TO SBU" },
-];
-
-export const UNITS = [
-  { type: "BL-G01", description: "AULA" },
-  { type: "BL-G02", description: "BANGUNAN GUDANG" },
-  { type: "BL-G03", description: "BANGUNAN KANTIN" },
-  { type: "BL-G04", description: "BANGUN KANTOR" },
-  { type: "MU-G12", description: "LINER" },
 ];
 
 export const ASSET_INFO = [
@@ -1998,65 +1972,6 @@ export const ASSET_INFO = [
     type: "TE-M05",
     description: "DISPLAY TIMBANGAN",
   },
-];
-
-export const MANUFACTURE_ASSET_TYPES = [
-  { value: "komputer", label: "Komputer" },
-  { value: "laptop", label: "Laptop" },
-  { value: "printer", label: "Printer" },
-  { value: "acc_point", label: "Access Point" },
-  { value: "radio", label: "Radio Link" },
-  { value: "router", label: "Router" },
-  { value: "nvr", label: "NVR" },
-  { value: "cctv", label: "Kamera CCTV" },
-  { value: "switch", label: "Switch" },
-];
-
-export const MANUFACTURE_BRANDS = [
-  { value: "macbook", label: "Macbook" },
-  { value: "acer", label: "Acer" },
-  { value: "asus", label: "Asus" },
-  { value: "lenovo", label: "Lenovo" },
-  { value: "hp", label: "HP" },
-];
-
-export const MANUFACTURE_PROCESSORS = [
-  { value: "intel_pentium", label: "Intel Pentium" },
-  { value: "intel_i3", label: "Intel Core i3" },
-  { value: "intel_i5", label: "Intel Core i5" },
-  { value: "intel_i7", label: "Intel Core i7" },
-  { value: "intel_i9", label: "Intel Core i9" },
-];
-
-export const MANUFACTURE_STORAGES = [
-  { value: "ssd_visipro_128", label: "SSD Visipro 128 Gb" },
-  { value: "ssd_visipro_250", label: "SSD Visipro 250 Gb" },
-  { value: "ssd_visipro_480", label: "SSD Visipro 480 Gb" },
-  { value: "ssd_visipro_512", label: "SSD Visipro 512 Gb" },
-  { value: "ssd_visipro_1tb", label: "SSD Visipro 1 Tb" },
-];
-
-export const MANUFACTURE_RAMS = [
-  { value: "ddr3_1gb", label: "RAM DDR3 1 Gb" },
-  { value: "ddr3_2gb", label: "RAM DDR3 2 Gb" },
-  { value: "ddr3_4gb", label: "RAM DDR3 4 Gb" },
-  { value: "ddr3_8gb", label: "RAM DDR3 8 Gb" },
-  { value: "ddr3_16gb", label: "RAM DDR3 16 Gb" },
-  { value: "ddr3_32gb", label: "RAM DDR3 32 Gb" },
-];
-
-export const MANUFACTURE_VGAS = [
-  { value: "nvidia_1gb", label: "NVidia 1 Gb" },
-  { value: "nvidia_2gb", label: "NVidia 2 Gb" },
-  { value: "nvidia_3gb", label: "NVidia 3 Gb" },
-  { value: "nvidia_4gb", label: "NVidia 4 Gb" },
-  { value: "nvidia_5gb", label: "NVidia 5 Gb" },
-];
-
-export const MANUFACTURE_SCREEN_SIZES = [
-  { value: "12_inch", label: "Laptop 12 Inchi" },
-  { value: "14_inch", label: "Laptop 14 Inchi" },
-  { value: "18_inch", label: "Laptop 18 Inchi" },
 ];
 
 export const MANUFACTURE_COLORS = [

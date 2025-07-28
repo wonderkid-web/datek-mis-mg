@@ -1,53 +1,44 @@
-import { db } from "./firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { Brand } from "./types";
+import { prisma } from './prisma';
+import { Brand } from '@prisma/client';
+import { MasterDataItem } from './types';
 
-const brandsCollectionRef = collection(db, "brands");
+const mapToMasterDataItem = (brand: Brand): MasterDataItem => ({
+  id: brand.id.toString(),
+  name: brand.nama,
+  createdAt: brand.createdAt,
+  updatedAt: brand.updatedAt,
+});
 
-export const createBrand = async (
-  item: Omit<Brand, "id" | "createdAt" | "updatedAt">
-): Promise<string> => {
-  const newItem = {
-    ...item,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const docRef = await addDoc(brandsCollectionRef, newItem);
-  return docRef.id;
+// GET all brands
+export const getBrands = async (): Promise<MasterDataItem[]> => {
+  const brands = await prisma.brand.findMany();
+  return brands.map(mapToMasterDataItem);
 };
 
-export const getBrands = async (): Promise<Brand[]> => {
-  const q = query(brandsCollectionRef, orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
-      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
-    } as Brand;
+// CREATE brand
+export const createBrand = async (data: { name: string }): Promise<MasterDataItem> => {
+  const newBrand = await prisma.brand.create({
+    data: {
+      nama: data.name,
+    },
   });
+  return mapToMasterDataItem(newBrand);
 };
 
-export const updateBrand = async (
-  id: string,
-  item: Partial<Omit<Brand, "id" | "createdAt">>
-): Promise<void> => {
-  const itemDoc = doc(db, "brands", id);
-  await updateDoc(itemDoc, { ...item, updatedAt: new Date() });
+// UPDATE brand
+export const updateBrand = async (id: number, data: { name: string }): Promise<MasterDataItem> => {
+  const updatedBrand = await prisma.brand.update({
+    where: { id },
+    data: {
+      nama: data.name,
+    },
+  });
+  return mapToMasterDataItem(updatedBrand);
 };
 
-export const deleteBrand = async (id: string): Promise<void> => {
-  const itemDoc = doc(db, "brands", id);
-  await deleteDoc(itemDoc);
+// DELETE brand
+export const deleteBrand = async (id: number): Promise<void> => {
+  await prisma.brand.delete({
+    where: { id },
+  });
 };

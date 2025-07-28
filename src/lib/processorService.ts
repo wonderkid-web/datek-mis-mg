@@ -1,53 +1,42 @@
-import { db } from "./firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { Processor } from "./types";
+import { prisma } from './prisma';
+import { LaptopProcessorOption } from '@prisma/client';
+import { MasterDataItem } from './types';
 
-const processorsCollectionRef = collection(db, "processors");
+const mapToMasterDataItem = (processorOption: LaptopProcessorOption): MasterDataItem => ({
+  id: processorOption.id.toString(),
+  name: processorOption.value,
+});
 
-export const createProcessor = async (
-  item: Omit<Processor, "id" | "createdAt" | "updatedAt">
-): Promise<string> => {
-  const newItem = {
-    ...item,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const docRef = await addDoc(processorsCollectionRef, newItem);
-  return docRef.id;
-};
-
-export const getProcessors = async (): Promise<Processor[]> => {
-  const q = query(processorsCollectionRef, orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
-      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
-    } as Processor;
+export const getProcessors = async (): Promise<MasterDataItem[]> => {
+  const processorOptions = await prisma.laptopProcessorOption.findMany({
+    orderBy: {
+      value: 'asc'
+    }
   });
+  return processorOptions.map(mapToMasterDataItem);
 };
 
-export const updateProcessor = async (
-  id: string,
-  item: Partial<Omit<Processor, "id" | "createdAt">>
-): Promise<void> => {
-  const itemDoc = doc(db, "processors", id);
-  await updateDoc(itemDoc, { ...item, updatedAt: new Date() });
+export const createProcessor = async (data: { name: string }): Promise<MasterDataItem> => {
+  const newProcessorOption = await prisma.laptopProcessorOption.create({
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(newProcessorOption);
 };
 
-export const deleteProcessor = async (id: string): Promise<void> => {
-  const itemDoc = doc(db, "processors", id);
-  await deleteDoc(itemDoc);
+export const updateProcessor = async (id: number, data: { name: string }): Promise<MasterDataItem> => {
+  const updatedProcessorOption = await prisma.laptopProcessorOption.update({
+    where: { id },
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(updatedProcessorOption);
+};
+
+export const deleteProcessor = async (id: number): Promise<void> => {
+  await prisma.laptopProcessorOption.delete({
+    where: { id },
+  });
 };

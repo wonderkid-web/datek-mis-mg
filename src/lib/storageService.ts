@@ -1,53 +1,42 @@
-import { db } from "./firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { Storage } from "./types";
+import { prisma } from './prisma';
+import { LaptopStorageTypeOption } from '@prisma/client';
+import { MasterDataItem } from './types';
 
-const storagesCollectionRef = collection(db, "storages");
+const mapToMasterDataItem = (storageOption: LaptopStorageTypeOption): MasterDataItem => ({
+  id: storageOption.id.toString(),
+  name: storageOption.value,
+});
 
-export const createStorage = async (
-  item: Omit<Storage, "id" | "createdAt" | "updatedAt">
-): Promise<string> => {
-  const newItem = {
-    ...item,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const docRef = await addDoc(storagesCollectionRef, newItem);
-  return docRef.id;
-};
-
-export const getStorages = async (): Promise<Storage[]> => {
-  const q = query(storagesCollectionRef, orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : undefined,
-      updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : undefined,
-    } as Storage;
+export const getStorages = async (): Promise<MasterDataItem[]> => {
+  const storageOptions = await prisma.laptopStorageTypeOption.findMany({
+    orderBy: {
+      value: 'asc'
+    }
   });
+  return storageOptions.map(mapToMasterDataItem);
 };
 
-export const updateStorage = async (
-  id: string,
-  item: Partial<Omit<Storage, "id" | "createdAt">>
-): Promise<void> => {
-  const itemDoc = doc(db, "storages", id);
-  await updateDoc(itemDoc, { ...item, updatedAt: new Date() });
+export const createStorage = async (data: { name: string }): Promise<MasterDataItem> => {
+  const newStorageOption = await prisma.laptopStorageTypeOption.create({
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(newStorageOption);
 };
 
-export const deleteStorage = async (id: string): Promise<void> => {
-  const itemDoc = doc(db, "storages", id);
-  await deleteDoc(itemDoc);
+export const updateStorage = async (id: number, data: { name: string }): Promise<MasterDataItem> => {
+  const updatedStorageOption = await prisma.laptopStorageTypeOption.update({
+    where: { id },
+    data: {
+      value: data.name,
+    },
+  });
+  return mapToMasterDataItem(updatedStorageOption);
+};
+
+export const deleteStorage = async (id: number): Promise<void> => {
+  await prisma.laptopStorageTypeOption.delete({
+    where: { id },
+  });
 };
