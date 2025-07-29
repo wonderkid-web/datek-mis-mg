@@ -6,7 +6,7 @@ import { columns } from "./columns";
 import { DataTable } from "@/app/master-data/laptop/ram-options/data-table"; // Reusing DataTable
 import { AddPowerDialog } from "./add-power-dialog";
 import { EditPowerDialog } from "./edit-power-dialog";
-import { getPowers, deletePower } from "@/lib/powerService"; // Import service functions
+import { getLaptopPowerOptions, deleteLaptopPowerOption } from "@/lib/laptopPowerService"; // Import service functions
 
 export default function PowerOptionsPage() {
   const [data, setData] = useState<LaptopPowerOption[]>([]);
@@ -17,7 +17,7 @@ export default function PowerOptionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const powerOptions = await getPowers(); // Use service function directly
+      const powerOptions = await getLaptopPowerOptions(); // Use service function directly
       setData(powerOptions as LaptopPowerOption[]); // Cast to LaptopPowerOption[]
     } catch (error) {
       console.error(error);
@@ -32,7 +32,7 @@ export default function PowerOptionsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await deletePower(id); // Use service function directly
+      await deleteLaptopPowerOption(id); // Use service function directly
       fetchData(); // Refresh data after successful deletion
     } catch (error) {
       console.error("An error occurred:", error);

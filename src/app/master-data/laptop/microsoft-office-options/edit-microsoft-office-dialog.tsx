@@ -9,12 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LaptopMicrosoftOfficeOption } from "@prisma/client";
-import { updateMicrosoftOffice } from "@/lib/microsoftOfficeService";
+import { updateLaptopMicrosoftOffice } from "@/lib/laptopMicrosoftOfficeService";
 
 interface EditMicrosoftOfficeDialogProps {
   microsoftOfficeOption: LaptopMicrosoftOfficeOption;
@@ -32,7 +31,7 @@ export function EditMicrosoftOfficeDialog({ microsoftOfficeOption, onSave, onOpe
 
   const handleSubmit = async () => {
     try {
-      await updateMicrosoftOffice(microsoftOfficeOption.id, { name: value });
+      await updateLaptopMicrosoftOffice(microsoftOfficeOption.id, { value });
 
       console.log("Microsoft Office option updated successfully");
       onSave();

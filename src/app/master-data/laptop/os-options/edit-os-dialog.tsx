@@ -9,12 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LaptopOsOption } from "@prisma/client";
-import { updateOs } from "@/lib/osService";
+import { updateLaptopOsOption } from "@/lib/laptopOsService";
 
 interface EditOsDialogProps {
   osOption: LaptopOsOption;
@@ -32,7 +31,7 @@ export function EditOsDialog({ osOption, onSave, onOpenChange, open }: EditOsDia
 
   const handleSubmit = async () => {
     try {
-      await updateOs(osOption.id, { name: value });
+      await updateLaptopOsOption(osOption.id, { value });
 
       console.log("OS option updated successfully");
       onSave();

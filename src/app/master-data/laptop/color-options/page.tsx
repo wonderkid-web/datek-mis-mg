@@ -6,7 +6,7 @@ import { columns } from "./columns";
 import { DataTable } from "@/app/master-data/laptop/ram-options/data-table"; // Reusing DataTable
 import { AddColorDialog } from "./add-color-dialog";
 import { EditColorDialog } from "./edit-color-dialog";
-import { getColors, deleteColor } from "@/lib/colorService"; // Import service functions
+import { getLaptopColors, deleteLaptopColor } from "@/lib/laptopColorService"; // Import service functions
 
 export default function ColorOptionsPage() {
   const [data, setData] = useState<LaptopColorOption[]>([]);
@@ -17,7 +17,7 @@ export default function ColorOptionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const colorOptions = await getColors(); // Use service function directly
+      const colorOptions = await getLaptopColors(); // Use service function directly
       setData(colorOptions as LaptopColorOption[]); // Cast to LaptopColorOption[]
     } catch (error) {
       console.error(error);
@@ -32,7 +32,7 @@ export default function ColorOptionsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteColor(id); // Use service function directly
+      await deleteLaptopColor(id); // Use service function directly
       fetchData(); // Refresh data after successful deletion
     } catch (error) {
       console.error("An error occurred:", error);

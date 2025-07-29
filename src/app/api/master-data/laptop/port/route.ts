@@ -1,12 +1,12 @@
-import { getPorts, createPort } from "@/lib/portService";
+import { createLaptopPortOption, getLaptopPortOptions } from "@/lib/laptopPortService";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const ports = await getPorts();
+    const ports = await getLaptopPortOptions();
     return NextResponse.json(ports);
   } catch (error) {
-    console.error("Error fetching ports:", error);
+    console.error("Error fetching laptop ports:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
@@ -17,19 +17,19 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name } = body;
+    const { value } = body;
 
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    if (!value) {
+      return NextResponse.json({ error: "Value is required" }, { status: 400 });
     }
 
-    const newPort = await createPort({ name });
+    const newPort = await createLaptopPortOption({ value });
 
     return NextResponse.json(newPort, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating port:", error);
+    console.error("Error creating laptop port:", error);
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: `Port '${error.meta?.target}' already exists.` }, { status: 409 });
+      return NextResponse.json({ error: `Laptop port with this value already exists.` }, { status: 409 });
     }
     return NextResponse.json(
       { error: "Internal Server Error" },

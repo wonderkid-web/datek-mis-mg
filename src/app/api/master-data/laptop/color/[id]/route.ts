@@ -1,52 +1,55 @@
-import { updateColor, deleteColor } from "@/lib/colorService";
-import { NextResponse } from "next/server";
+import { updateLaptopColor, deleteLaptopColor } from "@/lib/laptopColorService"
+import { NextResponse } from "next/server"
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10);
-    const body = await request.json();
-    const { name } = body;
+    const { id: idString } = await params
+    const id = Number.parseInt(idString, 10)
 
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "Invalid laptop color option ID." }, { status: 400 })
     }
 
-    const updatedColor = await updateColor(id, { name });
+    const body = await request.json()
+    const { value } = body
 
-    return NextResponse.json(updatedColor);
+    if (!value) {
+      return NextResponse.json({ error: "Value is required" }, { status: 400 })
+    }
+
+    const updatedLaptopColor = await updateLaptopColor(id, { value })
+    return NextResponse.json(updatedLaptopColor)
   } catch (error: any) {
-    console.error("Error updating color:", error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Color not found." }, { status: 404 });
-    } else if (error.code === 'P2002') {
-      return NextResponse.json({ error: `Color '${error.meta?.target}' already exists.` }, { status: 409 });
+    console.error("Error updating laptop color option:", error)
+
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Laptop color option not found." }, { status: 404 })
+    } else if (error.code === "P2002") {
+      return NextResponse.json({ error: "Laptop color option with this value already exists." }, { status: 409 })
     }
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10);
-    await deleteColor(id);
-    return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
-    console.error("Error deleting color:", error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Color not found." }, { status: 404 });
+    const { id: idString } = await params
+    const id = Number.parseInt(idString, 10)
+
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "Invalid laptop color option ID." }, { status: 400 })
     }
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+
+    await deleteLaptopColor(id)
+    return new NextResponse(null, { status: 204 })
+  } catch (error: any) {
+    console.error("Error deleting laptop color option:", error)
+
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Laptop color option not found." }, { status: 404 })
+    }
+
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }

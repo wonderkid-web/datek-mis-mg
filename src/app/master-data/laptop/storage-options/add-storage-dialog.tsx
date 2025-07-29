@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createStorage } from "@/lib/storageService";
+import { createLaptopStorageOption} from "@/lib/laptopStorageService";
 
 interface AddStorageDialogProps {
   onSave: () => void;
@@ -25,7 +25,7 @@ export function AddStorageDialog({ onSave }: AddStorageDialogProps) {
 
   const handleSubmit = async () => {
     try {
-      await createStorage({ name: value });
+      await createLaptopStorageOption({ value });
 
       console.log("Storage option added successfully");
       onSave();
@@ -44,7 +44,7 @@ export function AddStorageDialog({ onSave }: AddStorageDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New Storage Option</DialogTitle>
           <DialogDescription>
-            Add a new Storage option to the list. Click save when you're done.
+            Add a new Storage option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

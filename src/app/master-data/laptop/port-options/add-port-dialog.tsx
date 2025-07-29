@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createPort } from "@/lib/portService";
+import { createLaptopPortOption } from "@/lib/laptopPortService";
 
 interface AddPortDialogProps {
   onSave: () => void;
@@ -25,7 +25,7 @@ export function AddPortDialog({ onSave }: AddPortDialogProps) {
 
   const handleSubmit = async () => {
     try {
-      await createPort({ name: value });
+      await createLaptopPortOption({ value });
 
       console.log("Port option added successfully");
       onSave();
@@ -44,7 +44,7 @@ export function AddPortDialog({ onSave }: AddPortDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New Port Option</DialogTitle>
           <DialogDescription>
-            Add a new Port option to the list. Click save when you're done.
+            Add a new Port option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

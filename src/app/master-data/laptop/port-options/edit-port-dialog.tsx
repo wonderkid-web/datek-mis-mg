@@ -9,12 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LaptopPortOption } from "@prisma/client";
-import { updatePort } from "@/lib/portService";
+import { updateLaptopPortOption } from "@/lib/laptopPortService";
 
 interface EditPortDialogProps {
   portOption: LaptopPortOption;
@@ -32,7 +31,7 @@ export function EditPortDialog({ portOption, onSave, onOpenChange, open }: EditP
 
   const handleSubmit = async () => {
     try {
-      await updatePort(portOption.id, { name: value });
+      await updateLaptopPortOption(portOption.id, { value });
 
       console.log("Port option updated successfully");
       onSave();

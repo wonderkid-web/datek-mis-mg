@@ -13,7 +13,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -55,16 +54,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter values..."
-          value={(table.getColumn("value")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("value")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-      </div>
+      {/* Removed hardcoded filter input */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>

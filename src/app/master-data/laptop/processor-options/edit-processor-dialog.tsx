@@ -9,12 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LaptopProcessorOption } from "@prisma/client";
-import { updateProcessor } from "@/lib/processorService";
+import { updateLaptopProcessorOption } from "@/lib/laptopProcessorService";
 
 interface EditProcessorDialogProps {
   processorOption: LaptopProcessorOption;
@@ -32,7 +31,7 @@ export function EditProcessorDialog({ processorOption, onSave, onOpenChange, ope
 
   const handleSubmit = async () => {
     try {
-      await updateProcessor(processorOption.id, { name: value });
+      await updateLaptopProcessorOption(processorOption.id, { value });
 
       console.log("Processor option updated successfully");
       onSave();

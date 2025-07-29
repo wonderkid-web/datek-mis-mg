@@ -1,4 +1,4 @@
-import { updatePort, deletePort } from "@/lib/portService";
+import { updateLaptopPortOption, deleteLaptopPortOption } from "@/lib/laptopPortService";
 import { NextResponse } from "next/server";
 
 export async function PUT(
@@ -8,21 +8,21 @@ export async function PUT(
   try {
     const id = parseInt(params.id, 10);
     const body = await request.json();
-    const { name } = body;
+    const { value } = body;
 
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    if (!value) {
+      return NextResponse.json({ error: "Value is required" }, { status: 400 });
     }
 
-    const updatedPort = await updatePort(id, { name });
+    const updatedLaptopPortOption = await updateLaptopPortOption(id, { value });
 
-    return NextResponse.json(updatedPort);
+    return NextResponse.json(updatedLaptopPortOption);
   } catch (error: any) {
-    console.error("Error updating port:", error);
+    console.error("Error updating laptop port option:", error);
     if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Port not found." }, { status: 404 });
+      return NextResponse.json({ error: "Laptop port option not found." }, { status: 404 });
     } else if (error.code === 'P2002') {
-      return NextResponse.json({ error: `Port '${error.meta?.target}' already exists.` }, { status: 409 });
+      return NextResponse.json({ error: `Laptop port option with this value already exists.` }, { status: 409 });
     }
     return NextResponse.json(
       { error: "Internal Server Error" },
@@ -37,12 +37,12 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt(params.id, 10);
-    await deletePort(id);
+    await deleteLaptopPortOption(id);
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
-    console.error("Error deleting port:", error);
+    console.error("Error deleting laptop port option:", error);
     if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Port not found." }, { status: 404 });
+      return NextResponse.json({ error: "Laptop port option not found." }, { status: 404 });
     }
     return NextResponse.json(
       { error: "Internal Server Error" },

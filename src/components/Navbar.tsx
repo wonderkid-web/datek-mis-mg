@@ -70,19 +70,19 @@ export default function Navbar() {
                             key={child.name}
                             href={child.href}
                             title={child.name}
-                          >
-                            {child.description}
-                          </ListItem>
+                          />
                         ))}
                       </ul>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
                 ) : (
                   <NavigationMenuItem key={item.name}>
-                    <NavigationMenuLink className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-accent-foreground h-10 px-4 py-2 flex items-center space-x-2 rounded-md">
-                      {item.icon && <item.icon className="h-5 w-5" />}
-                      <span>{item.name}</span>
-                    </NavigationMenuLink>
+                    <Link href={item.href} legacyBehavior passHref>
+                      <NavigationMenuLink className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-accent-foreground h-10 px-4 py-2 flex items-center space-x-2 rounded-md">
+                        {item.icon && <item.icon className="h-5 w-5" />}
+                        <span>{item.name}</span>
+                      </NavigationMenuLink>
+                    </Link>
                   </NavigationMenuItem>
                 )
               )}

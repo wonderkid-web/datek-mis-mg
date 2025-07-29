@@ -48,7 +48,7 @@ model AssetCategory {
 // Model untuk Data Aset Umum (termasuk Laptop, Printer, dll.)
 model Asset {
   id                Int      @id @default(autoincrement())
-  nomorAsset        String   @unique @map("nomor_asset") @db.VarChar(50) // LAPTOP-001, PRINTER-XYZ
+  
   namaAsset         String   @map("nama_asset") @db.VarChar(255) // "Laptop Dell Latitude 7420"
   
   categoryId        Int
@@ -85,6 +85,7 @@ model AssetAssignment {
   userId               Int
   user                 User      @relation("UserAssetAssignments", fields: [userId], references: [id])
 
+  nomorAsset           String?   @map("nomor_asset") @db.VarChar(50) // LAPTOP-001, PRINTER-XYZ
   tanggalPeminjaman    DateTime  @map("tanggal_peminjaman") @db.DateTime(0) // Termasuk waktu
   tanggalPengembalian  DateTime? @map("tanggal_pengembalian") @db.DateTime(0) // Null jika masih dipinjam
 
@@ -169,6 +170,22 @@ model LaptopColorOption {
   @@map("laptop_color_options")
 }
 
+model LaptopBrandOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(50) // "Lenovo", "Macbook", "Dell", "HP"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_brand_options")
+}
+
+model LaptopTypeOption {
+  id          Int       @id @default(autoincrement())
+  value       String    @unique @db.VarChar(50) // "Ultrabook", "Gaming Laptop", "2-in-1"
+  laptopSpecs LaptopSpecs[]
+
+  @@map("laptop_type_options")
+}
+
 
 // --- SPESIFIKASI UNTUK ASET JENIS LAPTOP ---
 // Ini akan punya relasi One-to-One dengan model Asset,
@@ -201,6 +218,12 @@ model LaptopSpecs {
 
   colorOptionId       Int? // Tambahan dari request
   colorOption         LaptopColorOption? @relation(fields: [colorOptionId], references: [id])
+  
+  brandOptionId       Int? // Tambahan dari request
+  brandOption         LaptopBrandOption? @relation(fields: [brandOptionId], references: [id])
+  
+  typeOptionId       Int? // Tambahan dari request
+  typeOption         LaptopTypeOption? @relation(fields: [typeOptionId], references: [id])
   
   // MAC Address spesifik untuk Laptop
   macWlan           String?  @unique @map("mac_wlan") @db.VarChar(17) 

@@ -9,12 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LaptopColorOption } from "@prisma/client";
-import { updateColor } from "@/lib/colorService";
+import { updateLaptopColor } from "@/lib/laptopColorService";
 
 interface EditColorDialogProps {
   colorOption: LaptopColorOption;
@@ -32,7 +31,7 @@ export function EditColorDialog({ colorOption, onSave, onOpenChange, open }: Edi
 
   const handleSubmit = async () => {
     try {
-      await updateColor(colorOption.id, { name: value });
+      await updateLaptopColor(colorOption.id, { value });
 
       console.log("Color option updated successfully");
       onSave();

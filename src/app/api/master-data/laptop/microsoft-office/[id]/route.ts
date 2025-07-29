@@ -1,52 +1,58 @@
-import { updateMicrosoftOffice, deleteMicrosoftOffice } from "@/lib/microsoftOfficeService";
-import { NextResponse } from "next/server";
+import { updateLaptopMicrosoftOffice, deleteLaptopMicrosoftOffice } from "@/lib/laptopMicrosoftOfficeService"
+import { NextResponse } from "next/server"
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10);
-    const body = await request.json();
-    const { name } = body;
+    const { id: idString } = await params
+    const id = Number.parseInt(idString, 10)
 
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "Invalid laptop Microsoft Office option ID." }, { status: 400 })
     }
 
-    const updatedMicrosoftOffice = await updateMicrosoftOffice(id, { name });
+    const body = await request.json()
+    const { value } = body
 
-    return NextResponse.json(updatedMicrosoftOffice);
+    if (!value) {
+      return NextResponse.json({ error: "Value is required" }, { status: 400 })
+    }
+
+    const updatedLaptopMicrosoftOffice = await updateLaptopMicrosoftOffice(id, { value })
+    return NextResponse.json(updatedLaptopMicrosoftOffice)
   } catch (error: any) {
-    console.error("Error updating Microsoft Office:", error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Microsoft Office not found." }, { status: 404 });
-    } else if (error.code === 'P2002') {
-      return NextResponse.json({ error: `Microsoft Office '${error.meta?.target}' already exists.` }, { status: 409 });
+    console.error("Error updating laptop Microsoft Office option:", error)
+
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Laptop Microsoft Office option not found." }, { status: 404 })
+    } else if (error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Laptop Microsoft Office option with this value already exists." },
+        { status: 409 },
+      )
     }
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10);
-    await deleteMicrosoftOffice(id);
-    return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
-    console.error("Error deleting Microsoft Office:", error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Microsoft Office not found." }, { status: 404 });
+    const { id: idString } = await params
+    const id = Number.parseInt(idString, 10)
+
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "Invalid laptop Microsoft Office option ID." }, { status: 400 })
     }
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+
+    await deleteLaptopMicrosoftOffice(id)
+    return new NextResponse(null, { status: 204 })
+  } catch (error: any) {
+    console.error("Error deleting laptop Microsoft Office option:", error)
+
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Laptop Microsoft Office option not found." }, { status: 404 })
+    }
+
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }

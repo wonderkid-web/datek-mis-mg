@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createOs } from "@/lib/osService";
+import { createLaptopOsOption } from "@/lib/laptopOsService";
 
 interface AddOsDialogProps {
   onSave: () => void;
@@ -25,7 +25,7 @@ export function AddOsDialog({ onSave }: AddOsDialogProps) {
 
   const handleSubmit = async () => {
     try {
-      await createOs({ name: value });
+      await createLaptopOsOption({ value });
 
       console.log("OS option added successfully");
       onSave();
@@ -44,7 +44,7 @@ export function AddOsDialog({ onSave }: AddOsDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New OS Option</DialogTitle>
           <DialogDescription>
-            Add a new OS option to the list. Click save when you're done.
+            Add a new OS option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

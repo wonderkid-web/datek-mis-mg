@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createColor } from "@/lib/colorService";
+import { createLaptopColor } from "@/lib/laptopColorService";
 
 interface AddColorDialogProps {
   onSave: () => void;
@@ -25,7 +25,7 @@ export function AddColorDialog({ onSave }: AddColorDialogProps) {
 
   const handleSubmit = async () => {
     try {
-      await createColor({ name: value });
+      await createLaptopColor({ value });
 
       console.log("Color option added successfully");
       onSave();
@@ -44,7 +44,7 @@ export function AddColorDialog({ onSave }: AddColorDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New Color Option</DialogTitle>
           <DialogDescription>
-            Add a new Color option to the list. Click save when you're done.
+            Add a new Color option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

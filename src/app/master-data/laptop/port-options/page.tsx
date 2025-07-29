@@ -6,7 +6,7 @@ import { columns } from "./columns";
 import { DataTable } from "@/app/master-data/laptop/ram-options/data-table"; // Reusing DataTable
 import { AddPortDialog } from "./add-port-dialog";
 import { EditPortDialog } from "./edit-port-dialog";
-import { getPorts, deletePort } from "@/lib/portService"; // Import service functions
+import { getLaptopPortOptions, deleteLaptopPortOption } from "@/lib/laptopPortService"; // Import service functions
 
 export default function PortOptionsPage() {
   const [data, setData] = useState<LaptopPortOption[]>([]);
@@ -17,7 +17,7 @@ export default function PortOptionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const portOptions = await getPorts(); // Use service function directly
+      const portOptions = await getLaptopPortOptions(); // Use service function directly
       setData(portOptions as LaptopPortOption[]); // Cast to LaptopPortOption[]
     } catch (error) {
       console.error(error);
@@ -32,7 +32,7 @@ export default function PortOptionsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await deletePort(id); // Use service function directly
+      await deleteLaptopPortOption(id); // Use service function directly
       fetchData(); // Refresh data after successful deletion
     } catch (error) {
       console.error("An error occurred:", error);

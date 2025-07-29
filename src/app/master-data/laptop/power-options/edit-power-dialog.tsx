@@ -9,12 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LaptopPowerOption } from "@prisma/client";
-import { updatePower } from "@/lib/powerService";
+import { updateLaptopPowerOption } from "@/lib/laptopPowerService";
 
 interface EditPowerDialogProps {
   powerOption: LaptopPowerOption;
@@ -32,7 +31,7 @@ export function EditPowerDialog({ powerOption, onSave, onOpenChange, open }: Edi
 
   const handleSubmit = async () => {
     try {
-      await updatePower(powerOption.id, { name: value });
+      await updateLaptopPowerOption(powerOption.id, { value });
 
       console.log("Power option updated successfully");
       onSave();

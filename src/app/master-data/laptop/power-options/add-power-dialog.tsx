@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createPower } from "@/lib/powerService";
+import { createLaptopPowerOption } from "@/lib/laptopPowerService";
 
 interface AddPowerDialogProps {
   onSave: () => void;
@@ -25,7 +25,7 @@ export function AddPowerDialog({ onSave }: AddPowerDialogProps) {
 
   const handleSubmit = async () => {
     try {
-      await createPower({ name: value });
+      await createLaptopPowerOption({ value });
 
       console.log("Power option added successfully");
       onSave();
@@ -44,7 +44,7 @@ export function AddPowerDialog({ onSave }: AddPowerDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New Power Option</DialogTitle>
           <DialogDescription>
-            Add a new Power option to the list. Click save when you're done.
+            Add a new Power option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

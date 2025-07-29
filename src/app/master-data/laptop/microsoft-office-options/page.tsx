@@ -6,7 +6,7 @@ import { columns } from "./columns";
 import { DataTable } from "@/app/master-data/laptop/ram-options/data-table"; // Reusing DataTable
 import { AddMicrosoftOfficeDialog } from "./add-microsoft-office-dialog";
 import { EditMicrosoftOfficeDialog } from "./edit-microsoft-office-dialog";
-import { getMicrosoftOffices, deleteMicrosoftOffice } from "@/lib/microsoftOfficeService"; // Import service functions
+import { getLaptopMicrosoftOffices, deleteLaptopMicrosoftOffice } from "@/lib/laptopMicrosoftOfficeService"; // Import service functions
 
 export default function MicrosoftOfficeOptionsPage() {
   const [data, setData] = useState<LaptopMicrosoftOfficeOption[]>([]);
@@ -17,7 +17,7 @@ export default function MicrosoftOfficeOptionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const microsoftOfficeOptions = await getMicrosoftOffices(); // Use service function directly
+      const microsoftOfficeOptions = await getLaptopMicrosoftOffices(); // Use service function directly
       setData(microsoftOfficeOptions as LaptopMicrosoftOfficeOption[]); // Cast to LaptopMicrosoftOfficeOption[]
     } catch (error) {
       console.error(error);
@@ -32,7 +32,7 @@ export default function MicrosoftOfficeOptionsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteMicrosoftOffice(id); // Use service function directly
+      await deleteLaptopMicrosoftOffice(id); // Use service function directly
       fetchData(); // Refresh data after successful deletion
     } catch (error) {
       console.error("An error occurred:", error);

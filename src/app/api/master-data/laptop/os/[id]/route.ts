@@ -1,52 +1,62 @@
-import { updateOs, deleteOs } from "@/lib/osService";
-import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client"
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+const prisma = new PrismaClient()
+
+export interface LaptopOsOption {
+  id: number
+  value: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface UpdateLaptopOsOptionData {
+  value: string
+}
+
+export async function updateLaptopOsOption(id: number, data: UpdateLaptopOsOptionData): Promise<LaptopOsOption> {
   try {
-    const id = parseInt(params.id, 10);
-    const body = await request.json();
-    const { name } = body;
-
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
-    }
-
-    const updatedOs = await updateOs(id, { name });
-
-    return NextResponse.json(updatedOs);
-  } catch (error: any) {
-    console.error("Error updating OS:", error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: "OS not found." }, { status: 404 });
-    } else if (error.code === 'P2002') {
-      return NextResponse.json({ error: `OS '${error.meta?.target}' already exists.` }, { status: 409 });
-    }
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    const laptopOsOption = await prisma.laptopOsOption.update({
+      where: { id },
+      data,
+    })
+    return laptopOsOption
+  } catch (error) {
+    console.error("Error updating laptop OS option:", error)
+    throw error
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function deleteLaptopOsOption(id: number): Promise<void> {
   try {
-    const id = parseInt(params.id, 10);
-    await deleteOs(id);
-    return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
-    console.error("Error deleting OS:", error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: "OS not found." }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    await prisma.laptopOsOption.delete({
+      where: { id },
+    })
+  } catch (error) {
+    console.error("Error deleting laptop OS option:", error)
+    throw error
+  }
+}
+
+export async function getLaptopOsOptionById(id: number): Promise<LaptopOsOption | null> {
+  try {
+    const laptopOsOption = await prisma.laptopOsOption.findUnique({
+      where: { id },
+    })
+    return laptopOsOption
+  } catch (error) {
+    console.error("Error fetching laptop OS option:", error)
+    throw error
+  }
+}
+
+export async function getAllLaptopOsOptions(): Promise<LaptopOsOption[]> {
+  try {
+    const laptopOsOptions = await prisma.laptopOsOption.findMany({
+      orderBy: { value: "asc" },
+    })
+    return laptopOsOptions
+  } catch (error) {
+    console.error("Error fetching laptop OS options:", error)
+    throw error
   }
 }

@@ -6,7 +6,7 @@ import { columns } from "./columns";
 import { DataTable } from "@/app/master-data/laptop/ram-options/data-table"; // Reusing DataTable
 import { AddProcessorDialog } from "./add-processor-dialog";
 import { EditProcessorDialog } from "./edit-processor-dialog";
-import { getProcessors, deleteProcessor } from "@/lib/processorService"; // Import service functions
+import { getLaptopProcessorOptions, deleteLaptopProcessorOption } from "@/lib/laptopProcessorService"; // Import service functions
 
 export default function ProcessorOptionsPage() {
   const [data, setData] = useState<LaptopProcessorOption[]>([]);
@@ -17,7 +17,7 @@ export default function ProcessorOptionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const processorOptions = await getProcessors(); // Use service function directly
+      const processorOptions = await getLaptopProcessorOptions(); // Use service function directly
       setData(processorOptions as LaptopProcessorOption[]); // Cast to LaptopProcessorOption[]
     } catch (error) {
       console.error(error);
@@ -32,7 +32,7 @@ export default function ProcessorOptionsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteProcessor(id); // Use service function directly
+      await deleteLaptopProcessorOption(id); // Use service function directly
       fetchData(); // Refresh data after successful deletion
     } catch (error) {
       console.error("An error occurred:", error);

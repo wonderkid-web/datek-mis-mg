@@ -6,14 +6,9 @@ import { columns } from "./columns";
 import { DataTable } from "@/app/master-data/laptop/ram-options/data-table"; // Reusing DataTable
 import { AddRamDialog } from "./add-ram-dialog";
 import { EditRamDialog } from "./edit-ram-dialog";
+import { getLaptopRamOptions } from "@/lib/laptopRamService";
 
-async function getData(): Promise<LaptopRamOption[]> {
-  const res = await fetch("/api/master-data/laptop/ram");
-  if (!res.ok) {
-    throw new Error("Failed to fetch data");
-  }
-  return res.json();
-}
+
 
 export default function RamOptionsPage() {
   const [data, setData] = useState<LaptopRamOption[]>([]);
@@ -24,7 +19,7 @@ export default function RamOptionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const ramOptions = await getData(); // Use fetch to API route
+      const ramOptions = await getLaptopRamOptions(); // Use fetch to API route
       setData(ramOptions);
     } catch (error) {
       console.error(error);
@@ -39,9 +34,9 @@ export default function RamOptionsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`/api/master-data/laptop/ram/${id}`, {
-        method: 'DELETE',
-      });
+        const response = await fetch(`/api/master-data/laptop/ram/${id}`, {
+          method: 'DELETE',
+        });
 
       if (response.ok) {
         fetchData(); // Refresh data after successful deletion

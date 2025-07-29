@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createMicrosoftOffice } from "@/lib/microsoftOfficeService";
+import { createLaptopMicrosoftOffice } from "@/lib/laptopMicrosoftOfficeService";
 
 interface AddMicrosoftOfficeDialogProps {
   onSave: () => void;
@@ -25,7 +25,7 @@ export function AddMicrosoftOfficeDialog({ onSave }: AddMicrosoftOfficeDialogPro
 
   const handleSubmit = async () => {
     try {
-      await createMicrosoftOffice({ name: value });
+      await createLaptopMicrosoftOffice({ value });
 
       console.log("Microsoft Office option added successfully");
       onSave();
@@ -44,7 +44,7 @@ export function AddMicrosoftOfficeDialog({ onSave }: AddMicrosoftOfficeDialogPro
         <DialogHeader>
           <DialogTitle>Add New Microsoft Office Option</DialogTitle>
           <DialogDescription>
-            Add a new Microsoft Office option to the list. Click save when you're done.
+            Add a new Microsoft Office option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

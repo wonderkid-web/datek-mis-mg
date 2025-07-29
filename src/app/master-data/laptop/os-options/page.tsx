@@ -6,7 +6,7 @@ import { columns } from "./columns";
 import { DataTable } from "@/app/master-data/laptop/ram-options/data-table"; // Reusing DataTable
 import { AddOsDialog } from "./add-os-dialog";
 import { EditOsDialog } from "./edit-os-dialog";
-import { getOs, deleteOs } from "@/lib/osService"; // Import service functions
+import { getLaptopOsOptions, deleteLaptopOsOption } from "@/lib/laptopOsService"; // Import service functions
 
 export default function OsOptionsPage() {
   const [data, setData] = useState<LaptopOsOption[]>([]);
@@ -17,7 +17,7 @@ export default function OsOptionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const osOptions = await getOs(); // Use service function directly
+      const osOptions = await getLaptopOsOptions(); // Use service function directly
       setData(osOptions as LaptopOsOption[]); // Cast to LaptopOsOption[]
     } catch (error) {
       console.error(error);
@@ -32,7 +32,7 @@ export default function OsOptionsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteOs(id); // Use service function directly
+      await deleteLaptopOsOption(id); // Use service function directly
       fetchData(); // Refresh data after successful deletion
     } catch (error) {
       console.error("An error occurred:", error);

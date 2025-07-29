@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createRam } from "@/lib/ramService"; // Import the service function
+import { createLaptopRamOption } from "@/lib/laptopRamService"; // Import the service function
 
 interface AddRamDialogProps {
   onSave: () => void;
@@ -26,7 +26,7 @@ export function AddRamDialog({ onSave }: AddRamDialogProps) {
   const handleSubmit = async () => {
     try {
       // Call the service function directly
-      await createRam({ name: value });
+      await createLaptopRamOption({ value });
 
       console.log("RAM option added successfully");
       onSave(); // Panggil fungsi onSave untuk refresh data
@@ -45,7 +45,7 @@ export function AddRamDialog({ onSave }: AddRamDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New RAM Option</DialogTitle>
           <DialogDescription>
-            Add a new RAM option to the list. Click save when you're done.
+            Add a new RAM option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

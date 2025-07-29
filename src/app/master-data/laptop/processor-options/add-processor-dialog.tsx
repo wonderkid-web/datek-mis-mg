@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createProcessor } from "@/lib/processorService";
+import { createLaptopProcessorOption } from "@/lib/laptopProcessorService";
 
 interface AddProcessorDialogProps {
   onSave: () => void;
@@ -25,7 +25,7 @@ export function AddProcessorDialog({ onSave }: AddProcessorDialogProps) {
 
   const handleSubmit = async () => {
     try {
-      await createProcessor({ name: value });
+      await createLaptopProcessorOption({ value });
 
       console.log("Processor option added successfully");
       onSave();
@@ -44,7 +44,7 @@ export function AddProcessorDialog({ onSave }: AddProcessorDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New Processor Option</DialogTitle>
           <DialogDescription>
-            Add a new Processor option to the list. Click save when you're done.
+            Add a new Processor option to the list. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

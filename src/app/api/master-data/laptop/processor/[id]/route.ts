@@ -1,4 +1,4 @@
-import { updateProcessor, deleteProcessor } from "@/lib/processorService";
+import { updateLaptopProcessorOption, deleteLaptopProcessorOption } from "@/lib/laptopProcessorService";
 import { NextResponse } from "next/server";
 
 export async function PUT(
@@ -8,21 +8,21 @@ export async function PUT(
   try {
     const id = parseInt(params.id, 10);
     const body = await request.json();
-    const { name } = body;
+    const { value } = body;
 
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    if (!value) {
+      return NextResponse.json({ error: "Value is required" }, { status: 400 });
     }
 
-    const updatedProcessor = await updateProcessor(id, { name });
+    const updatedLaptopProcessorOption = await updateLaptopProcessorOption(id, { value });
 
-    return NextResponse.json(updatedProcessor);
+    return NextResponse.json(updatedLaptopProcessorOption);
   } catch (error: any) {
-    console.error("Error updating processor:", error);
+    console.error("Error updating laptop processor option:", error);
     if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Processor not found." }, { status: 404 });
+      return NextResponse.json({ error: "Laptop processor option not found." }, { status: 404 });
     } else if (error.code === 'P2002') {
-      return NextResponse.json({ error: `Processor '${error.meta?.target}' already exists.` }, { status: 409 });
+      return NextResponse.json({ error: `Laptop processor option with this value already exists.` }, { status: 409 });
     }
     return NextResponse.json(
       { error: "Internal Server Error" },
@@ -37,12 +37,12 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt(params.id, 10);
-    await deleteProcessor(id);
+    await deleteLaptopProcessorOption(id);
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
-    console.error("Error deleting processor:", error);
+    console.error("Error deleting laptop processor option:", error);
     if (error.code === 'P2025') {
-      return NextResponse.json({ error: "Processor not found." }, { status: 404 });
+      return NextResponse.json({ error: "Laptop processor option not found." }, { status: 404 });
     }
     return NextResponse.json(
       { error: "Internal Server Error" },
