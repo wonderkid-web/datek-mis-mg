@@ -87,7 +87,7 @@ export const COMPANIES = [
   },
   {
     type: "MG",
-    description: "PT Mahkota Group, Tbk",
+    description: "PT Mahkota Group Tbk",
     lintang: "3.5967341427711728",
     bujur: "98.67877243873158",
   },

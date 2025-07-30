@@ -1,5 +1,6 @@
 "use server";
 import { prisma } from './prisma';
+import { revalidatePath } from 'next/cache';
 import { AssetAssignment, Prisma } from '@prisma/client';
 
 export const getAssignments = async (): Promise<AssetAssignment[]> => {
@@ -7,7 +8,6 @@ export const getAssignments = async (): Promise<AssetAssignment[]> => {
     include: {
       asset: { select: { namaAsset: true} },
       user: { select: { namaLengkap: true } },
-      assignedBy: { select: { namaLengkap: true } },
     },
     orderBy: {
       tanggalPeminjaman: 'desc'
@@ -21,7 +21,6 @@ export const getAssignmentById = async (id: number): Promise<AssetAssignment | n
     include: {
       asset: true,
       user: true,
-      assignedBy: true,
     },
   });
 };
@@ -34,22 +33,21 @@ export const createAssignment = async (data: {
   kondisiSaatPeminjaman?: string | null;
   kondisiSaatPengembalian?: string | null;
   catatan?: string | null;
-  assignedByUserId?: number | null;
   nomorAsset?: string; // Add nomorAsset here
 }): Promise<AssetAssignment> => {
-  const { assetId, userId, assignedByUserId, ...rest } = data; // Destructure userId and assignedByUserId
+  const { assetId, userId, ...rest } = data; // Destructure userId
   return await prisma.assetAssignment.create({
     data: {
       ...rest,
       asset: {
         connect: { id: assetId },
       },
-      user: { // Add user connection
+      user: {
         connect: { id: userId },
       },
-      ...(assignedByUserId && { assignedBy: { connect: { id: assignedByUserId } } }), // Add assignedBy connection
     },
   });
+  revalidatePath('/data-center/unassigned-users');
 };
 
 export const updateAssignment = async (id: number, data: {
@@ -60,10 +58,9 @@ export const updateAssignment = async (id: number, data: {
   kondisiSaatPeminjaman?: string | null;
   kondisiSaatPengembalian?: string | null;
   catatan?: string | null;
-  assignedByUserId?: number | null;
   nomorAsset?: string; // Add nomorAsset here
 }): Promise<AssetAssignment> => {
-  const { assetId, userId, assignedByUserId, ...rest } = data;
+  const { assetId, userId, ...rest } = data;
 
   const updateData: Prisma.AssetAssignmentUpdateInput = { ...rest }; // Start with rest of the data
 
@@ -72,9 +69,6 @@ export const updateAssignment = async (id: number, data: {
   }
   if (userId !== undefined) {
     updateData.user = { connect: { id: userId } };
-  }
-  if (assignedByUserId !== undefined) {
-    updateData.assignedBy = { connect: { id: assignedByUserId! } };
   }
 
   return await prisma.assetAssignment.update({

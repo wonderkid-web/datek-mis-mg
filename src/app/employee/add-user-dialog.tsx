@@ -24,7 +24,7 @@ interface AddUserDialogProps {
 
 export function AddUserDialog({ onSave }: AddUserDialogProps) {
   const [open, setOpen] = useState(false);
-  const [nik, setNik] = useState("");
+  // const [nik, setNik] = useState("");
   const [namaLengkap, setNamaLengkap] = useState("");
   const [email, setEmail] = useState("");
   const [departemen, setDepartemen] = useState("");
@@ -35,7 +35,7 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
   const handleSubmit = async () => {
     try {
       await createUser({
-        nik,
+        // nik,
         namaLengkap,
         email,
         departemen,
@@ -48,7 +48,6 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
       onSave();
       setOpen(false);
       // Clear form
-      setNik("");
       setNamaLengkap("");
       setEmail("");
       setDepartemen("");
@@ -73,10 +72,10 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
+          {/* <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="nik" className="text-right">NIK</Label>
             <Input id="nik" value={nik} onChange={(e) => setNik(e.target.value)} className="col-span-3" required />
-          </div>
+          </div> */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="namaLengkap" className="text-right">Full Name</Label>
             <Input id="namaLengkap" value={namaLengkap} onChange={(e) => setNamaLengkap(e.target.value)} className="col-span-3" required />
@@ -88,7 +87,7 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="departemen" className="text-right">Department</Label>
             <Select onValueChange={setDepartemen} value={departemen}>
-              <SelectTrigger className="col-span-3">
+             <SelectTrigger className="col-span-3 w-full">
                 <SelectValue placeholder="Select Department" />
               </SelectTrigger>
               <SelectContent>
@@ -101,13 +100,27 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="jabatan" className="text-right">Position</Label>
-            <Input id="jabatan" value={jabatan} onChange={(e) => setJabatan(e.target.value)} className="col-span-3" />
+             <Label htmlFor="jabatan" className="text-right">
+              Position
+            </Label>
+            <Select onValueChange={setJabatan} value={jabatan}>
+           <SelectTrigger className="col-span-3 w-full">
+                <SelectValue placeholder="Select Office Location" />
+              </SelectTrigger>
+              <SelectContent>
+                {["HOLDING", "SBU"].map((company) => (
+                  <SelectItem key={company} value={company}>
+                    {company}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* <Input id="jabatan" value={jabatan} onChange={(e) => setJabatan(e.target.value)} className="col-span-3" /> */}
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="lokasiKantor" className="text-right">Office Location</Label>
-            <Select onValueChange={setLokasiKantor} value={lokasiKantor}>
-              <SelectTrigger className="col-span-3">
+            <Label htmlFor="lokasiKantor" className="text-right">Corporate</Label>
+            <Select  onValueChange={setLokasiKantor} value={lokasiKantor}>
+              <SelectTrigger className="col-span-3 w-full">
                 <SelectValue placeholder="Select Office Location" />
               </SelectTrigger>
               <SelectContent>
@@ -130,7 +143,7 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit}>Save changes</Button>
+          <Button type="submit" onClick={handleSubmit}>Add User</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

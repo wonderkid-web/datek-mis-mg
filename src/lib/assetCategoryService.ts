@@ -28,9 +28,10 @@ export const updateAssetCategory = async (id: number, data: { nama: string }): P
   });
 };
 
-// DELETE asset category
-export const deleteAssetCategory = async (id: number): Promise<void> => {
-  await prisma.assetCategory.delete({
+// DELETE asset category (soft delete)
+export const deleteAssetCategory = async (id: string): Promise<AssetCategory> => {
+  return await prisma.assetCategory.update({
     where: { id },
+    data: { isDeleted: true, deletedAt: new Date() },
   });
 };

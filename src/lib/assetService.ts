@@ -16,7 +16,7 @@ interface CreateAssetData {
   lokasiFisik?: string | null;
 }
 
-interface CreateLaptopSpecsData {
+interface CreateLaptopSpecsDataInput {
   processorOptionId?: number | null;
   ramOptionId?: number | null;
   storageTypeOptionId?: number | null;
@@ -27,21 +27,72 @@ interface CreateLaptopSpecsData {
   colorOptionId?: number | null;
   macWlan?: string | null;
   macLan?: string | null;
+  brandOptionId?: number | null;
+  typeOptionId?: number | null;
+  graphicOptionId?: number | null;
+  vgaOptionId?: number | null;
+  licenseOptionId?: number | null;
+  licenseKey?: string | null;
 }
 
 export async function createAssetAndLaptopSpecs(
   assetData: CreateAssetData,
-  laptopSpecsData: CreateLaptopSpecsData
+  laptopSpecsDataInput: CreateLaptopSpecsDataInput
 ): Promise<Asset> {
+  const laptopSpecsCreateData: any = {
+    macWlan: laptopSpecsDataInput.macWlan,
+    macLan: laptopSpecsDataInput.macLan,
+  };
+
+  if (laptopSpecsDataInput.processorOptionId) {
+    laptopSpecsCreateData.processorOption = { connect: { id: laptopSpecsDataInput.processorOptionId } };
+  }
+  if (laptopSpecsDataInput.ramOptionId) {
+    laptopSpecsCreateData.ramOption = { connect: { id: laptopSpecsDataInput.ramOptionId } };
+  }
+  if (laptopSpecsDataInput.storageTypeOptionId) {
+    laptopSpecsCreateData.storageTypeOption = { connect: { id: laptopSpecsDataInput.storageTypeOptionId } };
+  }
+  if (laptopSpecsDataInput.osOptionId) {
+    laptopSpecsCreateData.osOption = { connect: { id: laptopSpecsDataInput.osOptionId } };
+  }
+  if (laptopSpecsDataInput.portOptionId) {
+    laptopSpecsCreateData.portOption = { connect: { id: laptopSpecsDataInput.portOptionId } };
+  }
+  if (laptopSpecsDataInput.powerOptionId) {
+    laptopSpecsCreateData.powerOption = { connect: { id: laptopSpecsDataInput.powerOptionId } };
+  }
+  if (laptopSpecsDataInput.microsoftOfficeOptionId) {
+    laptopSpecsCreateData.microsoftOfficeOption = { connect: { id: laptopSpecsDataInput.microsoftOfficeOptionId } };
+  }
+  if (laptopSpecsDataInput.colorOptionId) {
+    laptopSpecsCreateData.colorOption = { connect: { id: laptopSpecsDataInput.colorOptionId } };
+  }
+  if (laptopSpecsDataInput.brandOptionId) {
+    laptopSpecsCreateData.brandOption = { connect: { id: laptopSpecsDataInput.brandOptionId } };
+  }
+  if (laptopSpecsDataInput.typeOptionId) {
+    laptopSpecsCreateData.typeOption = { connect: { id: laptopSpecsDataInput.typeOptionId } };
+  }
+  if (laptopSpecsDataInput.graphicOptionId) {
+    laptopSpecsCreateData.graphicOption = { connect: { id: laptopSpecsDataInput.graphicOptionId } };
+  }
+  if (laptopSpecsDataInput.vgaOptionId) {
+    laptopSpecsCreateData.vgaOption = { connect: { id: laptopSpecsDataInput.vgaOptionId } };
+  }
+  if (laptopSpecsDataInput.licenseOptionId) {
+    laptopSpecsCreateData.licenseOption = { connect: { id: laptopSpecsDataInput.licenseOptionId } };
+  }
+
   const newAsset = await prisma.asset.create({
     data: {
       ...assetData,
       laptopSpecs: {
-        create: laptopSpecsData,
+        create: laptopSpecsCreateData,
       },
     },
     include: {
-      laptopSpecs: true, // Include laptopSpecs in the returned asset
+      laptopSpecs: true,
     },
   });
   return newAsset;
@@ -57,7 +108,6 @@ export async function getAssets(): Promise<Asset[]> {
           colorOption: true,
           microsoftOfficeOption: true,
           osOption: true,
-          portOption: true,
           powerOption: true,
           processorOption: true,
           ramOption: true,
@@ -67,10 +117,43 @@ export async function getAssets(): Promise<Asset[]> {
       },
     },
   });
-
+// @ts-expect-error its okay
   return assets.map(asset => ({
     ...asset,
     // Convert Decimal to number for client-side compatibility
     nilaiPerolehan: asset.nilaiPerolehan ? asset.nilaiPerolehan.toNumber() : null,
   }));
+}
+
+export async function getAssetById(id: number): Promise<Asset | null> {
+  const asset = await prisma.asset.findUnique({
+    where: { id },
+    include: {
+      category: true,
+      laptopSpecs: {
+        include: {
+          brandOption: true,
+          colorOption: true,
+          microsoftOfficeOption: true,
+          osOption: true,
+          powerOption: true,
+          processorOption: true,
+          ramOption: true,
+          storageTypeOption: true,
+          typeOption: true,
+          graphicOption: true,
+          vgaOption: true,
+          licenseOption: true,
+        },
+      },
+    },
+  });
+
+  if (!asset) return null;
+
+  return {
+    ...asset,
+    // @ts-expect-error its okay
+    nilaiPerolehan: asset.nilaiPerolehan ? asset.nilaiPerolehan.toNumber() : null,
+  };
 }

@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formattedDate } from "@/helper";
 
 interface ColumnsProps {
   handleDelete: (id: number) => void;
@@ -20,6 +19,11 @@ interface ColumnsProps {
 }
 
 export const columns = ({ handleDelete, handleEdit }: ColumnsProps): ColumnDef<AssetAssignment>[] => [
+ {
+    accessorKey: "id",
+    header: () => <div className="text-center">No</div>,
+    cell: ({ row }) => <div className="text-right">{row.index + 1}</div>,
+  },
   {
     accessorKey: "asset.namaAsset",
     header: ({ column }) => {
@@ -42,52 +46,52 @@ export const columns = ({ handleDelete, handleEdit }: ColumnsProps): ColumnDef<A
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Assigned To
+          Username
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
   },
-  {
-    accessorKey: "tanggalPeminjaman",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Assignment Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const date = new Date(row.original.tanggalPeminjaman);
-      return formattedDate(date);
-    },
-  },
-  {
-    accessorKey: "tanggalPengembalian",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Return Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const date = row.original.tanggalPengembalian;
-      return date ? formattedDate(date) : "N/A";
-    },
-  },
-  {
-    accessorKey: "assignedBy.namaLengkap",
-    header: "Assigned By",
-  },
+  // {
+  //   accessorKey: "tanggalPeminjaman",
+  //   header: ({ column }) => {
+  //     return (
+  //       <Button
+  //         variant="ghost"
+  //         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //       >
+  //         Assignment Date
+  //         <ArrowUpDown className="ml-2 h-4 w-4" />
+  //       </Button>
+  //     );
+  //   },
+  //   cell: ({ row }) => {
+  //     const date = new Date(row.original.tanggalPeminjaman);
+  //     return formattedDate(date);
+  //   },
+  // },
+  // {
+  //   accessorKey: "tanggalPengembalian",
+  //   header: ({ column }) => {
+  //     return (
+  //       <Button
+  //         variant="ghost"
+  //         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //       >
+  //         Return Date
+  //         <ArrowUpDown className="ml-2 h-4 w-4" />
+  //       </Button>
+  //     );
+  //   },
+  //   cell: ({ row }) => {
+  //     const date = row.original.tanggalPengembalian;
+  //     return date ? formattedDate(date) : "N/A";
+  //   },
+  // },
+  // {
+  //   accessorKey: "assignedBy.namaLengkap",
+  //   header: "Assigned By",
+  // },
   {
     id: "actions",
     cell: ({ row }) => {

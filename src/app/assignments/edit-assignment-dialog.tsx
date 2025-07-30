@@ -36,7 +36,6 @@ export function EditAssignmentDialog({ assignment, onSave, onOpenChange, open }:
   const [kondisiSaatPeminjaman, setKondisiSaatPeminjaman] = useState(assignment.kondisiSaatPeminjaman || "");
   const [kondisiSaatPengembalian, setKondisiSaatPengembalian] = useState(assignment.kondisiSaatPengembalian || "");
   const [catatan, setCatatan] = useState(assignment.catatan || "");
-  const [assignedByUserId, setAssignedByUserId] = useState<string | null>(assignment.assignedByUserId?.toString() || null);
 
   const [users, setUsers] = useState<User[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -58,7 +57,6 @@ export function EditAssignmentDialog({ assignment, onSave, onOpenChange, open }:
     setKondisiSaatPeminjaman(assignment.kondisiSaatPeminjaman || "");
     setKondisiSaatPengembalian(assignment.kondisiSaatPengembalian || "");
     setCatatan(assignment.catatan || "");
-    setAssignedByUserId(assignment.assignedByUserId?.toString() || null);
   }, [assignment]);
 
   const handleSubmit = async () => {
@@ -72,7 +70,6 @@ export function EditAssignmentDialog({ assignment, onSave, onOpenChange, open }:
         kondisiSaatPeminjaman,
         kondisiSaatPengembalian,
         catatan,
-        assignedByUserId: assignedByUserId ? parseInt(assignedByUserId) : null,
       });
 
       console.log("Assignment updated successfully");
@@ -168,21 +165,6 @@ export function EditAssignmentDialog({ assignment, onSave, onOpenChange, open }:
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="catatan" className="text-right">Notes</Label>
             <Textarea id="catatan" value={catatan} onChange={(e) => setCatatan(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="assignedBy" className="text-right">Assigned By</Label>
-            <Select onValueChange={setAssignedByUserId} value={assignedByUserId || ""}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select User" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.namaLengkap} ({user.nik})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
         <DialogFooter>

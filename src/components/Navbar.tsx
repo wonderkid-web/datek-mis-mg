@@ -1,20 +1,11 @@
 "use client";
-
+// @ts-nocheck
 import Link from "next/link";
 import { LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { useRouter } from "next/navigation";
-import { useState, forwardRef } from "react";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
+import { useState, useRef, useEffect } from "react"; // Import useRef and useEffect
 import {
   Sheet,
   SheetContent,
@@ -32,6 +23,9 @@ import { navigationItems } from "@/lib/navigation";
 export default function Navbar() {
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({}); // Ref for each dropdown
 
   const handleLogout = async () => {
     try {
@@ -43,6 +37,27 @@ export default function Navbar() {
 
   const closeSheet = () => setIsSheetOpen(false);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if click is outside any open dropdown
+      let isOutside = true;
+      for (const key in dropdownRefs.current) {
+        if (dropdownRefs.current[key] && dropdownRefs.current[key]?.contains(event.target as Node)) {
+          isOutside = false;
+          break;
+        }
+      }
+      if (isOutside) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openDropdown]); // Re-run effect when openDropdown changes
+
   return (
     <nav className="bg-primary text-primary-foreground p-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
@@ -51,43 +66,46 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex">
-          <NavigationMenu>
-            <NavigationMenuList>
-              {navigationItems.map((item) =>
-                item.children ? (
-                  <NavigationMenuItem key={item.name}>
-                    <NavigationMenuTrigger className="bg-primary text-primary-foreground hover:bg-primary/90 data-[state=open]:bg-primary/90">
-                      <div className="flex items-center space-x-2">
-                        {item.icon && <item.icon className="h-5 w-5" />}
-                        <span>{item.name}</span>
-                      </div>
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
-                        {item.children.map((child) => (
-                          <ListItem
-                            key={child.name}
-                            href={child.href}
-                            title={child.name}
-                          />
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                ) : (
-                  <NavigationMenuItem key={item.name}>
-                    <Link href={item.href} legacyBehavior passHref>
-                      <NavigationMenuLink className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-accent-foreground h-10 px-4 py-2 flex items-center space-x-2 rounded-md">
-                        {item.icon && <item.icon className="h-5 w-5" />}
-                        <span>{item.name}</span>
-                      </NavigationMenuLink>
-                    </Link>
-                  </NavigationMenuItem>
-                )
-              )}
-            </NavigationMenuList>
-          </NavigationMenu>
+        <div className="hidden md:flex items-center space-x-4">
+          {navigationItems.map((item) =>
+            item.children ? (
+              // Dropdown for items with children
+              
+              <div key={item.name} className="relative"
+              // @ts-expect-error its okay
+              ref={(el) => (dropdownRefs.current[item.name] = el)}> {/* Attach ref */}
+                <Button
+                  variant="ghost"
+                  onClick={() => setOpenDropdown(openDropdown === item.name ? null : item.name)}
+                  className="flex items-center space-x-2 text-primary-foreground hover:bg-primary/90"
+                >
+                  {item.icon && <item.icon className="h-5 w-5" />}
+                  <span>{item.name}</span>
+                </Button>
+                {openDropdown === item.name && (
+                  <ul className="absolute top-full left-0 bg-green-700 text-white shadow-lg rounded-md mt-2 py-2 w-48 z-10">
+                    {item.children.map((child) => (
+                      <li key={child.name}>
+                        <Link href={child.href} className="block px-4 py-2 hover:bg-green-800">
+                          {child.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <Link key={item.name} href={item.href} passHref>
+                <Button
+                  variant="ghost"
+                  className="flex items-center space-x-2 text-primary-foreground hover:bg-primary/90"
+                >
+                  {item.icon && <item.icon className="h-5 w-5" />}
+                  <span>{item.name}</span>
+                </Button>
+              </Link>
+            )
+          )}
           <Button
             onClick={handleLogout}
             className="bg-destructive hover:bg-destructive/90 ml-4"
@@ -167,29 +185,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
-const ListItem = forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <a
-          ref={ref}
-          className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-            className
-          )}
-          {...props}
-        >
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-            {children}
-          </p>
-        </a>
-      </NavigationMenuLink>
-    </li>
-  );
-});
-ListItem.displayName = "ListItem";

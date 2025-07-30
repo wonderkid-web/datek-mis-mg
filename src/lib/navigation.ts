@@ -35,7 +35,7 @@ export const navigationItems = [
       // { name: "Komputer", href: "/master-data/komputer" },
       // { name: "Access Point", href: "/master-data/access-point" },
       // { name: "Printer", href: "/master-data/printer" },
-      { name: "Laptop", href: "/master-data/laptop" },
+      { name: "Spesifikasi Laptop", href: "/master-data/laptop" },
     ],
   },
   {
@@ -55,13 +55,8 @@ export const navigationItems = [
       // { name: "Komputer", href: "/items/komputer" },
       // { name: "Access Point", href: "/items/access-point" },
       // { name: "Printer", href: "/items/printer" },
-      { name: "Laptop", href: "/items/laptop" },
+      { name: "Asset Laptop", href: "/items/laptop" },
     ],
-  },
-  {
-    name: "Assignment",
-    href: "/assignments",
-    icon: User,
   },
   {
     name: "Data Centre",
@@ -80,13 +75,18 @@ export const navigationItems = [
       // { name: "Komputer", href: "/view-devices/komputer" },
       // { name: "Access Point", href: "/view-devices/access-point" },
       // { name: "Printer", href: "/view-devices/printer" },
-      { name: "Assigned Users", href: "/data-center/assigned-users" },
       { name: "Unassigned Users", href: "/data-center/unassigned-users" },
+      { name: "Assigned Users", href: "/data-center/assigned-users" },
     ],
   },
+  //  {
+  //   name: "Assignment",
+  //   href: "/assignments",
+  //   icon: User,
+  // },
   {
     name: "Service Record",
-    href: "/service-record",
+    href: "/service-records",
     icon: ToolCaseIcon,
   },
 ];

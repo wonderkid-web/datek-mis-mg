@@ -5,6 +5,11 @@ import { Asset } from "@prisma/client";
 
 export const columns: ColumnDef<Asset>[] = [
   {
+    accessorKey: "id",
+    header: () => <div className="text-center">No</div>,
+    cell: ({ row }) => <div className="text-right">{row.index + 1}</div>,
+  },
+  {
     accessorKey: "namaAsset",
     header: "Asset Name",
   },

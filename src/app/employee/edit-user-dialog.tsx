@@ -13,7 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { User } from "@prisma/client";
 import { updateUser } from "@/lib/userService";
 import { COMPANIES, DEPARTMENTS } from "@/lib/constants";
@@ -25,8 +31,12 @@ interface EditUserDialogProps {
   open: boolean;
 }
 
-export function EditUserDialog({ user, onSave, onOpenChange, open }: EditUserDialogProps) {
-  const [nik, setNik] = useState(user.nik);
+export function EditUserDialog({
+  user,
+  onSave,
+  onOpenChange,
+  open,
+}: EditUserDialogProps) {
   const [namaLengkap, setNamaLengkap] = useState(user.namaLengkap);
   const [email, setEmail] = useState(user.email);
   const [departemen, setDepartemen] = useState(user.departemen || "");
@@ -35,7 +45,6 @@ export function EditUserDialog({ user, onSave, onOpenChange, open }: EditUserDia
   const [isActive, setIsActive] = useState(user.isActive);
 
   useEffect(() => {
-    setNik(user.nik);
     setNamaLengkap(user.namaLengkap);
     setEmail(user.email);
     setDepartemen(user.departemen || "");
@@ -47,7 +56,6 @@ export function EditUserDialog({ user, onSave, onOpenChange, open }: EditUserDia
   const handleSubmit = async () => {
     try {
       await updateUser(user.id, {
-        nik,
         namaLengkap,
         email,
         departemen,
@@ -74,22 +82,32 @@ export function EditUserDialog({ user, onSave, onOpenChange, open }: EditUserDia
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
+          {/* <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="nik" className="text-right">NIK</Label>
             <Input id="nik" value={nik} onChange={(e) => setNik(e.target.value)} className="col-span-3" required />
-          </div>
+          </div> */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="namaLengkap" className="text-right">Full Name</Label>
-            <Input id="namaLengkap" value={namaLengkap} onChange={(e) => setNamaLengkap(e.target.value)} className="col-span-3" required />
+            <Label htmlFor="namaLengkap" className="text-right">
+              Full Name
+            </Label>
+            <Input
+              id="namaLengkap"
+              value={namaLengkap}
+              onChange={(e) => setNamaLengkap(e.target.value)}
+              className="col-span-3"
+              required
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="email" className="text-right">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="col-span-3" required />
+            <Input id="email" type="email" value={email!} onChange={(e) => setEmail(e.target.value)} className="col-span-3" required />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="departemen" className="text-right">Department</Label>
+            <Label htmlFor="departemen" className="text-right">
+              Department
+            </Label>
             <Select onValueChange={setDepartemen} value={departemen}>
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="col-span-3 w-full ">
                 <SelectValue placeholder="Select Department" />
               </SelectTrigger>
               <SelectContent>
@@ -102,13 +120,28 @@ export function EditUserDialog({ user, onSave, onOpenChange, open }: EditUserDia
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="jabatan" className="text-right">Position</Label>
-            <Input id="jabatan" value={jabatan} onChange={(e) => setJabatan(e.target.value)} className="col-span-3" />
+             <Label htmlFor="jabatan" className="text-right">
+              Position
+            </Label>
+            <Select onValueChange={setJabatan} value={jabatan}>
+              <SelectTrigger className="col-span-3 w-full ">
+                <SelectValue placeholder="Select Office Location" />
+              </SelectTrigger>
+              <SelectContent>
+                {["HOLDING", "SBU"].map((company) => (
+                  <SelectItem key={company} value={company}>
+                    {company}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="lokasiKantor" className="text-right">Office Location</Label>
+            <Label htmlFor="lokasiKantor" className="text-right">
+              Corporate
+            </Label>
             <Select onValueChange={setLokasiKantor} value={lokasiKantor}>
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="col-span-3 w-full ">
                 <SelectValue placeholder="Select Office Location" />
               </SelectTrigger>
               <SelectContent>
@@ -121,7 +154,9 @@ export function EditUserDialog({ user, onSave, onOpenChange, open }: EditUserDia
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="isActive" className="text-right">Active</Label>
+            <Label htmlFor="isActive" className="text-right">
+              Active
+            </Label>
             <Checkbox
               id="isActive"
               checked={isActive}
@@ -131,7 +166,9 @@ export function EditUserDialog({ user, onSave, onOpenChange, open }: EditUserDia
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit}>Save changes</Button>
+          <Button type="submit" onClick={handleSubmit}>
+            Save changes
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

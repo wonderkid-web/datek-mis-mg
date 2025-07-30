@@ -29,9 +29,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id, 10);
+    const id = params.id; // ID is now a string
     await deleteUser(id);
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ message: "User deleted successfully" }, { status: 200 });
   } catch (error: any) {
     console.error("Error deleting user:", error);
     if (error.code === 'P2025') {

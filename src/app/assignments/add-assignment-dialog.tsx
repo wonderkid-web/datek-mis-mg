@@ -19,7 +19,6 @@ import { createAssignment } from "@/lib/assignmentService";
 import { getUsers } from "@/lib/userService";
 import { getAssets } from "@/lib/assetService"; // Assuming you have a getAssets function
 import { User, Asset } from "@prisma/client";
-import { STATUSES } from "@/lib/constants";
 
 interface AddAssignmentDialogProps {
   onSave: () => void;
@@ -35,7 +34,6 @@ export function AddAssignmentDialog({ onSave }: AddAssignmentDialogProps) {
   const [kondisiSaatPeminjaman, setKondisiSaatPeminjaman] = useState("");
   const [kondisiSaatPengembalian, setKondisiSaatPengembalian] = useState("");
   const [catatan, setCatatan] = useState("");
-  const [assignedByUserId, setAssignedByUserId] = useState<string | null>(null);
 
   const [users, setUsers] = useState<User[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -59,7 +57,6 @@ export function AddAssignmentDialog({ onSave }: AddAssignmentDialogProps) {
         kondisiSaatPeminjaman,
         kondisiSaatPengembalian,
         catatan,
-        assignedByUserId: assignedByUserId ? parseInt(assignedByUserId) : null,
       });
 
       console.log("Assignment added successfully");
@@ -74,7 +71,6 @@ export function AddAssignmentDialog({ onSave }: AddAssignmentDialogProps) {
       setKondisiSaatPeminjaman("");
       setKondisiSaatPengembalian("");
       setCatatan("");
-      setAssignedByUserId(null);
     } catch (error) {
       console.error("An error occurred:", error);
     }
@@ -127,62 +123,9 @@ export function AddAssignmentDialog({ onSave }: AddAssignmentDialogProps) {
               </SelectContent>
             </Select>
           </div>
-          {/* <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="tanggalPeminjaman" className="text-right">Assignment Date</Label>
-            <Input id="tanggalPeminjaman" type="datetime-local" value={tanggalPeminjaman} onChange={(e) => setTanggalPeminjaman(e.target.value)} className="col-span-3" required />
-          </div> */}
-          {/* <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="tanggalPengembalian" className="text-right">Return Date</Label>
-            <Input id="tanggalPengembalian" type="datetime-local" value={tanggalPengembalian} onChange={(e) => setTanggalPengembalian(e.target.value)} className="col-span-3" />
-          </div> */}
-          {/* <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="kondisiSaatPeminjaman" className="text-right">Condition on Assignment</Label>
-            <Select onValueChange={setKondisiSaatPeminjaman} value={kondisiSaatPeminjaman}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Condition" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUSES.map((status) => (
-                  <SelectItem key={status.type} value={status.description}>
-                    {status.description}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="kondisiSaatPengembalian" className="text-right">Condition on Return</Label>
-            <Select onValueChange={setKondisiSaatPengembalian} value={kondisiSaatPengembalian}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Condition" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUSES.map((status) => (
-                  <SelectItem key={status.type} value={status.description}>
-                    {status.description}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div> */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="catatan" className="text-right">Notes</Label>
             <Textarea id="catatan" value={catatan} onChange={(e) => setCatatan(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="assignedBy" className="text-right">Assigned By</Label>
-            <Select onValueChange={setAssignedByUserId} value={assignedByUserId || ""}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select User" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.namaLengkap} ({user.nik})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
         <DialogFooter>

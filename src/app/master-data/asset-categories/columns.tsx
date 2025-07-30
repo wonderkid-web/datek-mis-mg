@@ -20,6 +20,10 @@ interface ColumnsProps {
 
 export const columns = ({ handleDelete, handleEdit }: ColumnsProps): ColumnDef<AssetCategory>[] => [
   {
+    accessorKey: "id",
+    header: "ID",
+  },
+  {
     accessorKey: "nama",
     header: ({ column }) => {
       return (

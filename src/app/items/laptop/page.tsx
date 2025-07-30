@@ -1,103 +1,109 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import Select from "react-select"; // Import react-select
+
 import { getLaptopRamOptions } from "@/lib/laptopRamService";
 import { getLaptopProcessorOptions } from "@/lib/laptopProcessorService";
 import { getLaptopStorageOptions } from "@/lib/laptopStorageService";
 import { getLaptopOsOptions } from "@/lib/laptopOsService";
-import { getLaptopPortOptions } from "@/lib/laptopPortService";
 import { getLaptopPowerOptions } from "@/lib/laptopPowerService";
 import { getLaptopMicrosoftOffices } from "@/lib/laptopMicrosoftOfficeService";
 import { getLaptopColors } from "@/lib/laptopColorService";
 import { getLaptopBrandOptions } from "@/lib/laptopBrandService";
 import { getLaptopTypeOptions } from "@/lib/laptopTypeService";
+import { getLaptopGraphicOptions } from "@/lib/laptopGraphicService";
+import { getLaptopVgaOptions } from "@/lib/laptopVgaService";
+import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { createAssetAndLaptopSpecs } from "@/lib/assetService";
 
 // Define interfaces for dropdown options
 interface Option {
-  id: number;
+  id: number; 
   value: string;
+}
+
+interface ReactSelectOption {
+  value: string;
+  label: string;
 }
 
 export default function AddLaptopAssetPage() {
   const router = useRouter();
 
   // State for common asset fields
-  const [namaAsset, setNamaAsset] = useState("");
+  const [namaAsset, setNamaAsset] = useState<string | null>(null);
   const [nomorSeri, setNomorSeri] = useState("");
   const [tanggalPembelian, setTanggalPembelian] = useState("");
   const [tanggalGaransi, setTanggalGaransi] = useState("");
-  const [nilaiPerolehan, setNilaiPerolehan] = useState("");
-  const [statusAsset, setStatusAsset] = useState("GOOD"); // Default status
-
-  // State for laptop-specific fields (dropdowns)
-  const [processorOptionId, setProcessorOptionId] = useState<string | null>(
-    null
-  );
-  const [ramOptionId, setRamOptionId] = useState<string | null>(null);
-  const [storageTypeOptionId, setStorageTypeOptionId] = useState<string | null>(
-    null
-  );
-  const [osOptionId, setOsOptionId] = useState<string | null>(null);
-  const [portOptionId, setPortOptionId] = useState<string | null>(null);
-  const [powerOptionId, setPowerOptionId] = useState<string | null>(null);
-  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<
-    string | null
-  >(null);
-  const [colorOptionId, setColorOptionId] = useState<string | null>(null);
-  const [brandOptionId, setBrandOptionId] = useState<string | null>(null);
-  const [typeOptionId, setTypeOptionId] = useState<string | null>(null);
+  const [nilaiPerolehan] = useState("");
+  const [statusAsset, setStatusAsset] = useState<string | null>(null);
 
   // State for laptop-specific fields (text)
   const [macWlan, setMacWlan] = useState("");
   const [macLan, setMacLan] = useState("");
+  const [licenseKey, setLicenseKey] = useState("");
 
   // State for dropdown options
   const [ramOptions, setRamOptions] = useState<Option[]>([]);
   const [processorOptions, setProcessorOptions] = useState<Option[]>([]);
   const [storageOptions, setStorageOptions] = useState<Option[]>([]);
   const [osOptions, setOsOptions] = useState<Option[]>([]);
-  const [portOptions, setPortOptions] = useState<Option[]>([]);
   const [powerOptions, setPowerOptions] = useState<Option[]>([]);
-  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<
-    Option[]
-  >([]);
+  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<Option[]>([]);
   const [colorOptions, setColorOptions] = useState<Option[]>([]);
   const [brandOptions, setBrandOptions] = useState<Option[]>([]);
+  const [graphicOptions, setGraphicOptions] = useState<Option[]>([]);
+  const [licenseOptions, setLicenseOptions] = useState<Option[]>([]);
   const [typeOptions, setTypeOptions] = useState<Option[]>([]);
+  const [vgaOptions, setVgaOptions] = useState<Option[]>([]);
 
-  const assetStatuses = [
-    "GOOD",
-    "NEED REPARATION",
-    "BROKEN",
-    "MISSING",
-    "SELL",
+  // State untuk ID dropdown
+  const [brandOptionId, setBrandOptionId] = useState<number | null>(null);
+  const [processorOptionId, setProcessorOptionId] = useState<number | null>(null);
+  const [ramOptionId, setRamOptionId] = useState<number | null>(null);
+  const [storageTypeOptionId, setStorageTypeOptionId] = useState<number | null>(null);
+  const [osOptionId, setOsOptionId] = useState<number | null>(null);
+  const [licenseOptionId, setLicenseOptionId] = useState<number | null>(null);
+  const [powerOptionId, setPowerOptionId] = useState<number | null>(null);
+  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<number | null>(null);
+  const [colorOptionId, setColorOptionId] = useState<number | null>(null);
+  const [graphicOptionId, setGraphicOptionId] = useState<number | null>(null);
+  const [vgaOptionId, setVgaOptionId] = useState<number | null>(null);
+  const [typeOptionId, setTypeOptionId] = useState<number | null>(null);
+
+  const assetStatuses: ReactSelectOption[] = [
+    { value: "GOOD", label: "GOOD" },
+    { value: "NEED REPARATION", label: "NEED REPARATION" },
+    { value: "BROKEN", label: "BROKEN" },
+    { value: "MISSING", label: "MISSING" },
+    { value: "SELL", label: "SELL" },
   ];
 
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        setRamOptions(await getLaptopRamOptions());
-        setProcessorOptions(await getLaptopProcessorOptions());
-        setStorageOptions(await getLaptopStorageOptions());
-        setOsOptions(await getLaptopOsOptions());
-        setPortOptions(await getLaptopPortOptions());
-        setPowerOptions(await getLaptopPowerOptions());
-        setMicrosoftOfficeOptions(await getLaptopMicrosoftOffices());
-        setColorOptions(await getLaptopColors());
-        setBrandOptions(await getLaptopBrandOptions());
-        setTypeOptions(await getLaptopTypeOptions());
+        const mapOptions = (items: any[]) =>
+          items
+            .filter((item: any) => !item.isDeleted)
+            .map((item: any) => ({ id: item.id, value: item.value }));
+
+        setRamOptions(mapOptions(await getLaptopRamOptions()));
+        setProcessorOptions(mapOptions(await getLaptopProcessorOptions()));
+        setStorageOptions(mapOptions(await getLaptopStorageOptions()));
+        setOsOptions(mapOptions(await getLaptopOsOptions()));
+        setPowerOptions(mapOptions(await getLaptopPowerOptions()));
+        setMicrosoftOfficeOptions(mapOptions(await getLaptopMicrosoftOffices()));
+        setColorOptions(mapOptions(await getLaptopColors()));
+        setBrandOptions(mapOptions(await getLaptopBrandOptions()));
+        setTypeOptions(mapOptions(await getLaptopTypeOptions()));
+        setGraphicOptions(mapOptions(await getLaptopGraphicOptions()));
+        setVgaOptions(mapOptions(await getLaptopVgaOptions()));
+        setLicenseOptions(mapOptions(await getLaptopLicenseOptions()));
       } catch (error) {
         console.error("Failed to fetch options:", error);
       }
@@ -109,42 +115,68 @@ export default function AddLaptopAssetPage() {
     e.preventDefault();
 
     const assetData = {
-      namaAsset,
-      categoryId: 1, // Assuming 1 is the ID for 'Laptop' category
+      namaAsset: namaAsset || "",
+      categoryId: 1, 
       nomorSeri,
       tanggalPembelian: tanggalPembelian ? new Date(tanggalPembelian) : null,
       tanggalGaransi: tanggalGaransi ? new Date(tanggalGaransi) : null,
       nilaiPerolehan: nilaiPerolehan ? parseFloat(nilaiPerolehan) : null,
-      statusAsset,
+      statusAsset: statusAsset || "GOOD", 
     };
 
     const laptopSpecsData = {
-      processorOptionId: processorOptionId ? parseInt(processorOptionId) : null,
-      ramOptionId: ramOptionId ? parseInt(ramOptionId) : null,
-      storageTypeOptionId: storageTypeOptionId
-        ? parseInt(storageTypeOptionId)
-        : null,
-      osOptionId: osOptionId ? parseInt(osOptionId) : null,
-      portOptionId: portOptionId ? parseInt(portOptionId) : null,
-      powerOptionId: powerOptionId ? parseInt(powerOptionId) : null,
-      microsoftOfficeOptionId: microsoftOfficeOptionId
-        ? parseInt(microsoftOfficeOptionId)
-        : null,
-      colorOptionId: colorOptionId ? parseInt(colorOptionId) : null,
-      brandOptionId: brandOptionId ? parseInt(brandOptionId) : null,
-      typeOptionId: typeOptionId ? parseInt(typeOptionId) : null,
+      processorOptionId,
+      ramOptionId,
+      storageTypeOptionId,
+      osOptionId,
+      powerOptionId,
+      microsoftOfficeOptionId,
+      colorOptionId,
+      brandOptionId,
+      typeOptionId,
       macWlan,
       macLan,
+      graphicOptionId,
+      vgaOptionId,
+      licenseKey,
+      licenseOptionId,
     };
 
     try {
       await createAssetAndLaptopSpecs(assetData, laptopSpecsData);
       alert("Laptop asset added successfully!");
-      router.push("/assets"); // Redirect to assets list
+      router.push("/assets");
     } catch (error) {
       console.error("Failed to add laptop asset:", error);
       alert("Failed to add laptop asset.");
     }
+  };
+
+  const getSelectedOption = (options: Option[], selectedId: number | null) => {
+    if (selectedId === null) return null;
+    const option = options.find((opt) => opt.id === selectedId);
+    return option ? { value: option.id.toString(), label: option.value } : null;
+  };
+
+  const getSelectedOptionByValue = (options: Option[], selectedValue: string | null) => {
+    if (!selectedValue) return null;
+    const option = options.find((opt) => opt.value === selectedValue);
+    return option ? { value: option.id.toString(), label: option.value } : null;
+  };
+
+  const handleMacAddressChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    const input = e.target.value.replace(/[^0-9a-fA-F]/g, "");
+    let formatted = "";
+    for (let i = 0; i < input.length; i++) {
+      if (i > 0 && i % 2 === 0) {
+        formatted += ":";
+      }
+      formatted += input[i];
+    }
+    setter(formatted.toUpperCase().slice(0, 17));
   };
 
   return (
@@ -158,12 +190,16 @@ export default function AddLaptopAssetPage() {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold mb-4">Common Asset Details</h2>
           <div>
-            <Label htmlFor="namaAsset"></Label>
-            <Input
-              id="namaAsset"
-              value={namaAsset}
-              onChange={(e) => setNamaAsset(e.target.value)}
-              required
+            <Label htmlFor="namaAsset">Model Laptop</Label>
+            <Select
+              options={typeOptions.map((opt) => ({ value: opt.value, label: opt.value }))}
+              value={getSelectedOptionByValue(typeOptions, namaAsset)}
+              onChange={(selectedOption) =>
+                setNamaAsset(selectedOption ? selectedOption.value : null)
+              }
+              placeholder="Select model"
+              isClearable
+              isSearchable
             />
           </div>
           <div>
@@ -193,241 +229,158 @@ export default function AddLaptopAssetPage() {
               onChange={(e) => setTanggalGaransi(e.target.value)}
             />
           </div>
-          {/* <div>
-            <Label htmlFor="nilaiPerolehan">Acquisition Value</Label>
-            <Input type="number" id="nilaiPerolehan" value={nilaiPerolehan} onChange={(e) => setNilaiPerolehan(e.target.value)} step="0.01" />
-          </div> */}
           <div>
             <Label htmlFor="statusAsset">Asset Status</Label>
-            <Select onValueChange={setStatusAsset} value={statusAsset}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {assetStatuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Select
+              options={assetStatuses}
+              value={assetStatuses.find((option) => option.value === statusAsset)}
+              onChange={(selectedOption) =>
+                setStatusAsset(selectedOption ? selectedOption.value : null)
+              }
+              placeholder="Select status"
+              isClearable
+              isSearchable
+            />
           </div>
         </div>
 
         {/* Laptop Specific Details */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 className="text-xl font-semibold mb-4 col-span-full">
             Laptop Specific Details
           </h2>
-          <div>
-            <Label htmlFor="brandOption">Brand</Label>
-            <Select
-              onValueChange={setBrandOptionId}
-              value={brandOptionId || ""}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select brand" />
-              </SelectTrigger>
-              <SelectContent>
-                {brandOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           <div>
-            <Label htmlFor="processorOption">Processor</Label>
+            <Label>Brand</Label>
             <Select
-              onValueChange={setProcessorOptionId}
-              value={processorOptionId || ""}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select processor" />
-              </SelectTrigger>
-              <SelectContent>
-                {processorOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={brandOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(brandOptions, brandOptionId)}
+              onChange={(selectedOption) => setBrandOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
           </div>
           <div>
-            <Label htmlFor="ramOption">RAM</Label>
-            <Select onValueChange={setRamOptionId} value={ramOptionId || ""}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select RAM" />
-              </SelectTrigger>
-              <SelectContent>
-                {ramOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="storageTypeOption">Storage Type</Label>
+            <Label>Processor</Label>
             <Select
-              onValueChange={setStorageTypeOptionId}
-              value={storageTypeOptionId || ""}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select storage type" />
-              </SelectTrigger>
-              <SelectContent>
-                {storageOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={processorOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(processorOptions, processorOptionId)}
+              onChange={(selectedOption) => setProcessorOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
           </div>
           <div>
-            <Label htmlFor="osOption">Operating System</Label>
-            <Select onValueChange={setOsOptionId} value={osOptionId || ""}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select OS" />
-              </SelectTrigger>
-              <SelectContent>
-                {osOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>RAM</Label>
+            <Select
+              options={ramOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(ramOptions, ramOptionId)}
+              onChange={(selectedOption) => setRamOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
           </div>
           <div>
-            <Label htmlFor="nomorSeri">License</Label>
+            <Label>Storage Type</Label>
+            <Select
+              options={storageOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(storageOptions, storageTypeOptionId)}
+              onChange={(selectedOption) => setStorageTypeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>Operating System</Label>
+            <Select
+              options={osOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(osOptions, osOptionId)}
+              onChange={(selectedOption) => setOsOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>License Key</Label>
             <Input
-              id="nomorSeri"
               maxLength={29}
-              value={nomorSeri}
-              onChange={(e) => setNomorSeri(e.target.value)}
-              required
+              value={licenseKey}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                let formattedValue = '';
+                for (let i = 0; i < value.length; i++) {
+                  if (i > 0 && i % 5 === 0) {
+                    formattedValue += '-';
+                  }
+                  formattedValue += value[i];
+                }
+                setLicenseKey(formattedValue.slice(0, 29));
+              }}
               placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
             />
           </div>
           <div>
-            <Label htmlFor="osOption">Type License</Label>
-            <Select onValueChange={setOsOptionId} value={osOptionId || ""}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select OS" />
-              </SelectTrigger>
-              <SelectContent>
-                {osOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* <div>
-            <Label htmlFor="portOption">Port</Label>
-            <Select onValueChange={setPortOptionId} value={portOptionId || ""}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select port" />
-              </SelectTrigger>
-              <SelectContent>
-                {portOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div> */}
-          <div>
-            <Label htmlFor="powerOption">Power Adaptor</Label>
+            <Label>License Type</Label>
             <Select
-              onValueChange={setPowerOptionId}
-              value={powerOptionId || ""}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select power" />
-              </SelectTrigger>
-              <SelectContent>
-                {powerOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="microsoftOfficeOption">Microsoft Office</Label>
-            <Select
-              onValueChange={setMicrosoftOfficeOptionId}
-              value={microsoftOfficeOptionId || ""}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Microsoft Office" />
-              </SelectTrigger>
-              <SelectContent>
-                {microsoftOfficeOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="colorOption">Color</Label>
-            <Select
-              onValueChange={setColorOptionId}
-              value={colorOptionId || ""}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select color" />
-              </SelectTrigger>
-              <SelectContent>
-                {colorOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="typeOption">Type</Label>
-            <Select onValueChange={setTypeOptionId} value={typeOptionId || ""}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {typeOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>
-                    {option.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="macWlan">MAC WLAN</Label>
-            <Input
-              id="macWlan"
-              value={macWlan}
-              onChange={(e) => setMacWlan(e.target.value)}
+              options={licenseOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(licenseOptions, licenseOptionId)}
+              onChange={(selectedOption) => setLicenseOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
             />
           </div>
           <div>
-            <Label htmlFor="macLan">MAC LAN</Label>
+            <Label>Power Adaptor</Label>
+            <Select
+              options={powerOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(powerOptions, powerOptionId)}
+              onChange={(selectedOption) => setPowerOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>Microsoft Office</Label>
+            <Select
+              options={microsoftOfficeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(microsoftOfficeOptions, microsoftOfficeOptionId)}
+              onChange={(selectedOption) => setMicrosoftOfficeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>Color</Label>
+            <Select
+              options={colorOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(colorOptions, colorOptionId)}
+              onChange={(selectedOption) => setColorOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>Type</Label>
+            <Select
+              options={typeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(typeOptions, typeOptionId)}
+              onChange={(selectedOption) => setTypeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>Graphic</Label>
+            <Select
+              options={graphicOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(graphicOptions, graphicOptionId)}
+              onChange={(selectedOption) => setGraphicOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>VGA</Label>
+            <Select
+              options={vgaOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+              value={getSelectedOption(vgaOptions, vgaOptionId)}
+              onChange={(selectedOption) => setVgaOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+            />
+          </div>
+          <div>
+            <Label>MAC WLAN</Label>
             <Input
-              id="macLan"
+              value={macWlan}
+              onChange={(e) => handleMacAddressChange(e, setMacWlan)}
+              placeholder="XX:XX:XX:XX:XX:XX"
+              maxLength={17}
+            />
+          </div>
+          <div>
+            <Label>MAC LAN</Label>
+            <Input
               value={macLan}
-              onChange={(e) => setMacLan(e.target.value)}
+              onChange={(e) => handleMacAddressChange(e, setMacLan)}
+              placeholder="XX:XX:XX:XX:XX:XX"
+              maxLength={17}
             />
           </div>
         </div>
