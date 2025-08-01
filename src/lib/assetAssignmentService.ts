@@ -5,8 +5,44 @@ export async function getAssetAssignments() {
   try {
     const assetAssignments = await prisma.assetAssignment.findMany({
       include: {
-        asset: true, // Include related Asset
-        user: true,  // Include related User
+        asset: {
+          include: {
+            category: true,
+            laptopSpecs: {
+              include: {
+                brandOption: true,
+                colorOption: true,
+                microsoftOfficeOption: true,
+                osOption: true,
+                powerOption: true,
+                processorOption: true,
+                ramOption: true,
+                storageTypeOption: true,
+                typeOption: true,
+                graphicOption: true,
+                vgaOption: true,
+                licenseOption: true,
+              },
+            },
+            intelNucSpecs: {
+              include: {
+                brandOption: true,
+                colorOption: true,
+                microsoftOfficeOption: true,
+                osOption: true,
+                powerOption: true,
+                processorOption: true,
+                ramOption: true,
+                storageTypeOption: true,
+                typeOption: true,
+                graphicOption: true,
+                vgaOption: true,
+                licenseOption: true,
+              },
+            },
+          },
+        },
+        user: true, // Include related User
       },
       where: {
         // Optional: you might want to only show active assignments

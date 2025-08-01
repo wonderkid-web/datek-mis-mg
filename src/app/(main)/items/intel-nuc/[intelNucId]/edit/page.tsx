@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,8 @@ import { getLaptopBrandOptions } from "@/lib/laptopBrandService";
 import { getLaptopTypeOptions } from "@/lib/laptopTypeService";
 import { getLaptopGraphicOptions } from "@/lib/laptopGraphicService";
 import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
-import { createAssetAndLaptopSpecs } from "@/lib/assetService";
+import { getAssetById } from "@/lib/assetService";
+import { updateAssetAndIntelNucSpecs } from "@/lib/intelNucService";
 import { toast } from "sonner";
 
 // Define interfaces for dropdown options
@@ -32,8 +33,14 @@ interface ReactSelectOption {
   label: string;
 }
 
-export default function AddLaptopAssetPage() {
+export default function EditIntelNucAssetPage() {
   const router = useRouter();
+  const params = useParams();
+  const intelNucId = params.intelNucId as string;
+
+  if (!intelNucId) {
+    return <div>Loading...</div>; // Or any loading indicator
+  }
 
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
@@ -42,7 +49,7 @@ export default function AddLaptopAssetPage() {
   const [tanggalGaransi, setTanggalGaransi] = useState("");
   const [statusAsset, setStatusAsset] = useState<string | null>(null);
 
-  // State for laptop-specific fields (text)
+  // State for Intel NUC-specific fields (text)
   const [macWlan, setMacWlan] = useState("");
   const [macLan, setMacLan] = useState("");
   const [licenseKey, setLicenseKey] = useState("");
@@ -107,20 +114,53 @@ export default function AddLaptopAssetPage() {
     fetchOptions();
   }, []);
 
+  useEffect(() => {
+    const loadAssetData = async () => {
+      if (intelNucId) {
+        const asset = await getAssetById(parseInt(intelNucId));
+        if (asset) {
+          setNamaAsset(asset.namaAsset);
+          setNomorSeri(asset.nomorSeri);
+          setTanggalPembelian(asset.tanggalPembelian?.toISOString().split('T')[0] || "");
+          setTanggalGaransi(asset.tanggalGaransi?.toISOString().split('T')[0] || "");
+          setStatusAsset(asset.statusAsset);
+
+          if (asset.intelNucSpecs) {
+            setMacWlan(asset.intelNucSpecs.macWlan || "");
+            setMacLan(asset.intelNucSpecs.macLan || "");
+            setLicenseKey(asset.intelNucSpecs.licenseKey || "");
+
+            setBrandOptionId(asset.intelNucSpecs.brandOptionId);
+            setProcessorOptionId(asset.intelNucSpecs.processorOptionId);
+            setRamOptionId(asset.intelNucSpecs.ramOptionId);
+            setStorageTypeOptionId(asset.intelNucSpecs.storageTypeOptionId);
+            setOsOptionId(asset.intelNucSpecs.osOptionId);
+            setLicenseOptionId(asset.intelNucSpecs.licenseOptionId);
+            setPowerOptionId(asset.intelNucSpecs.powerOptionId);
+            setMicrosoftOfficeOptionId(asset.intelNucSpecs.microsoftOfficeOptionId);
+            setColorOptionId(asset.intelNucSpecs.colorOptionId);
+            setGraphicOptionId(asset.intelNucSpecs.graphicOptionId);
+            setTypeOptionId(asset.intelNucSpecs.typeOptionId);
+          }
+        }
+      }
+    };
+    loadAssetData();
+  }, [intelNucId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const assetData = {
       namaAsset: namaAsset || "",
-      // ini satu karna laptop
-      categoryId: 1, 
+      categoryId: 2, // For Intel NUC
       nomorSeri,
       tanggalPembelian: tanggalPembelian ? new Date(tanggalPembelian) : null,
       tanggalGaransi: tanggalGaransi ? new Date(tanggalGaransi) : null,
       statusAsset: statusAsset || "GOOD", 
     };
 
-    const laptopSpecsData = {
+    const intelNucSpecsData = {
       processorOptionId,
       ramOptionId,
       storageTypeOptionId,
@@ -138,12 +178,12 @@ export default function AddLaptopAssetPage() {
     };
 
     try {
-      await createAssetAndLaptopSpecs(assetData, laptopSpecsData);
-      toast.success("Laptop asset added successfully!");
+      await updateAssetAndIntelNucSpecs(parseInt(intelNucId), assetData, intelNucSpecsData);
+      toast.success("Intel NUC asset updated successfully!");
       router.push("/data-center/assigned-assets");
     } catch (error) {
-      console.error("Failed to add laptop asset:", error);
-      toast.error("Failed to add laptop asset.");
+      console.error("Failed to update Intel NUC asset:", error);
+      toast.error("Failed to update Intel NUC asset.");
     }
   };
 
@@ -176,7 +216,7 @@ export default function AddLaptopAssetPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Add New Laptop Asset</h1>
+      <h1 className="text-2xl font-bold mb-6">Edit Intel NUC Asset</h1>
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -185,7 +225,7 @@ export default function AddLaptopAssetPage() {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold mb-4">Common Asset Details</h2>
           <div>
-            <Label htmlFor="namaAsset">Model Laptop</Label>
+            <Label htmlFor="namaAsset">Model Intel NUC</Label>
             <Select
               options={typeOptions.map((opt) => ({ value: opt.value, label: opt.value }))}
               value={getSelectedOptionByValue(typeOptions, namaAsset)}
@@ -239,10 +279,10 @@ export default function AddLaptopAssetPage() {
           </div>
         </div>
 
-        {/* Laptop Specific Details */}
+        {/* Intel NUC Specific Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <h2 className="text-xl font-semibold mb-4 col-span-full">
-            Laptop Specific Details
+            Intel NUC Specific Details
           </h2>
 
           <div>
@@ -336,14 +376,6 @@ export default function AddLaptopAssetPage() {
               onChange={(selectedOption) => setColorOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
             />
           </div>
-          {/* <div>
-            <Label>Type</Label>
-            <Select
-              options={typeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(typeOptions, typeOptionId)}
-              onChange={(selectedOption) => setTypeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div> */}
           <div>
             <Label>Graphic</Label>
             <Select
@@ -374,7 +406,7 @@ export default function AddLaptopAssetPage() {
         </div>
 
         <div className="md:col-span-2 flex justify-end">
-          <Button type="submit">Add Laptop Asset</Button>
+          <Button type="submit">Update Intel NUC Asset</Button>
         </div>
       </form>
     </div>

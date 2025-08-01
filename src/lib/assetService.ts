@@ -3,15 +3,11 @@ import { prisma } from "./prisma";
 import { Asset } from "@prisma/client";
 
 interface CreateAssetData {
-  nomorAsset?: string;
   namaAsset: string;
   categoryId: number;
-  merk?: string | null;
-  model?: string | null;
   nomorSeri: string;
   tanggalPembelian?: Date | null;
   tanggalGaransi?: Date | null;
-  nilaiPerolehan?: number | null;
   statusAsset: string;
   lokasiFisik?: string | null;
 }
@@ -45,43 +41,69 @@ export async function createAssetAndLaptopSpecs(
   };
 
   if (laptopSpecsDataInput.processorOptionId) {
-    laptopSpecsCreateData.processorOption = { connect: { id: laptopSpecsDataInput.processorOptionId } };
+    laptopSpecsCreateData.processorOption = {
+      connect: { id: laptopSpecsDataInput.processorOptionId },
+    };
   }
   if (laptopSpecsDataInput.ramOptionId) {
-    laptopSpecsCreateData.ramOption = { connect: { id: laptopSpecsDataInput.ramOptionId } };
+    laptopSpecsCreateData.ramOption = {
+      connect: { id: laptopSpecsDataInput.ramOptionId },
+    };
   }
   if (laptopSpecsDataInput.storageTypeOptionId) {
-    laptopSpecsCreateData.storageTypeOption = { connect: { id: laptopSpecsDataInput.storageTypeOptionId } };
+    laptopSpecsCreateData.storageTypeOption = {
+      connect: { id: laptopSpecsDataInput.storageTypeOptionId },
+    };
   }
   if (laptopSpecsDataInput.osOptionId) {
-    laptopSpecsCreateData.osOption = { connect: { id: laptopSpecsDataInput.osOptionId } };
+    laptopSpecsCreateData.osOption = {
+      connect: { id: laptopSpecsDataInput.osOptionId },
+    };
   }
   if (laptopSpecsDataInput.portOptionId) {
-    laptopSpecsCreateData.portOption = { connect: { id: laptopSpecsDataInput.portOptionId } };
+    laptopSpecsCreateData.portOption = {
+      connect: { id: laptopSpecsDataInput.portOptionId },
+    };
   }
   if (laptopSpecsDataInput.powerOptionId) {
-    laptopSpecsCreateData.powerOption = { connect: { id: laptopSpecsDataInput.powerOptionId } };
+    laptopSpecsCreateData.powerOption = {
+      connect: { id: laptopSpecsDataInput.powerOptionId },
+    };
   }
   if (laptopSpecsDataInput.microsoftOfficeOptionId) {
-    laptopSpecsCreateData.microsoftOfficeOption = { connect: { id: laptopSpecsDataInput.microsoftOfficeOptionId } };
+    laptopSpecsCreateData.microsoftOfficeOption = {
+      connect: { id: laptopSpecsDataInput.microsoftOfficeOptionId },
+    };
   }
   if (laptopSpecsDataInput.colorOptionId) {
-    laptopSpecsCreateData.colorOption = { connect: { id: laptopSpecsDataInput.colorOptionId } };
+    laptopSpecsCreateData.colorOption = {
+      connect: { id: laptopSpecsDataInput.colorOptionId },
+    };
   }
   if (laptopSpecsDataInput.brandOptionId) {
-    laptopSpecsCreateData.brandOption = { connect: { id: laptopSpecsDataInput.brandOptionId } };
+    laptopSpecsCreateData.brandOption = {
+      connect: { id: laptopSpecsDataInput.brandOptionId },
+    };
   }
   if (laptopSpecsDataInput.typeOptionId) {
-    laptopSpecsCreateData.typeOption = { connect: { id: laptopSpecsDataInput.typeOptionId } };
+    laptopSpecsCreateData.typeOption = {
+      connect: { id: laptopSpecsDataInput.typeOptionId },
+    };
   }
   if (laptopSpecsDataInput.graphicOptionId) {
-    laptopSpecsCreateData.graphicOption = { connect: { id: laptopSpecsDataInput.graphicOptionId } };
+    laptopSpecsCreateData.graphicOption = {
+      connect: { id: laptopSpecsDataInput.graphicOptionId },
+    };
   }
   if (laptopSpecsDataInput.vgaOptionId) {
-    laptopSpecsCreateData.vgaOption = { connect: { id: laptopSpecsDataInput.vgaOptionId } };
+    laptopSpecsCreateData.vgaOption = {
+      connect: { id: laptopSpecsDataInput.vgaOptionId },
+    };
   }
   if (laptopSpecsDataInput.licenseOptionId) {
-    laptopSpecsCreateData.licenseOption = { connect: { id: laptopSpecsDataInput.licenseOptionId } };
+    laptopSpecsCreateData.licenseOption = {
+      connect: { id: laptopSpecsDataInput.licenseOptionId },
+    };
   }
 
   const newAsset = await prisma.asset.create({
@@ -113,15 +135,32 @@ export async function getAssets(): Promise<Asset[]> {
           ramOption: true,
           storageTypeOption: true,
           typeOption: true,
+          graphicOption: true,
+          vgaOption: true,
+          licenseOption: true,
+        },
+      },
+      intelNucSpecs: {
+        include: {
+          brandOption: true,
+          colorOption: true,
+          microsoftOfficeOption: true,
+          osOption: true,
+          powerOption: true,
+          processorOption: true,
+          ramOption: true,
+          storageTypeOption: true,
+          typeOption: true,
+          graphicOption: true,
+          vgaOption: true,
+          licenseOption: true,
         },
       },
     },
   });
-// @ts-expect-error its okay
-  return assets.map(asset => ({
+
+  return assets.map((asset) => ({
     ...asset,
-    // Convert Decimal to number for client-side compatibility
-    nilaiPerolehan: asset.nilaiPerolehan ? asset.nilaiPerolehan.toNumber() : null,
   }));
 }
 
@@ -146,6 +185,22 @@ export async function getAssetById(id: number): Promise<Asset | null> {
           licenseOption: true,
         },
       },
+      intelNucSpecs: {
+        include: {
+          brandOption: true,
+          colorOption: true,
+          microsoftOfficeOption: true,
+          osOption: true,
+          powerOption: true,
+          processorOption: true,
+          ramOption: true,
+          storageTypeOption: true,
+          typeOption: true,
+          graphicOption: true,
+          vgaOption: true,
+          licenseOption: true,
+        },
+      },
     },
   });
 
@@ -153,7 +208,146 @@ export async function getAssetById(id: number): Promise<Asset | null> {
 
   return {
     ...asset,
-    // @ts-expect-error its okay
-    nilaiPerolehan: asset.nilaiPerolehan ? asset.nilaiPerolehan.toNumber() : null,
   };
+}
+
+export async function updateBasicAssetInfo(
+  id: number,
+  data: Partial<CreateAssetData>
+): Promise<Asset> {
+  const updatedAsset = await prisma.asset.update({
+    where: { id },
+    data,
+  });
+
+  return {
+    ...updatedAsset,
+  };
+}
+
+interface UpdateLaptopSpecsDataInput {
+  processorOptionId?: number | null;
+  ramOptionId?: number | null;
+  storageTypeOptionId?: number | null;
+  osOptionId?: number | null;
+  portOptionId?: number | null;
+  powerOptionId?: number | null;
+  microsoftOfficeOptionId?: number | null;
+  colorOptionId?: number | null;
+  macWlan?: string | null;
+  macLan?: string | null;
+  brandOptionId?: number | null;
+  typeOptionId?: number | null;
+  graphicOptionId?: number | null;
+  vgaOptionId?: number | null;
+  licenseOptionId?: number | null;
+  licenseKey?: string | null;
+}
+
+export async function updateAssetAndLaptopSpecs(
+  id: number,
+  assetData: Partial<CreateAssetData>,
+  laptopSpecsDataInput: UpdateLaptopSpecsDataInput
+): Promise<Asset> {
+  const laptopSpecsUpdateData: any = {};
+
+  if (laptopSpecsDataInput.macWlan !== undefined) {
+    laptopSpecsUpdateData.macWlan = laptopSpecsDataInput.macWlan;
+  }
+  if (laptopSpecsDataInput.macLan !== undefined) {
+    laptopSpecsUpdateData.macLan = laptopSpecsDataInput.macLan;
+  }
+  if (laptopSpecsDataInput.licenseKey !== undefined) {
+    laptopSpecsUpdateData.licenseKey = laptopSpecsDataInput.licenseKey;
+  }
+
+  if (laptopSpecsDataInput.processorOptionId !== undefined) {
+    laptopSpecsUpdateData.processorOption = laptopSpecsDataInput.processorOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.processorOptionId } };
+  }
+  if (laptopSpecsDataInput.ramOptionId !== undefined) {
+    laptopSpecsUpdateData.ramOption = laptopSpecsDataInput.ramOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.ramOptionId } };
+  }
+  if (laptopSpecsDataInput.storageTypeOptionId !== undefined) {
+    laptopSpecsUpdateData.storageTypeOption = laptopSpecsDataInput.storageTypeOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.storageTypeOptionId } };
+  }
+  if (laptopSpecsDataInput.osOptionId !== undefined) {
+    laptopSpecsUpdateData.osOption = laptopSpecsDataInput.osOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.osOptionId } };
+  }
+  if (laptopSpecsDataInput.portOptionId !== undefined) {
+    laptopSpecsUpdateData.portOption = laptopSpecsDataInput.portOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.portOptionId } };
+  }
+  if (laptopSpecsDataInput.powerOptionId !== undefined) {
+    laptopSpecsUpdateData.powerOption = laptopSpecsDataInput.powerOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.powerOptionId } };
+  }
+  if (laptopSpecsDataInput.microsoftOfficeOptionId !== undefined) {
+    laptopSpecsUpdateData.microsoftOfficeOption = laptopSpecsDataInput.microsoftOfficeOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.microsoftOfficeOptionId } };
+  }
+  if (laptopSpecsDataInput.colorOptionId !== undefined) {
+    laptopSpecsUpdateData.colorOption = laptopSpecsDataInput.colorOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.colorOptionId } };
+  }
+  if (laptopSpecsDataInput.brandOptionId !== undefined) {
+    laptopSpecsUpdateData.brandOption = laptopSpecsDataInput.brandOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.brandOptionId } };
+  }
+  if (laptopSpecsDataInput.typeOptionId !== undefined) {
+    laptopSpecsUpdateData.typeOption = laptopSpecsDataInput.typeOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.typeOptionId } };
+  }
+  if (laptopSpecsDataInput.graphicOptionId !== undefined) {
+    laptopSpecsUpdateData.graphicOption = laptopSpecsDataInput.graphicOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.graphicOptionId } };
+  }
+  if (laptopSpecsDataInput.vgaOptionId !== undefined) {
+    laptopSpecsUpdateData.vgaOption = laptopSpecsDataInput.vgaOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.vgaOptionId } };
+  }
+  if (laptopSpecsDataInput.licenseOptionId !== undefined) {
+    laptopSpecsUpdateData.licenseOption = laptopSpecsDataInput.licenseOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.licenseOptionId } };
+  }
+
+  const updatedAsset = await prisma.asset.update({
+    where: { id },
+    data: {
+      ...assetData,
+      laptopSpecs: {
+        update: laptopSpecsUpdateData,
+      },
+    },
+    include: {
+      laptopSpecs: true,
+    },
+  });
+  return updatedAsset;
+}
+
+export async function deleteAsset(id: number): Promise<Asset> {
+  // Find the asset first to determine its category
+  const asset = await prisma.asset.findUnique({
+    where: { id },
+    include: { category: true },
+  });
+
+  if (!asset) {
+    throw new Error("Asset not found");
+  }
+
+  // Start a transaction to ensure all or nothing is deleted
+  return await prisma.$transaction(async (tx) => {
+    // 1. Delete related assignments first
+    await tx.assetAssignment.deleteMany({ where: { assetId: id } });
+
+    // 2. Conditionally delete specs based on category
+    if (asset.category.slug === "laptop") {
+      await tx.laptopSpecs.deleteMany({ where: { assetId: id } });
+    } else if (asset.category.slug === "intel-nuc") {
+      await tx.intelNucSpecs.deleteMany({ where: { assetId: id } });
+    }
+    // Add other categories here in the future, e.g.:
+    // else if (asset.category.slug === 'printer') {
+    //   await tx.printerSpecs.deleteMany({ where: { assetId: id } });
+    // }
+
+    // 3. Finally, delete the main asset record
+    const deletedAsset = await tx.asset.delete({
+      where: { id },
+    });
+
+    return deletedAsset;
+  });
 }

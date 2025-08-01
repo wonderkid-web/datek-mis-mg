@@ -1,26 +1,101 @@
 "use server";
-import { prisma } from './prisma';
-import { revalidatePath } from 'next/cache';
-import { AssetAssignment, Prisma } from '@prisma/client';
+import { prisma } from "./prisma";
+import { revalidatePath } from "next/cache";
+import { AssetAssignment, Prisma } from "@prisma/client";
 
-export const getAssignments = async (): Promise<AssetAssignment[]> => {
-  return await prisma.assetAssignment.findMany({
+export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
+  return prisma.assetAssignment.findMany({
     include: {
-      asset: { select: { namaAsset: true} },
-      user: { select: { namaLengkap: true } },
+      user: true,
+      asset: {
+        include: {
+          laptopSpecs: {
+            include: {
+              brandOption: true,
+              colorOption: true,
+              microsoftOfficeOption: true,
+              osOption: true,
+              powerOption: true,
+              processorOption: true,
+              ramOption: true,
+              storageTypeOption: true,
+              typeOption: true,
+              graphicOption: true,
+              vgaOption: true,
+              licenseOption: true,
+            },
+          },
+          intelNucSpecs: {
+            include: {
+              brandOption: true,
+              colorOption: true,
+              microsoftOfficeOption: true,
+              osOption: true,
+              powerOption: true,
+              processorOption: true,
+              ramOption: true,
+              storageTypeOption: true,
+              typeOption: true,
+              graphicOption: true,
+              vgaOption: true,
+              licenseOption: true,
+            },
+          },
+        },
+      },
     },
-    orderBy: {
-      tanggalPeminjaman: 'desc'
-    }
   });
 };
 
-export const getAssignmentById = async (id: number): Promise<AssetAssignment | null> => {
+
+export const getAssignmentById = async (
+  id: number
+): Promise<AssetAssignment | null> => {
   return await prisma.assetAssignment.findUnique({
     where: { id },
     include: {
-      asset: true,
-      user: true,
+      asset: {
+        select: {
+          id: true,
+          namaAsset: true,
+          categoryId: true,
+          nomorSeri: true,
+          tanggalPembelian: true,
+          tanggalGaransi: true,
+          statusAsset: true,
+          lokasiFisik: true,
+          createdAt: true,
+          updatedAt: true,
+          category: { select: { id: true, nama: true, slug: true } },
+          laptopSpecs: {
+            select: {
+              macWlan: true,
+              macLan: true,
+              brandOption: { select: { value: true } },
+              colorOption: { select: { value: true } },
+              microsoftOfficeOption: { select: { value: true } },
+              osOption: { select: { value: true } },
+              powerOption: { select: { value: true } },
+              processorOption: { select: { value: true } },
+              ramOption: { select: { value: true } },
+              storageTypeOption: { select: { value: true } },
+              typeOption: { select: { value: true } },
+              graphicOption: { select: { value: true } },
+              vgaOption: { select: { value: true } },
+              licenseOption: { select: { value: true } },
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          namaLengkap: true,
+          email: true,
+          departemen: true,
+          jabatan: true,
+        },
+      },
     },
   });
 };
@@ -28,17 +103,14 @@ export const getAssignmentById = async (id: number): Promise<AssetAssignment | n
 export const createAssignment = async (data: {
   assetId: number;
   userId: number;
-  tanggalPeminjaman: Date;
-  tanggalPengembalian?: Date | null;
-  kondisiSaatPeminjaman?: string | null;
-  kondisiSaatPengembalian?: string | null;
   catatan?: string | null;
-  nomorAsset?: string; // Add nomorAsset here
+  nomorAsset?: string | null;
 }): Promise<AssetAssignment> => {
-  const { assetId, userId, ...rest } = data; // Destructure userId
+  const { assetId, userId, catatan, nomorAsset } = data;
   return await prisma.assetAssignment.create({
     data: {
-      ...rest,
+      catatan,
+      nomorAsset,
       asset: {
         connect: { id: assetId },
       },
@@ -47,22 +119,21 @@ export const createAssignment = async (data: {
       },
     },
   });
-  revalidatePath('/data-center/unassigned-users');
+  revalidatePath("/data-center/assets");
 };
 
-export const updateAssignment = async (id: number, data: {
-  assetId?: number;
-  userId?: number;
-  tanggalPeminjaman?: Date;
-  tanggalPengembalian?: Date | null;
-  kondisiSaatPeminjaman?: string | null;
-  kondisiSaatPengembalian?: string | null;
-  catatan?: string | null;
-  nomorAsset?: string; // Add nomorAsset here
-}): Promise<AssetAssignment> => {
-  const { assetId, userId, ...rest } = data;
+export const updateAssignment = async (
+  id: number,
+  data: {
+    assetId?: number;
+    userId?: number;
+    catatan?: string | null;
+    nomorAsset?: string | null;
+  }
+): Promise<AssetAssignment> => {
+  const { assetId, userId, catatan, nomorAsset } = data;
 
-  const updateData: Prisma.AssetAssignmentUpdateInput = { ...rest }; // Start with rest of the data
+  const updateData: Prisma.AssetAssignmentUpdateInput = { catatan, nomorAsset }; // Start with rest of the data
 
   if (assetId !== undefined) {
     updateData.asset = { connect: { id: assetId } };

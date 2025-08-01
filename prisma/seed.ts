@@ -22,6 +22,12 @@ async function main() {
     create: { nama: "Laptop", slug: "laptop" },
   })
 
+  const intelNucCategory = await prisma.assetCategory.upsert({
+    where: { slug: "intel-nuc" },
+    update: {},
+    create: { nama: "Intel NUC", slug: "intel-nuc" },
+  })
+
   // ==========================
   // 3. LAPTOP OPTION TABLES (MINIMAL)
   // ==========================

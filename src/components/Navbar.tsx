@@ -1,5 +1,5 @@
 "use client";
-// @ts-nocheck
+
 import Link from "next/link";
 import { LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,7 @@ export default function Navbar() {
               // Dropdown for items with children
               
               <div key={item.name} className="relative"
-              // @ts-expect-error its okay
-              ref={(el) => (dropdownRefs.current[item.name] = el)}> {/* Attach ref */}
+              ref={(el: HTMLDivElement | null) => (dropdownRefs.current[item.name] = el)}> {/* Attach ref */}
                 <Button
                   variant="ghost"
                   onClick={() => setOpenDropdown(openDropdown === item.name ? null : item.name)}

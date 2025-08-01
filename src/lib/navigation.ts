@@ -7,7 +7,19 @@ import {
   Database,
 } from "lucide-react";
 
-export const navigationItems = [
+interface ChildNavigationItem {
+  name: string;
+  href: string;
+}
+
+interface NavigationItem {
+  name: string;
+  href?: string;
+  icon: any; // LucideIcon component
+  children?: ChildNavigationItem[];
+}
+
+export const navigationItems: NavigationItem[] = [
   {
     name: "Dashboard",
     href: "/",
@@ -22,68 +34,26 @@ export const navigationItems = [
     name: "Master Data",
     icon: Database,
     children: [
-      // { name: "Telepon", href: "/master-data/telepon" },
-      // { name: "Synology", href: "/master-data/synology" },
-      // { name: "NVR CCTV", href: "/master-data/nvr-cctv" },
-      // { name: "Camera CCTV", href: "/master-data/camera-cctv" },
-      // { name: "Scanner", href: "/master-data/scanner" },
-      // { name: "Fingerprint", href: "/master-data/fingerprint" },
-      // { name: "Switch", href: "/master-data/switch" },
-      // { name: "Radio", href: "/master-data/radio" },
-      // { name: "UPS", href: "/master-data/ups" },
-      // { name: "Router", href: "/master-data/router" },
-      // { name: "Komputer", href: "/master-data/komputer" },
-      // { name: "Access Point", href: "/master-data/access-point" },
-      // { name: "Printer", href: "/master-data/printer" },
-      { name: "Spesifikasi Laptop", href: "/master-data/laptop" },
+      { name: "Spesifikasi Laptop/Intel NUC", href: "/master-data/laptop" },
+      { name: "Asset Categories", href: "/master-data/asset-categories" },
     ],
   },
   {
     name: "Asset",
     icon: Package,
     children: [
-      // { name: "Telepon", href: "/items/telepon" },
-      // { name: "Synology", href: "/items/synology" },
-      // { name: "NVR CCTV", href: "/items/nvr-cctv" },
-      // { name: "Camera CCTV", href: "/items/camera-cctv" },
-      // { name: "Scanner", href: "/items/scanner" },
-      // { name: "Fingerprint", href: "/items/fingerprint" },
-      // { name: "Switch", href: "/items/switch" },
-      // { name: "Radio", href: "/items/radio" },
-      // { name: "UPS", href: "/items/ups" },
-      // { name: "Router", href: "/items/router" },
-      // { name: "Komputer", href: "/items/komputer" },
-      // { name: "Access Point", href: "/items/access-point" },
-      // { name: "Printer", href: "/items/printer" },
       { name: "Asset Laptop", href: "/items/laptop" },
+      { name: "Asset Intel NUC", href: "/items/intel-nuc" },
     ],
   },
   {
     name: "Data Centre",
     icon: List,
     children: [
-      // { name: "Telepon", href: "/view-devices/telepon" },
-      // { name: "Synology", href: "/view-devices/synology" },
-      // { name: "NVR CCTV", href: "/view-devices/nvr-cctv" },
-      // { name: "Camera CCTV", href: "/view-devices/camera-cctv" },
-      // { name: "Scanner", href: "/view-devices/scanner" },
-      // { name: "Fingerprint", href: "/view-devices/fingerprint" },
-      // { name: "Switch", href: "/view-devices/switch" },
-      // { name: "Radio", href: "/view-devices/radio" },
-      // { name: "UPS", href: "/view-devices/ups" },
-      // { name: "Router", href: "/view-devices/router" },
-      // { name: "Komputer", href: "/view-devices/komputer" },
-      // { name: "Access Point", href: "/view-devices/access-point" },
-      // { name: "Printer", href: "/view-devices/printer" },
-      { name: "Unassigned Users", href: "/data-center/unassigned-users" },
-      { name: "Assigned Users", href: "/data-center/assigned-users" },
+      { name: "Data Assets", href: "/data-center/assets" },
+      { name: "Assigned Assets", href: "/data-center/assigned-assets" },
     ],
   },
-  //  {
-  //   name: "Assignment",
-  //   href: "/assignments",
-  //   icon: User,
-  // },
   {
     name: "Service Record",
     href: "/service-records",

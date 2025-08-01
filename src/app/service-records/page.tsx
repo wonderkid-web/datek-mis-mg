@@ -14,9 +14,45 @@ import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"; /
 import { getServiceRecords, createServiceRecord } from '@/lib/serviceRecordService';
 import { getAssetAssignments } from '@/lib/assetAssignmentService';
 import { columns, ServiceRecordWithDetails } from './columns';
-import { AssetAssignment, Asset, User } from '@prisma/client';
+import { AssetAssignment, Asset, User, LaptopSpecs, IntelNucSpecs, LaptopBrandOption, LaptopColorOption, LaptopMicrosoftOfficeOption, LaptopOsOption, LaptopPowerOption, LaptopProcessorOption, LaptopRamOption, LaptopStorageTypeOption, LaptopTypeOption, LaptopGraphicOption, LaptopVgaOption, LaptopLicenseOption, AssetCategory } from '@prisma/client';
 
-type AssetAssignmentWithDetails = AssetAssignment & { asset: Asset; user: User };
+type LaptopSpecsWithRelations = LaptopSpecs & {
+  brandOption?: LaptopBrandOption | null;
+  colorOption?: LaptopColorOption | null;
+  microsoftOfficeOption?: LaptopMicrosoftOfficeOption | null;
+  osOption?: LaptopOsOption | null;
+  powerOption?: LaptopPowerOption | null;
+  processorOption?: LaptopProcessorOption | null;
+  ramOption?: LaptopRamOption | null;
+  storageTypeOption?: LaptopStorageTypeOption | null;
+  typeOption?: LaptopTypeOption | null;
+  graphicOption?: LaptopGraphicOption | null;
+  vgaOption?: LaptopVgaOption | null;
+  licenseOption?: LaptopLicenseOption | null;
+};
+
+type IntelNucSpecsWithRelations = IntelNucSpecs & {
+  brandOption?: LaptopBrandOption | null;
+  colorOption?: LaptopColorOption | null;
+  microsoftOfficeOption?: LaptopMicrosoftOfficeOption | null;
+  osOption?: LaptopOsOption | null;
+  powerOption?: LaptopPowerOption | null;
+  processorOption?: LaptopProcessorOption | null;
+  ramOption?: LaptopRamOption | null;
+  storageTypeOption?: LaptopStorageTypeOption | null;
+  typeOption?: LaptopTypeOption | null;
+  graphicOption?: LaptopGraphicOption | null;
+  vgaOption?: LaptopVgaOption | null;
+  licenseOption?: LaptopLicenseOption | null;
+};
+
+type AssetWithDetails = Asset & {
+  category?: AssetCategory | null;
+  laptopSpecs?: LaptopSpecsWithRelations | null;
+  intelNucSpecs?: IntelNucSpecsWithRelations | null;
+};
+
+type AssetAssignmentWithDetails = AssetAssignment & { asset: AssetWithDetails; user: User };
 
 // Helper function to format number to Rupiah
 const formatRupiah = (amount: number | string): string => {
@@ -140,7 +176,7 @@ export default function ServiceRecordsPage() {
                                 <SelectContent>
                                     {assetAssignments.map(a => (
                                         <SelectItem key={a.id} value={a.id.toString()}>
-                                            {a.nomorAsset} - {a.asset.namaAsset}
+                                            {a.nomorAsset}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -193,6 +229,66 @@ export default function ServiceRecordsPage() {
                                 <TableRow>
                                     <TableCell className="font-semibold">Device:</TableCell>
                                     <TableCell>{selectedAssignment.asset.namaAsset}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Category:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.category?.nama || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Brand:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.brandOption?.value || selectedAssignment.asset.intelNucSpecs?.brandOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Processor:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.processorOption?.value || selectedAssignment.asset.intelNucSpecs?.processorOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">RAM:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.ramOption?.value || selectedAssignment.asset.intelNucSpecs?.ramOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Storage Type:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.storageTypeOption?.value || selectedAssignment.asset.intelNucSpecs?.storageTypeOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Operating System:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.osOption?.value || selectedAssignment.asset.intelNucSpecs?.osOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">MAC WLAN:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.macWlan || selectedAssignment.asset.intelNucSpecs?.macWlan || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">MAC LAN:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.macLan || selectedAssignment.asset.intelNucSpecs?.macLan || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">License Key:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.licenseKey || selectedAssignment.asset.intelNucSpecs?.licenseKey || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">License Type:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.licenseOption?.value || selectedAssignment.asset.intelNucSpecs?.licenseOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Power Adaptor:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.powerOption?.value || selectedAssignment.asset.intelNucSpecs?.powerOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Microsoft Office:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.microsoftOfficeOption?.value || selectedAssignment.asset.intelNucSpecs?.microsoftOfficeOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Color:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.colorOption?.value || selectedAssignment.asset.intelNucSpecs?.colorOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">Graphic:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.graphicOption?.value || selectedAssignment.asset.intelNucSpecs?.graphicOption?.value || 'N/A'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-semibold">VGA:</TableCell>
+                                    <TableCell>{selectedAssignment.asset.laptopSpecs?.vgaOption?.value || selectedAssignment.asset.intelNucSpecs?.vgaOption?.value || 'N/A'}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="font-semibold">User:</TableCell>

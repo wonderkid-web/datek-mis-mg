@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { getLaptopBrandOptions } from "@/lib/laptopBrandService";
 import { getLaptopTypeOptions } from "@/lib/laptopTypeService";
 import { getLaptopGraphicOptions } from "@/lib/laptopGraphicService";
 import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
-import { createAssetAndLaptopSpecs } from "@/lib/assetService";
+import { getAssetById, updateAssetAndLaptopSpecs } from "@/lib/assetService";
 import { toast } from "sonner";
 
 // Define interfaces for dropdown options
@@ -32,8 +32,14 @@ interface ReactSelectOption {
   label: string;
 }
 
-export default function AddLaptopAssetPage() {
+export default function EditLaptopAssetPage() {
   const router = useRouter();
+  const params = useParams();
+  const laptopId = params.laptopId as string;
+
+  if (!laptopId) {
+    return <div>Loading...</div>; // Or any loading indicator
+  }
 
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
@@ -107,6 +113,40 @@ export default function AddLaptopAssetPage() {
     fetchOptions();
   }, []);
 
+  useEffect(() => {
+    const loadAssetData = async () => {
+      if (laptopId) {
+        const asset = await getAssetById(parseInt(laptopId));
+        if (asset) {
+          setNamaAsset(asset.namaAsset);
+          setNomorSeri(asset.nomorSeri);
+          setTanggalPembelian(asset.tanggalPembelian?.toISOString().split('T')[0] || "");
+          setTanggalGaransi(asset.tanggalGaransi?.toISOString().split('T')[0] || "");
+          setStatusAsset(asset.statusAsset);
+          setLicenseKey(asset.nomorSeri || "");
+
+          if (asset.laptopSpecs) {
+            setMacWlan(asset.laptopSpecs.macWlan || "");
+            setMacLan(asset.laptopSpecs.macLan || "");
+
+            setBrandOptionId(asset.laptopSpecs.brandOptionId);
+            setProcessorOptionId(asset.laptopSpecs.processorOptionId);
+            setRamOptionId(asset.laptopSpecs.ramOptionId);
+            setStorageTypeOptionId(asset.laptopSpecs.storageTypeOptionId);
+            setOsOptionId(asset.laptopSpecs.osOptionId);
+            setLicenseOptionId(asset.laptopSpecs.licenseOptionId);
+            setPowerOptionId(asset.laptopSpecs.powerOptionId);
+            setMicrosoftOfficeOptionId(asset.laptopSpecs.microsoftOfficeOptionId);
+            setColorOptionId(asset.laptopSpecs.colorOptionId);
+            setGraphicOptionId(asset.laptopSpecs.graphicOptionId);
+            setTypeOptionId(asset.laptopSpecs.typeOptionId);
+          }
+        }
+      }
+    };
+    loadAssetData();
+  }, [laptopId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -138,7 +178,7 @@ export default function AddLaptopAssetPage() {
     };
 
     try {
-      await createAssetAndLaptopSpecs(assetData, laptopSpecsData);
+      await updateAssetAndLaptopSpecs(parseInt(laptopId), assetData, laptopSpecsData);
       toast.success("Laptop asset added successfully!");
       router.push("/data-center/assigned-assets");
     } catch (error) {
@@ -374,7 +414,7 @@ export default function AddLaptopAssetPage() {
         </div>
 
         <div className="md:col-span-2 flex justify-end">
-          <Button type="submit">Add Laptop Asset</Button>
+          <Button type="submit">Update Laptop Asset</Button>
         </div>
       </form>
     </div>
