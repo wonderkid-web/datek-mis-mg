@@ -38,9 +38,8 @@ export default function EditIntelNucAssetPage() {
   const params = useParams();
   const intelNucId = params.intelNucId as string;
 
-  if (!intelNucId) {
-    return <div>Loading...</div>; // Or any loading indicator
-  }
+  // State for loading
+  const [isLoading, setIsLoading] = useState(true);
 
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);

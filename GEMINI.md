@@ -8,12 +8,12 @@ Dokumen ini bertujuan untuk memberikan konteks yang diperlukan kepada Gemini aga
   Membangun website tracking aset dengan fokus utama mencatat aset apa saja yang dimiliki oleh setiap user (karyawan) di perusahaan kelapa sawit.
 
 - **Alur Kerja Aset:**
-  - **Penambahan Aset Baru:** Dilakukan melalui halaman `/items/laptop` (untuk aset jenis laptop). Halaman ini berfungsi sebagai formulir lengkap untuk menambahkan detail aset dan spesifikasi laptop.
+  - **Penambahan Aset Baru:** Dilakukan melalui halaman `/items/laptop` (untuk aset jenis laptop) dan `/items/intel-nuc` (untuk aset jenis Intel NUC). Halaman-halaman ini berfungsi sebagai formulir lengkap untuk menambahkan detail aset dan spesifikasi masing-masing.
   - **Manajemen Aset Umum:** Dilakukan melalui halaman `/data-center/assets`. Halaman ini menampilkan daftar semua aset, memungkinkan pengeditan dasar aset, penghapusan aset, dan penugasan aset kepada pengguna.
   - **Manajemen Penugasan Aset:** Dilakukan melalui halaman `/data-center/assigned-assets`. Halaman ini menampilkan daftar semua penugasan aset (aset yang sudah diberikan kepada pengguna) dengan fungsionalitas CRUD penuh untuk penugasan tersebut.
 
 - **Tantangan Atribut Bervariasi & Pendekatan Hibrida:**
-  Jenis aset yang berbeda (laptop, printer, dll.) memiliki spesifikasi yang berbeda-beda (misal: RAM di laptop tapi tidak di printer). Menggunakan satu tabel `assets` untuk atribut umum, dan tabel terpisah (`laptop_specs`, `printer_specs`, dll.) untuk atribut spesifik yang unik per kategori aset. Ini menjaga integritas data dan performa query.
+  Jenis aset yang berbeda (laptop, Intel NUC, printer, dll.) memiliki spesifikasi yang berbeda-beda (misal: RAM di laptop tapi tidak di printer). Menggunakan satu tabel `assets` untuk atribut umum, dan tabel terpisah (`laptop_specs`, `intel_nuc_specs`, `printer_specs`, dll.) untuk atribut spesifik yang unik per kategori aset. Ini menjaga integritas data dan performa query.
 
 - **Klarifikasi Kebutuhan Input Standar & Lookup Tables:**
   Nilai untuk spesifikasi tertentu (misal: RAM) tidak boleh berupa input bebas, melainkan select dropdown dari daftar nilai yang bisa di-CRUD oleh admin. Untuk setiap atribut yang membutuhkan select dan CRUD pada opsi-opsinya (misal: `ram_options`, `processor_options`, `storage_type_options`), akan dibuat tabel terpisah. Tabel spesifikasi aset (misal `laptop_specs`) kemudian akan memiliki Foreign Key ke tabel-tabel lookup ini.
@@ -55,6 +55,11 @@ app/
 │ │     └── [laptopId]/
 │ │         └── edit/
 │ │             └── page.tsx <-- /items/laptop/[laptopId]/edit (Form edit spesifikasi laptop)
+│ │ └── intel-nuc/
+│ │     ├── page.tsx <-- /items/intel-nuc (Form tambah aset Intel NUC baru)
+│ │     └── [intelNucId]/
+│ │         └── edit/
+│ │             └── page.tsx <-- /items/intel-nuc/[intelNucId]/edit (Form edit spesifikasi Intel NUC)
 │ │
 │ ├── employee/
 │ │ ├── add-user-dialog.tsx

@@ -37,9 +37,8 @@ export default function EditLaptopAssetPage() {
   const params = useParams();
   const laptopId = params.laptopId as string;
 
-  if (!laptopId) {
-    return <div>Loading...</div>; // Or any loading indicator
-  }
+  // State for loading
+  const [isLoading, setIsLoading] = useState(true);
 
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
@@ -52,6 +51,10 @@ export default function EditLaptopAssetPage() {
   const [macWlan, setMacWlan] = useState("");
   const [macLan, setMacLan] = useState("");
   const [licenseKey, setLicenseKey] = useState("");
+
+  if (isLoading) {
+    return <div className="container mx-auto p-4">Loading asset data...</div>;
+  }
 
   // State for dropdown options
   const [ramOptions, setRamOptions] = useState<Option[]>([]);
