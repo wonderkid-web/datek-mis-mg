@@ -23,7 +23,7 @@ import { toast } from "sonner";
 
 // Define interfaces for dropdown options
 interface Option {
-  id: number; 
+  id: number;
   value: string;
 }
 
@@ -53,7 +53,9 @@ export default function AddLaptopAssetPage() {
   const [storageOptions, setStorageOptions] = useState<Option[]>([]);
   const [osOptions, setOsOptions] = useState<Option[]>([]);
   const [powerOptions, setPowerOptions] = useState<Option[]>([]);
-  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<Option[]>([]);
+  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<
+    Option[]
+  >([]);
   const [colorOptions, setColorOptions] = useState<Option[]>([]);
   const [brandOptions, setBrandOptions] = useState<Option[]>([]);
   const [graphicOptions, setGraphicOptions] = useState<Option[]>([]);
@@ -62,13 +64,19 @@ export default function AddLaptopAssetPage() {
 
   // State untuk ID dropdown
   const [brandOptionId, setBrandOptionId] = useState<number | null>(null);
-  const [processorOptionId, setProcessorOptionId] = useState<number | null>(null);
+  const [processorOptionId, setProcessorOptionId] = useState<number | null>(
+    null
+  );
   const [ramOptionId, setRamOptionId] = useState<number | null>(null);
-  const [storageTypeOptionId, setStorageTypeOptionId] = useState<number | null>(null);
+  const [storageTypeOptionId, setStorageTypeOptionId] = useState<number | null>(
+    null
+  );
   const [osOptionId, setOsOptionId] = useState<number | null>(null);
   const [licenseOptionId, setLicenseOptionId] = useState<number | null>(null);
   const [powerOptionId, setPowerOptionId] = useState<number | null>(null);
-  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<number | null>(null);
+  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<
+    number | null
+  >(null);
   const [colorOptionId, setColorOptionId] = useState<number | null>(null);
   const [graphicOptionId, setGraphicOptionId] = useState<number | null>(null);
   const [typeOptionId, setTypeOptionId] = useState<number | null>(null);
@@ -94,7 +102,9 @@ export default function AddLaptopAssetPage() {
         setStorageOptions(mapOptions(await getLaptopStorageOptions()));
         setOsOptions(mapOptions(await getLaptopOsOptions()));
         setPowerOptions(mapOptions(await getLaptopPowerOptions()));
-        setMicrosoftOfficeOptions(mapOptions(await getLaptopMicrosoftOffices()));
+        setMicrosoftOfficeOptions(
+          mapOptions(await getLaptopMicrosoftOffices())
+        );
         setColorOptions(mapOptions(await getLaptopColors()));
         setBrandOptions(mapOptions(await getLaptopBrandOptions()));
         setTypeOptions(mapOptions(await getLaptopTypeOptions()));
@@ -113,11 +123,11 @@ export default function AddLaptopAssetPage() {
     const assetData = {
       namaAsset: namaAsset || "",
       // ini satu karna laptop
-      categoryId: 1, 
+      categoryId: 1,
       nomorSeri,
       tanggalPembelian: tanggalPembelian ? new Date(tanggalPembelian) : null,
       tanggalGaransi: tanggalGaransi ? new Date(tanggalGaransi) : null,
-      statusAsset: statusAsset || "GOOD", 
+      statusAsset: statusAsset || "GOOD",
     };
 
     const laptopSpecsData = {
@@ -153,7 +163,10 @@ export default function AddLaptopAssetPage() {
     return option ? { value: option.id.toString(), label: option.value } : null;
   };
 
-  const getSelectedOptionByValue = (options: Option[], selectedValue: string | null) => {
+  const getSelectedOptionByValue = (
+    options: Option[],
+    selectedValue: string | null
+  ) => {
     if (!selectedValue) return null;
     const option = options.find((opt) => opt.value === selectedValue);
     return option ? { value: option.id.toString(), label: option.value } : null;
@@ -176,204 +189,266 @@ export default function AddLaptopAssetPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Add New Laptop Asset</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">
+        Add New Laptop Asset 💻
+      </h1>
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="space-y-6 p-4 border rounded-lg md:w-1/2 mx-auto"
       >
-        {/* Common Asset Details */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold mb-4">Common Asset Details</h2>
-          <div>
-            <Label htmlFor="namaAsset">Model Laptop</Label>
-            <Select
-              options={typeOptions.map((opt) => ({ value: opt.value, label: opt.value }))}
-              value={getSelectedOptionByValue(typeOptions, namaAsset)}
-              onChange={(selectedOption) =>
-                setNamaAsset(selectedOption ? selectedOption.value : null)
-              }
-              placeholder="Select model"
-              isClearable
-              isSearchable
-            />
-          </div>
-          <div>
-            <Label htmlFor="nomorSeri">Serial Number</Label>
-            <Input
-              id="nomorSeri"
-              value={nomorSeri}
-              onChange={(e) => setNomorSeri(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="tanggalPembelian">Purchase Date</Label>
-            <Input
-              type="date"
-              id="tanggalPembelian"
-              value={tanggalPembelian}
-              onChange={(e) => setTanggalPembelian(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="tanggalGaransi">Warranty Date</Label>
-            <Input
-              type="date"
-              id="tanggalGaransi"
-              value={tanggalGaransi}
-              onChange={(e) => setTanggalGaransi(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="statusAsset">Asset Status</Label>
-            <Select
-              options={assetStatuses}
-              value={assetStatuses.find((option) => option.value === statusAsset)}
-              onChange={(selectedOption) =>
-                setStatusAsset(selectedOption ? selectedOption.value : null)
-              }
-              placeholder="Select status"
-              isClearable
-              isSearchable
-            />
-          </div>
+        <h2 className="text-xl font-semibold mb-4">Laptop Details</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Brand</Label>
+          <Select
+            options={brandOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(brandOptions, brandOptionId)}
+            onChange={(selectedOption) =>
+              setBrandOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label htmlFor="namaAsset">Model Laptop</Label>
+          <Select
+            options={typeOptions.map((opt) => ({
+              value: opt.value,
+              label: opt.value,
+            }))}
+            value={getSelectedOptionByValue(typeOptions, namaAsset)}
+            onChange={(selectedOption) =>
+              setNamaAsset(selectedOption ? selectedOption.value : null)
+            }
+            placeholder="Select model"
+            isClearable
+            isSearchable
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label htmlFor="nomorSeri">Serial Number</Label>
+          <Input
+            id="nomorSeri"
+            value={nomorSeri}
+            onChange={(e) => setNomorSeri(e.target.value.toUpperCase())}
+            required
+          />
         </div>
 
-        {/* Laptop Specific Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <h2 className="text-xl font-semibold mb-4 col-span-full">
-            Laptop Specific Details
-          </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Processor</Label>
+          <Select
+            options={processorOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(processorOptions, processorOptionId)}
+            onChange={(selectedOption) =>
+              setProcessorOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>RAM</Label>
+          <Select
+            options={ramOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(ramOptions, ramOptionId)}
+            onChange={(selectedOption) =>
+              setRamOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Storage Type</Label>
+          <Select
+            options={storageOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(storageOptions, storageTypeOptionId)}
+            onChange={(selectedOption) =>
+              setStorageTypeOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Graphic</Label>
+          <Select
+            options={graphicOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(graphicOptions, graphicOptionId)}
+            onChange={(selectedOption) =>
+              setGraphicOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Power Adaptor</Label>
+          <Select
+            options={powerOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(powerOptions, powerOptionId)}
+            onChange={(selectedOption) =>
+              setPowerOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Color</Label>
+          <Select
+            options={colorOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(colorOptions, colorOptionId)}
+            onChange={(selectedOption) =>
+              setColorOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
 
-          <div>
-            <Label>Brand</Label>
-            <Select
-              options={brandOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(brandOptions, brandOptionId)}
-              onChange={(selectedOption) => setBrandOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>Processor</Label>
-            <Select
-              options={processorOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(processorOptions, processorOptionId)}
-              onChange={(selectedOption) => setProcessorOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>RAM</Label>
-            <Select
-              options={ramOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(ramOptions, ramOptionId)}
-              onChange={(selectedOption) => setRamOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>Storage Type</Label>
-            <Select
-              options={storageOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(storageOptions, storageTypeOptionId)}
-              onChange={(selectedOption) => setStorageTypeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>Operating System</Label>
-            <Select
-              options={osOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(osOptions, osOptionId)}
-              onChange={(selectedOption) => setOsOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>License Key</Label>
-            <Input
-              maxLength={29}
-              value={licenseKey}
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
-                let formattedValue = '';
-                for (let i = 0; i < value.length; i++) {
-                  if (i > 0 && i % 5 === 0) {
-                    formattedValue += '-';
-                  }
-                  formattedValue += value[i];
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>MAC WLAN</Label>
+          <Input
+            value={macWlan}
+            onChange={(e) => handleMacAddressChange(e, setMacWlan)}
+            placeholder="XX:XX:XX:XX:XX:XX"
+            maxLength={17}
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>MAC LAN</Label>
+          <Input
+            value={macLan}
+            onChange={(e) => handleMacAddressChange(e, setMacLan)}
+            placeholder="XX:XX:XX:XX:XX:XX"
+            maxLength={17}
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Operating System</Label>
+          <Select
+            options={osOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(osOptions, osOptionId)}
+            onChange={(selectedOption) =>
+              setOsOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>License Type</Label>
+          <Select
+            options={licenseOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            
+            value={getSelectedOption(licenseOptions, licenseOptionId)}
+            onChange={(selectedOption) =>
+              setLicenseOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>License Key</Label>
+          <Input
+            maxLength={29}
+            value={licenseKey}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+              let formattedValue = "";
+              for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 5 === 0) {
+                  formattedValue += "-";
                 }
-                setLicenseKey(formattedValue.slice(0, 29));
-              }}
-              placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-            />
-          </div>
-          <div>
-            <Label>License Type</Label>
-            <Select
-              options={licenseOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(licenseOptions, licenseOptionId)}
-              onChange={(selectedOption) => setLicenseOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>Power Adaptor</Label>
-            <Select
-              options={powerOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(powerOptions, powerOptionId)}
-              onChange={(selectedOption) => setPowerOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>Microsoft Office</Label>
-            <Select
-              options={microsoftOfficeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(microsoftOfficeOptions, microsoftOfficeOptionId)}
-              onChange={(selectedOption) => setMicrosoftOfficeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          <div>
-            <Label>Color</Label>
-            <Select
-              options={colorOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(colorOptions, colorOptionId)}
-              onChange={(selectedOption) => setColorOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          {/* <div>
-            <Label>Type</Label>
-            <Select
-              options={typeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(typeOptions, typeOptionId)}
-              onChange={(selectedOption) => setTypeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div> */}
-          <div>
-            <Label>Graphic</Label>
-            <Select
-              options={graphicOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(graphicOptions, graphicOptionId)}
-              onChange={(selectedOption) => setGraphicOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div>
-          
-          <div>
-            <Label>MAC WLAN</Label>
-            <Input
-              value={macWlan}
-              onChange={(e) => handleMacAddressChange(e, setMacWlan)}
-              placeholder="XX:XX:XX:XX:XX:XX"
-              maxLength={17}
-            />
-          </div>
-          <div>
-            <Label>MAC LAN</Label>
-            <Input
-              value={macLan}
-              onChange={(e) => handleMacAddressChange(e, setMacLan)}
-              placeholder="XX:XX:XX:XX:XX:XX"
-              maxLength={17}
-            />
-          </div>
+                formattedValue += value[i];
+              }
+              setLicenseKey(formattedValue.slice(0, 29));
+            }}
+            placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+          />
         </div>
 
-        <div className="md:col-span-2 flex justify-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label>Microsoft Office</Label>
+          <Select
+            options={microsoftOfficeOptions.map((opt) => ({
+              value: opt.id.toString(),
+              label: opt.value,
+            }))}
+            value={getSelectedOption(
+              microsoftOfficeOptions,
+              microsoftOfficeOptionId
+            )}
+            onChange={(selectedOption) =>
+              setMicrosoftOfficeOptionId(
+                selectedOption ? parseInt(selectedOption.value) : null
+              )
+            }
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label htmlFor="tanggalPembelian">Purchase Date</Label>
+          <Input
+            type="date"
+            id="tanggalPembelian"
+            value={tanggalPembelian}
+            onChange={(e) => setTanggalPembelian(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label htmlFor="tanggalGaransi">Warranty Date</Label>
+          <Input
+            type="date"
+            id="tanggalGaransi"
+            value={tanggalGaransi}
+            onChange={(e) => setTanggalGaransi(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+          <Label htmlFor="statusAsset">Asset Status</Label>
+          <Select
+            options={assetStatuses}
+            value={assetStatuses.find((option) => option.value === statusAsset)}
+            onChange={(selectedOption) =>
+              setStatusAsset(selectedOption ? selectedOption.value : null)
+            }
+            placeholder="Select status"
+            isClearable
+            isSearchable
+          />
+        </div>
+        <div className="flex justify-end mt-18">
           <Button type="submit">Add Laptop Asset</Button>
         </div>
       </form>

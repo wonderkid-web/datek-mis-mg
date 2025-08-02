@@ -46,6 +46,7 @@ model Asset {
   category         AssetCategory     @relation(fields: [categoryId], references: [id])
   laptopSpecs      LaptopSpecs?
   intelNucSpecs    IntelNucSpecs?
+  printerSpecs     PrinterSpecs?
 
   @@index([categoryId], map: "assets_categoryId_fkey")
   @@map("assets")
@@ -281,4 +282,44 @@ model IntelNucSpecs {
   @@index([typeOptionId], map: "intel_nuc_specs_typeOptionId_fkey")
   @@index([vgaOptionId], map: "intel_nuc_specs_vgaOptionId_fkey")
   @@map("intel_nuc_specs")
+}
+
+model PrinterTypeOption {
+  id           Int            @id @default(autoincrement())
+  value        String         @unique @db.VarChar(50)
+  printerSpecs PrinterSpecs[]
+
+  @@map("printer_type_options")
+}
+
+model PrinterBrandOption {
+  id           Int            @id @default(autoincrement())
+  value        String         @unique @db.VarChar(50)
+  printerSpecs PrinterSpecs[]
+
+  @@map("printer_brand_options")
+}
+
+model PrinterModelOption {
+  id           Int            @id @default(autoincrement())
+  value        String         @unique @db.VarChar(50)
+  printerSpecs PrinterSpecs[]
+
+  @@map("printer_model_options")
+}
+
+model PrinterSpecs {
+  assetId       Int                 @id
+  typeOptionId  Int?
+  brandOptionId Int?
+  modelOptionId Int?
+  asset         Asset               @relation(fields: [assetId], references: [id])
+  typeOption    PrinterTypeOption?  @relation(fields: [typeOptionId], references: [id])
+  brandOption   PrinterBrandOption? @relation(fields: [brandOptionId], references: [id])
+  modelOption   PrinterModelOption? @relation(fields: [modelOptionId], references: [id])
+
+  @@index([typeOptionId], map: "printer_specs_typeOptionId_fkey")
+  @@index([brandOptionId], map: "printer_specs_brandOptionId_fkey")
+  @@index([modelOptionId], map: "printer_specs_modelOptionId_fkey")
+  @@map("printer_specs")
 }

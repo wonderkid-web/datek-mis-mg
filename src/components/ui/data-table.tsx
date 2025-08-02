@@ -218,8 +218,9 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="bg-gray-200">
                 {headerGroup.headers.map((header) => {
+                  const headerClassName = (header.column.columnDef as any).headerClassName;
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className={headerClassName}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(

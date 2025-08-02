@@ -84,7 +84,7 @@ export const columns = ({
   },
   {
     accessorKey: "jabatan",
-    header: () => <div className="text-center">Position</div>,
+    header: () => <div className="text-center">Home Base</div>,
     cell: ({ row }) => (
       <div className="text-center">{row.original.jabatan}</div>
     ),

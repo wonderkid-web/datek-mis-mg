@@ -15,7 +15,10 @@ export async function getServiceRecords(options: Prisma.ServiceRecordFindManyArg
         },
       },
     });
-    return serviceRecords;
+    return serviceRecords.map(record => ({
+      ...record,
+      cost: record.cost.toString(), // Convert Decimal to string
+    }));
   } catch (error) {
     console.error('Error fetching service records:', error);
     throw new Error('Could not fetch service records.');
@@ -27,7 +30,10 @@ export async function createServiceRecord(data: Prisma.ServiceRecordCreateInput)
     const serviceRecord = await prisma.serviceRecord.create({
       data,
     });
-    return serviceRecord;
+    return {
+      ...serviceRecord,
+      cost: serviceRecord.cost.toString(), // Convert Decimal to string
+    };
   } catch (error) {
     console.error('Error creating service record:', error);
     throw new Error('Could not create service record.');
@@ -40,7 +46,10 @@ export async function updateServiceRecord(id: number, data: Prisma.ServiceRecord
       where: { id },
       data,
     });
-    return serviceRecord;
+    return {
+      ...serviceRecord,
+      cost: serviceRecord.cost.toString(), // Convert Decimal to string
+    };
   } catch (error) {
     console.error(`Error updating service record with id ${id}:`, error);
     throw new Error('Could not update service record.');

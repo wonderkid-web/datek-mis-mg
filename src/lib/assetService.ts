@@ -156,6 +156,13 @@ export async function getAssets(): Promise<Asset[]> {
           licenseOption: true,
         },
       },
+      printerSpecs: {
+        include: {
+          brandOption: true,
+          typeOption: true,
+          modelOption: true,
+        },
+      },
     },
   });
 
@@ -201,6 +208,13 @@ export async function getAssetById(id: number): Promise<Asset | null> {
           licenseOption: true,
         },
       },
+      printerSpecs: {
+        include: {
+          brandOption: true,
+          typeOption: true,
+          modelOption: true,
+        },
+      },
     },
   });
 
@@ -242,6 +256,12 @@ interface UpdateLaptopSpecsDataInput {
   vgaOptionId?: number | null;
   licenseOptionId?: number | null;
   licenseKey?: string | null;
+}
+
+interface UpdatePrinterSpecsDataInput {
+  typeOptionId?: number | null;
+  brandOptionId?: number | null;
+  modelOptionId?: number | null;
 }
 
 export async function updateAssetAndLaptopSpecs(
@@ -316,6 +336,38 @@ export async function updateAssetAndLaptopSpecs(
   return updatedAsset;
 }
 
+export async function updateAssetAndPrinterSpecs(
+  id: number,
+  assetData: Partial<CreateAssetData>,
+  printerSpecsDataInput: UpdatePrinterSpecsDataInput
+): Promise<Asset> {
+  const printerSpecsUpdateData: any = {};
+
+  if (printerSpecsDataInput.typeOptionId !== undefined) {
+    printerSpecsUpdateData.typeOption = printerSpecsDataInput.typeOptionId === null ? { disconnect: true } : { connect: { id: printerSpecsDataInput.typeOptionId } };
+  }
+  if (printerSpecsDataInput.brandOptionId !== undefined) {
+    printerSpecsUpdateData.brandOption = printerSpecsDataInput.brandOptionId === null ? { disconnect: true } : { connect: { id: printerSpecsDataInput.brandOptionId } };
+  }
+  if (printerSpecsDataInput.modelOptionId !== undefined) {
+    printerSpecsUpdateData.modelOption = printerSpecsDataInput.modelOptionId === null ? { disconnect: true } : { connect: { id: printerSpecsDataInput.modelOptionId } };
+  }
+
+  const updatedAsset = await prisma.asset.update({
+    where: { id },
+    data: {
+      ...assetData,
+      printerSpecs: {
+        update: printerSpecsUpdateData,
+      },
+    },
+    include: {
+      printerSpecs: true,
+    },
+  });
+  return updatedAsset;
+}
+
 export async function deleteAsset(id: number): Promise<Asset> {
   // Find the asset first to determine its category
   const asset = await prisma.asset.findUnique({
@@ -337,11 +389,9 @@ export async function deleteAsset(id: number): Promise<Asset> {
       await tx.laptopSpecs.deleteMany({ where: { assetId: id } });
     } else if (asset.category.slug === "intel-nuc") {
       await tx.intelNucSpecs.deleteMany({ where: { assetId: id } });
+    } else if (asset.category.slug === "printer") {
+      await tx.printerSpecs.deleteMany({ where: { assetId: id } });
     }
-    // Add other categories here in the future, e.g.:
-    // else if (asset.category.slug === 'printer') {
-    //   await tx.printerSpecs.deleteMany({ where: { assetId: id } });
-    // }
 
     // 3. Finally, delete the main asset record
     const deletedAsset = await tx.asset.delete({

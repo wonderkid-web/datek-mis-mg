@@ -23,12 +23,12 @@ export const columns = ({
    {
     accessorKey: "category",
     header: () => <div className="text-center">Type</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.categoryId == 1 ? "Laptop" : "Intel NUC"}</p>,
+    cell: ({ row }) => <p className="text-center">{row.original.category?.nama || "N/A"}</p>,
   },
    {
     accessorKey: "brand",
     header: () => <div className="text-center">Brand</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.laptopSpecs?.brandOption?.value || row.original.intelNucSpecs?.brandOption?.value || "N/A"}</p>,
+    cell: ({ row }) => <p className="text-center">{row.original.laptopSpecs?.brandOption?.value || row.original.intelNucSpecs?.brandOption?.value || row.original.printerSpecs?.brandOption?.value || "N/A"}</p>,
   },
    {
     accessorKey: "namaAsset",
@@ -64,15 +64,11 @@ export const columns = ({
     header: () => <div className="text-center">Storage</div>,
     cell: ({ row }) => <p className="text-center">{row.original.laptopSpecs?.storageTypeOption?.value || row.original.intelNucSpecs?.storageTypeOption?.value || "N/A"}</p>,
    },
- 
-  // {
-  //   accessorKey: "category.name",
-  //   header: "Category",
-  //   cell: ({ row }) => {
-  //       const category = row.original.category as AssetCategory;
-  //       return category ? category.name : 'N/A';
-  //     },
-  // },
+   {
+    accessorKey: "model",
+    header: () => <div className="text-center">Model</div>,
+    cell: ({ row }) => <p className="text-center">{row.original.printerSpecs?.modelOption?.value || "N/A"}</p>,
+   },
  
   {
     accessorKey: "statusAsset",
@@ -94,6 +90,10 @@ export const columns = ({
         router.push(`/items/intel-nuc/${asset.id}/edit`);
       };
 
+      const handleEditPrinterSpecs = () => {
+        router.push(`/items/printer/${asset.id}/edit`);
+      };
+
       return (
         <div className="flex items-center justify-center space-x-2">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(asset)}>
@@ -110,6 +110,12 @@ export const columns = ({
             <Button variant="ghost" size="icon" onClick={handleEditIntelNucSpecs}>
               <Edit className="h-4 w-4" />
               <span className="sr-only">Edit Intel NUC Specs</span>
+            </Button>
+          )}
+          {asset.category?.slug === "printer" && (
+            <Button variant="ghost" size="icon" onClick={handleEditPrinterSpecs}>
+              <Edit className="h-4 w-4" />
+              <span className="sr-only">Edit Printer Specs</span>
             </Button>
           )}
           <Button

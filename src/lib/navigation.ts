@@ -35,6 +35,7 @@ export const navigationItems: NavigationItem[] = [
     icon: Database,
     children: [
       { name: "Spesifikasi Laptop/Intel NUC", href: "/master-data/laptop" },
+      { name: "Spesifikasi Printer", href: "/master-data/printer" },
       { name: "Asset Categories", href: "/master-data/asset-categories" },
     ],
   },
@@ -44,6 +45,7 @@ export const navigationItems: NavigationItem[] = [
     children: [
       { name: "Asset Laptop", href: "/items/laptop" },
       { name: "Asset Intel NUC", href: "/items/intel-nuc" },
+      { name: "Asset Printer", href: "/items/printer" },
     ],
   },
   {

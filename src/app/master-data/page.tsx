@@ -11,6 +11,7 @@ import {
 
 import AssetCategoriesPage from "./asset-categories/page";
 import LaptopMasterDataPage from "./laptop/page";
+import MasterDataPrinterPage from "./printer/page";
 
 export default function MasterDataPage() {
   return (
@@ -22,12 +23,16 @@ export default function MasterDataPage() {
           <TabsList className="w-full">
             <TabsTrigger value="asset-categories">Asset Categories</TabsTrigger>
             <TabsTrigger value="laptop">Laptop Options</TabsTrigger>
+            <TabsTrigger value="printer">Printer Options</TabsTrigger>
           </TabsList>
           <TabsContent value="asset-categories">
             <AssetCategoriesPage />
           </TabsContent>
           <TabsContent value="laptop">
             <LaptopMasterDataPage />
+          </TabsContent>
+          <TabsContent value="printer">
+            <MasterDataPrinterPage />
           </TabsContent>
         </Tabs>
       </main>
