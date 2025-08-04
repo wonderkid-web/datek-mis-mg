@@ -79,7 +79,7 @@ export default function AddLaptopAssetPage() {
   >(null);
   const [colorOptionId, setColorOptionId] = useState<number | null>(null);
   const [graphicOptionId, setGraphicOptionId] = useState<number | null>(null);
-  const [typeOptionId, setTypeOptionId] = useState<number | null>(null);
+  const [typeOptionId] = useState<number | null>(null);
 
   const assetStatuses: ReactSelectOption[] = [
     { value: "GOOD", label: "GOOD" },

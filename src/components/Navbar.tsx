@@ -72,6 +72,7 @@ export default function Navbar() {
               // Dropdown for items with children
               
               <div key={item.name} className="relative"
+              // @ts-expect-error its okay to use ref here
               ref={(el: HTMLDivElement | null) => (dropdownRefs.current[item.name] = el)}> {/* Attach ref */}
                 <Button
                   variant="ghost"
@@ -94,7 +95,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <Link key={item.name} href={item.href} passHref>
+              <Link key={item.name} href={item.href as string} passHref>
                 <Button
                   variant="ghost"
                   className="flex items-center space-x-2 text-primary-foreground hover:bg-primary/90"
@@ -157,7 +158,7 @@ export default function Navbar() {
                   ) : (
                     <Link
                       key={item.name}
-                      href={item.href}
+                      href={item.href as string}
                       className="flex items-center space-x-2 py-2 px-3 rounded-md hover:bg-primary-foreground/10"
                       onClick={closeSheet}
                     >

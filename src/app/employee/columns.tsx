@@ -1,19 +1,34 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { User } from "@prisma/client";
 import { Pencil, ArrowUpDown, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ColumnsProps {
   handleDelete: (id: string) => void;
-  handleEdit: (user: User) => void;
+  handleEdit: (user: {
+    id: number;
+    namaLengkap: string;
+    email: string | null;
+    departemen: string | null;
+    jabatan: string | null;
+    lokasiKantor: string | null;
+    isActive: boolean;
+  }) => void;
 }
 
 export const columns = ({
   handleDelete,
   handleEdit,
-}: ColumnsProps): ColumnDef<User>[] => [
+}: ColumnsProps): ColumnDef<{
+  id: number;
+  namaLengkap: string;
+  email: string | null;
+  departemen: string | null;
+  jabatan: string | null;
+  lokasiKantor: string | null;
+  isActive: boolean;
+}>[] => [
   {
     accessorKey: "id",
     header: () => <div className="text-center">No</div>,
@@ -118,7 +133,11 @@ export const columns = ({
             <Pencil className="h-4 w-4" />
             <span className="sr-only">Edit</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(user.id.toString())}
+          >
             <Trash className="h-4 w-4" />
             <span className="sr-only">Delete</span>
           </Button>

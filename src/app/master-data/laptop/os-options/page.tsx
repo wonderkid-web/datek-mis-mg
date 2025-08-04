@@ -1,6 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
+"use client"
+import { useState } from "react";
 import { LaptopOsOption } from "@prisma/client";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -19,31 +18,43 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function OsOptionsPage() {
-  const [data, setData] = useState<LaptopOsOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [editingOsOption, setEditingOsOption] = useState<LaptopOsOption | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const osOptions = await getLaptopOsOptions();
-      setData(osOptions.filter(item => !item.isDeleted));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: osOptions, isLoading } = useQuery({
+    queryKey: ["laptopOsOptions"],
+    queryFn: async () => {
+      const fetchedOptions = await getLaptopOsOptions();
+      return fetchedOptions
+    },
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const deleteOsMutation = useMutation({
+    mutationFn: deleteLaptopOsOption,
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["laptopOsOptions"] });
+      const previousOsOptions = queryClient.getQueryData<LaptopOsOption[]>(["laptopOsOptions"]);
+      queryClient.setQueryData<LaptopOsOption[]>(["laptopOsOptions"], (old) =>
+        old ? old.filter((item) => item.id !== Number(idToDelete)) : []
+      );
+      return { previousOsOptions };
+    },
+    onError: (err, idToDelete, context) => {
+      queryClient.setQueryData(["laptopOsOptions"], context?.previousOsOptions);
+      console.error("An error occurred:", err);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["laptopOsOptions"] });
+    },
+  });
 
   const openDeleteDialog = (id: string) => {
     setItemToDelete(id);
@@ -52,15 +63,9 @@ export default function OsOptionsPage() {
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      try {
-        await deleteLaptopOsOption(itemToDelete);
-        fetchData();
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setIsDeleteDialogOpen(false);
-        setItemToDelete(null);
-      }
+      deleteOsMutation.mutate(Number(itemToDelete));
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -69,12 +74,21 @@ export default function OsOptionsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const filteredData = data.filter((item) =>
+  const filteredData = osOptions?.filter((item) =>
     item.value.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) || [];
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Manage OS Options</h1>
+          {/* <Skeleton className="h-10 w-1/3" /> */}
+        </div>
+        {/* <TableSkeleton /> */}
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -90,15 +104,21 @@ export default function OsOptionsPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="max-w-sm"
           />
-          <AddOsDialog onSave={fetchData} />
+          <AddOsDialog
+            onSave={() => queryClient.invalidateQueries({ queryKey: ["laptopOsOptions"] })}
+          />
         </div>
-        <DataTable columns={columns({ handleDelete: openDeleteDialog, handleEdit })} data={filteredData} totalCount={filteredData.length} />
+        <DataTable
+          columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
+          data={filteredData}
+          totalCount={filteredData.length}
+        />
 
         {editingOsOption && (
           <EditOsDialog
             osOption={editingOsOption}
             onSave={() => {
-              fetchData();
+              queryClient.invalidateQueries({ queryKey: ["laptopOsOptions"] });
               setEditingOsOption(null);
             }}
             open={isEditDialogOpen}
@@ -106,7 +126,10 @@ export default function OsOptionsPage() {
           />
         )}
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -116,7 +139,9 @@ export default function OsOptionsPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

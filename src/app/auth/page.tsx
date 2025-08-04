@@ -2,9 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,17 +12,7 @@ import { Label } from '@/components/ui/label';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/'); // Redirect to dashboard or home page
-    } catch (error: unknown) {
-      alert((error as Error).message);
-    }
-  };
 
   return (
     <div className="flex min-h-screen items-center justify-center">
@@ -33,7 +21,7 @@ export default function LoginPage() {
           <CardTitle className="text-center text-2xl font-bold">Login</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin}>
+          <form>
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>

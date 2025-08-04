@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createUser } from "@/lib/userService";
 import { COMPANIES, DEPARTMENTS } from "@/lib/constants";
+import { toast } from "sonner";
 
 interface AddUserDialogProps {
   onSave: () => void;
@@ -54,8 +55,10 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
       setJabatan("");
       setLokasiKantor("");
       setIsActive(true);
+      toast.success("User added successfully!");
     } catch (error) {
       console.error("An error occurred:", error);
+      toast.error("Failed to add user.");
     }
   };
 

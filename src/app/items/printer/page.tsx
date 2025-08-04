@@ -12,6 +12,7 @@ import { getPrinterTypeOptions } from "@/lib/printerTypeService";
 import { getPrinterModelOptions } from "@/lib/printerModelService";
 import { createAssetAndPrinterSpecs } from "@/lib/printerService";
 import { toast } from "sonner";
+import { Asset, PrinterSpecs } from "@/lib/types";
 
 interface Option {
   id: number;
@@ -67,23 +68,23 @@ export default function AddPrinterAssetPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const assetData = {
+    const assetData: Omit<Asset, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'laptopSpecs' | 'intelNucSpecs' | 'printerSpecs'> & { categoryId: number } = {
       namaAsset: namaAsset || "",
-      categoryId: 2, // Asumsi categoryId 2 untuk printer
+      categoryId: 3, // Corrected categoryId for printer
       nomorSeri,
       tanggalPembelian: tanggalPembelian ? new Date(tanggalPembelian) : null,
       tanggalGaransi: tanggalGaransi ? new Date(tanggalGaransi) : null,
       statusAsset: statusAsset || "GOOD",
     };
 
-    const printerSpecsData = {
+    const printerSpecsData: Omit<PrinterSpecs, 'assetId'> = {
       brandOptionId,
       typeOptionId,
       modelOptionId,
     };
 
     try {
-      await createAssetAndPrinterSpecs({ assetData, printerSpecsData });
+      await createAssetAndPrinterSpecs(assetData, printerSpecsData );
       toast.success("Printer asset added successfully!");
       router.push("/data-center/assigned-assets");
     } catch (error) {

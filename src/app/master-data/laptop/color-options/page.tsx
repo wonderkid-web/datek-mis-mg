@@ -1,6 +1,5 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LaptopColorOption } from "@prisma/client";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -19,31 +18,43 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ColorOptionsPage() {
-  const [data, setData] = useState<LaptopColorOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [editingColorOption, setEditingColorOption] = useState<LaptopColorOption | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const colorOptions = await getLaptopColors();
-      setData(colorOptions.filter(item => !item.isDeleted));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: colorOptions, isLoading } = useQuery({
+    queryKey: ["laptopColorOptions"],
+    queryFn: async () => {
+      const fetchedOptions = await getLaptopColors();
+      return fetchedOptions
+    },
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const deleteColorMutation = useMutation({
+    mutationFn: deleteLaptopColor,
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["laptopColorOptions"] });
+      const previousColorOptions = queryClient.getQueryData<LaptopColorOption[]>(["laptopColorOptions"]);
+      queryClient.setQueryData<LaptopColorOption[]>(["laptopColorOptions"], (old) =>
+        old ? old.filter((item) => item.id !== Number(idToDelete)) : []
+      );
+      return { previousColorOptions };
+    },
+    onError: (err, idToDelete, context) => {
+      queryClient.setQueryData(["laptopColorOptions"], context?.previousColorOptions);
+      console.error("An error occurred:", err);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["laptopColorOptions"] });
+    },
+  });
 
   const openDeleteDialog = (id: string) => {
     setItemToDelete(id);
@@ -52,15 +63,9 @@ export default function ColorOptionsPage() {
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      try {
-        await deleteLaptopColor(itemToDelete);
-        fetchData();
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setIsDeleteDialogOpen(false);
-        setItemToDelete(null);
-      }
+      deleteColorMutation.mutate(Number(itemToDelete));
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -69,12 +74,21 @@ export default function ColorOptionsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const filteredData = data.filter((item) =>
+  const filteredData = colorOptions?.filter((item) =>
     item.value.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) || [];
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Manage Color Options</h1>
+          {/* <Skeleton className="h-10 w-1/3" /> */}
+        </div>
+        {/* <TableSkeleton /> */}
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -90,15 +104,21 @@ export default function ColorOptionsPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="max-w-sm"
           />
-          <AddColorDialog onSave={fetchData} />
+          <AddColorDialog
+            onSave={() => queryClient.invalidateQueries({ queryKey: ["laptopColorOptions"] })}
+          />
         </div>
-        <DataTable columns={columns({ handleDelete: openDeleteDialog, handleEdit })} data={filteredData} totalCount={filteredData.length} />
+        <DataTable
+          columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
+          data={filteredData}
+          totalCount={filteredData.length}
+        />
 
         {editingColorOption && (
           <EditColorDialog
             colorOption={editingColorOption}
             onSave={() => {
-              fetchData();
+              queryClient.invalidateQueries({ queryKey: ["laptopColorOptions"] });
               setEditingColorOption(null);
             }}
             open={isEditDialogOpen}
@@ -106,7 +126,10 @@ export default function ColorOptionsPage() {
           />
         )}
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -116,7 +139,9 @@ export default function ColorOptionsPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

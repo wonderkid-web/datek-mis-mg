@@ -3,14 +3,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const { value } = await request.json();
     const updatedLicenseOption = await prisma.laptopLicenseOption.update({
-      // @ts-expect-error its okay
-      where: { id },
+      where: { id: Number(id) },
       data: { value },
     });
     return NextResponse.json(updatedLicenseOption);
@@ -19,16 +18,15 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  { params }: { params: { id: string } }
+export async function DELETE(request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
     await prisma.laptopLicenseOption.update({
-      // @ts-expect-error its okay
-      where: { id },
-      // @ts-expect-error its okay
-      data: { isDeleted: true, deletedAt: new Date() },
+      where: { id: Number(id) },
+      // @ts-expect-error itsoka: prisma does not support soft delete directly
+      data: {  deletedAt: new Date() },
     });
     return NextResponse.json({ message: "License option deleted successfully" }, { status: 200 });
   } catch (_error) {

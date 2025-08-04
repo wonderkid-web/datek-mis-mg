@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id, 10);
+    const { id } = await params;
+
     const body = await request.json();
     const { value } = body;
 
@@ -14,7 +15,7 @@ export async function PUT(
       return NextResponse.json({ error: "Value is required" }, { status: 400 });
     }
 
-    const updatedLaptopPowerOption = await updateLaptopPowerOption(id, { value });
+    const updatedLaptopPowerOption = await updateLaptopPowerOption(Number(id), { value });
 
     return NextResponse.json(updatedLaptopPowerOption);
   } catch (error: any) {
@@ -33,11 +34,12 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id, 10);
-    await deleteLaptopPowerOption(id);
+    const { id } = await params;
+
+    await deleteLaptopPowerOption(Number(id));
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
     console.error("Error deleting laptop power option:", error);

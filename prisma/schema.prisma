@@ -131,6 +131,15 @@ model LaptopPowerOption {
   @@map("laptop_power_options")
 }
 
+model LaptopLicenseKeyOption {
+  id            Int             @id @default(autoincrement())
+  value         String          @unique @db.VarChar(100)
+  laptopSpecs   LaptopSpecs[]
+  IntelNucSpecs IntelNucSpecs[]
+
+  @@map("laptop_license_key_options")
+}
+
 model LaptopMicrosoftOfficeOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
@@ -203,6 +212,7 @@ model LaptopSpecs {
   osOptionId              Int?
   portOptionId            Int?
   powerOptionId           Int?
+  LicenseKeyOptionId      Int?
   microsoftOfficeOptionId Int?
   colorOptionId           Int?
   graphicOptionId         Int? // New field for Graphic
@@ -224,6 +234,7 @@ model LaptopSpecs {
   typeOption              LaptopTypeOption?            @relation(fields: [typeOptionId], references: [id])
   vgaOption               LaptopVgaOption?             @relation(fields: [vgaOptionId], references: [id]) // New relation
   licenseOption           LaptopLicenseOption?         @relation(fields: [licenseOptionId], references: [id]) // New relation
+  LicenseKeyOption        LaptopLicenseKeyOption?      @relation(fields: [LicenseKeyOptionId], references: [id])
 
   @@index([brandOptionId], map: "laptop_specs_brandOptionId_fkey")
   @@index([colorOptionId], map: "laptop_specs_colorOptionId_fkey")
@@ -251,6 +262,7 @@ model IntelNucSpecs {
   microsoftOfficeOptionId Int?
   colorOptionId           Int?
   graphicOptionId         Int?
+  licenseKeyOptionId      Int?
   vgaOptionId             Int?
   macWlan                 String?                      @unique @map("mac_wlan") @db.VarChar(17)
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
@@ -269,6 +281,7 @@ model IntelNucSpecs {
   typeOption              LaptopTypeOption?            @relation(fields: [typeOptionId], references: [id])
   vgaOption               LaptopVgaOption?             @relation(fields: [vgaOptionId], references: [id])
   licenseOption           LaptopLicenseOption?         @relation(fields: [licenseOptionId], references: [id])
+  LaptopLicenseKeyOption  LaptopLicenseKeyOption?      @relation(fields: [licenseKeyOptionId], references: [id])
 
   @@index([brandOptionId], map: "intel_nuc_specs_brandOptionId_fkey")
   @@index([colorOptionId], map: "intel_nuc_specs_colorOptionId_fkey")

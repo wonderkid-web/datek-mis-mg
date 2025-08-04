@@ -7,10 +7,10 @@ import {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id, 10);
+    const id = Number((await params).id)
     const data = await request.json();
     const updatedServiceRecord = await updateServiceRecord(id, data);
     return NextResponse.json(updatedServiceRecord);
@@ -24,10 +24,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id, 10);
+    const id = Number((await params).id)
     await deleteServiceRecord(id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {

@@ -1,36 +1,55 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Asset, AssetCategory } from "@prisma/client";
+import { Asset } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Pencil, Trash, Edit } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 interface ColumnsProps {
   handleEdit: (asset: Asset) => void;
   handleDelete: (id: number) => void;
+  router: AppRouterInstance;
 }
 
 export const columns = ({
   handleEdit,
   handleDelete,
+  router,
 }: ColumnsProps): ColumnDef<Asset>[] => [
   {
     accessorKey: "id",
     header: () => <div className="text-center">No</div>,
     cell: ({ row }) => <div className="text-right">{row.index + 1}</div>,
   },
-   {
+  {
     accessorKey: "category",
     header: () => <div className="text-center">Type</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.category?.nama || "N/A"}</p>,
+    cell: ({ row }) => {
+      let category;
+      if (row.original.category?.slug === "laptop") {
+        category = "Laptop";
+      } else if (row.original.category?.slug === "intel-nuc") {
+        category = "Intel NUC";
+      } else if (row.original.category?.slug === "printer") {
+        category = "Printer";
+      }
+      return <p className="text-center">{category || "N/A"}</p>;
+    },
   },
-   {
+  {
     accessorKey: "brand",
     header: () => <div className="text-center">Brand</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.laptopSpecs?.brandOption?.value || row.original.intelNucSpecs?.brandOption?.value || row.original.printerSpecs?.brandOption?.value || "N/A"}</p>,
+    cell: ({ row }) => (
+      <p className="text-center">
+        {row.original.laptopSpecs?.brandOption?.value ||
+          row.original.intelNucSpecs?.brandOption?.value ||
+          row.original.printerSpecs?.brandOption?.value ||
+          "N/A"}
+      </p>
+    ),
   },
-   {
+  {
     accessorKey: "namaAsset",
     header: ({ column }) => (
       <Button
@@ -44,43 +63,33 @@ export const columns = ({
     ),
     cell: ({ row }) => <p className="text-center">{row.original.namaAsset}</p>,
   },
-   {
+  {
     accessorKey: "nomorSeri",
     header: () => <div className="text-center">Serial Number</div>,
     cell: ({ row }) => <p className="text-center">{row.original.nomorSeri}</p>,
   },
-   {
-    accessorKey: "processor",
-    header: () => <div className="text-center">Processor</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.laptopSpecs?.processorOption?.value || row.original.intelNucSpecs?.processorOption?.value || "N/A"}</p>,
-   },
-   {
-    accessorKey: "ram",
-    header: () => <div className="text-center">RAM</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.laptopSpecs?.ramOption?.value || row.original.intelNucSpecs?.ramOption?.value || "N/A"}</p>,
-   },
-   {
-    accessorKey: "storage",
-    header: () => <div className="text-center">Storage</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.laptopSpecs?.storageTypeOption?.value || row.original.intelNucSpecs?.storageTypeOption?.value || "N/A"}</p>,
-   },
-   {
+  {
     accessorKey: "model",
     header: () => <div className="text-center">Model</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.printerSpecs?.modelOption?.value || "N/A"}</p>,
-   },
- 
+    cell: ({ row }) => (
+      <p className="text-center">
+        {row.original.printerSpecs?.modelOption?.value || "N/A"}
+      </p>
+    ),
+  },
+
   {
     accessorKey: "statusAsset",
     header: () => <div className="text-center">Status</div>,
-    cell: ({ row }) => <p className="text-center">{row.original.statusAsset}</p>,
+    cell: ({ row }) => (
+      <p className="text-center">{row.original.statusAsset}</p>
+    ),
   },
   {
     id: "actions",
     header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const asset = row.original;
-      const router = useRouter();
 
       const handleEditLaptopSpecs = () => {
         router.push(`/items/laptop/${asset.id}/edit`);
@@ -100,20 +109,28 @@ export const columns = ({
             <Pencil className="h-4 w-4" />
             <span className="sr-only">Edit</span>
           </Button>
-          {asset.category?.slug === "laptop" && (
+          {asset.category?.slug.toLowerCase() === "laptop" && (
             <Button variant="ghost" size="icon" onClick={handleEditLaptopSpecs}>
               <Edit className="h-4 w-4" />
               <span className="sr-only">Edit Laptop Specs</span>
             </Button>
           )}
-          {asset.category?.slug === "intel-nuc" && (
-            <Button variant="ghost" size="icon" onClick={handleEditIntelNucSpecs}>
+          {asset.category?.slug.toLowerCase() === "intel-nuc" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleEditIntelNucSpecs}
+            >
               <Edit className="h-4 w-4" />
               <span className="sr-only">Edit Intel NUC Specs</span>
             </Button>
           )}
-          {asset.category?.slug === "printer" && (
-            <Button variant="ghost" size="icon" onClick={handleEditPrinterSpecs}>
+          {asset.category?.slug.toLowerCase() === "printer" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleEditPrinterSpecs}
+            >
               <Edit className="h-4 w-4" />
               <span className="sr-only">Edit Printer Specs</span>
             </Button>

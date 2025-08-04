@@ -6,7 +6,10 @@ import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { AddVgaDialog } from "./add-vga-dialog";
 import { EditVgaDialog } from "./edit-vga-dialog";
-import { getLaptopVgaOptions, deleteLaptopVgaOption } from "@/lib/laptopVgaService";
+import {
+  getLaptopVgaOptions,
+  deleteLaptopVgaOption,
+} from "@/lib/laptopVgaService";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
@@ -19,11 +22,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 export default function VgaOptionsPage() {
   const [data, setData] = useState<LaptopVgaOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingOption, setEditingOption] = useState<LaptopVgaOption | null>(null);
+  const [editingOption, setEditingOption] = useState<LaptopVgaOption | null>(
+    null
+  );
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -33,7 +40,7 @@ export default function VgaOptionsPage() {
     setLoading(true);
     try {
       const options = await getLaptopVgaOptions();
-      setData(options.filter(item => !item.isDeleted));
+      return options;
     } catch (error) {
       console.error(error);
     } finally {
@@ -53,7 +60,7 @@ export default function VgaOptionsPage() {
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
       try {
-        await deleteLaptopVgaOption(itemToDelete);
+        await deleteLaptopVgaOption(Number(itemToDelete));
         fetchData();
       } catch (error) {
         console.error("An error occurred:", error);
@@ -74,7 +81,15 @@ export default function VgaOptionsPage() {
   );
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Assigned Assets</h1>
+          <Skeleton className="h-10 w-1/3" />
+        </div>
+        <TableSkeleton />
+      </div>
+    );
   }
 
   return (
@@ -92,7 +107,11 @@ export default function VgaOptionsPage() {
           />
           <AddVgaDialog onSave={fetchData} />
         </div>
-        <DataTable columns={columns({ handleDelete: openDeleteDialog, handleEdit })} data={filteredData} totalCount={filteredData.length} />
+        <DataTable
+          columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
+          data={filteredData}
+          totalCount={filteredData.length}
+        />
 
         {editingOption && (
           <EditVgaDialog
@@ -106,7 +125,10 @@ export default function VgaOptionsPage() {
           />
         )}
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -116,7 +138,9 @@ export default function VgaOptionsPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

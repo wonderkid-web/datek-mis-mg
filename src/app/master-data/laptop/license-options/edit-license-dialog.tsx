@@ -38,7 +38,7 @@ export function EditLicenseDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateLaptopLicenseOption(licenseOption.id, { value });
+      await updateLaptopLicenseOption(licenseOption.id.toString(), { value });
       onSave();
       onOpenChange(false);
     } catch (error) {

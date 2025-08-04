@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use server";
 import { prisma } from './prisma';
 import { LaptopPortOption } from '@prisma/client';

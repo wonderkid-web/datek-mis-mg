@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getAssets, deleteAsset } from "@/lib/assetService";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -10,31 +10,125 @@ import { Asset } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getAssetCategories } from "@/lib/assetCategoryService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [currentTab, setCurrentTab] = useState("all-assets"); // New state for current tab
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const fetchedAssets = await getAssets();
-      setAssets(fetchedAssets);
-    } catch (error) {
-      console.error("Failed to fetch assets:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: categories, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["assetCategories"],
+    queryFn: getAssetCategories,
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const laptopCategoryId = categories?.find((cat) => cat.slug === "laptop")?.id;
+  const intelNucCategoryId = categories?.find(
+    (cat) => cat.slug === "intel-nuc"
+  )?.id;
+  const printerCategoryId = categories?.find(
+    (cat) => cat.slug === "printer"
+  )?.id;
 
-  
+  const {
+    data: allAssets,
+    isLoading: isLoadingAllAssets,
+    isRefetching: isRefetchingAllAssets,
+  } = useQuery({
+    queryKey: ["allAssets", laptopCategoryId, intelNucCategoryId],
+    queryFn: () => {
+      if (laptopCategoryId !== undefined && intelNucCategoryId !== undefined) {
+        return getAssets().then((fetchedAssets) =>
+          fetchedAssets.filter(
+            (asset) =>
+              asset.categoryId === laptopCategoryId ||
+              asset.categoryId === intelNucCategoryId
+          )
+        );
+      }
+      return Promise.resolve([]);
+    },
+    enabled: laptopCategoryId !== undefined && intelNucCategoryId !== undefined,
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
+
+  const {
+    data: printerAssets,
+    isLoading: isLoadingPrinterAssets,
+    isRefetching: isRefetchingPrinterAssets,
+  } = useQuery({
+    queryKey: ["printerAssets", printerCategoryId],
+    queryFn: () => {
+      if (printerCategoryId !== undefined) {
+        return getAssets(printerCategoryId);
+      }
+      return Promise.resolve([]);
+    },
+    enabled: printerCategoryId !== undefined,
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
+
+  const deleteAssetMutation = useMutation({
+    mutationFn: deleteAsset,
+    onMutate: async (idToDelete) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({
+        queryKey: ["allAssets", laptopCategoryId, intelNucCategoryId],
+      });
+      await queryClient.cancelQueries({
+        queryKey: ["printerAssets", printerCategoryId],
+      });
+
+      // Snapshot the previous values
+      const previousAllAssets = queryClient.getQueryData<Asset[]>([
+        "allAssets",
+        laptopCategoryId,
+        intelNucCategoryId,
+      ]);
+      const previousPrinterAssets = queryClient.getQueryData<Asset[]>([
+        "printerAssets",
+        printerCategoryId,
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<Asset[]>(
+        ["allAssets", laptopCategoryId, intelNucCategoryId],
+        (old) => (old ? old.filter((asset) => asset.id !== idToDelete) : [])
+      );
+      queryClient.setQueryData<Asset[]>(
+        ["printerAssets", printerCategoryId],
+        (old) => (old ? old.filter((asset) => asset.id !== idToDelete) : [])
+      );
+
+      return { previousAllAssets, previousPrinterAssets };
+    },
+    onError: (err, idToDelete, context) => {
+      // Rollback to the previous value on error
+      queryClient.setQueryData(
+        ["allAssets", laptopCategoryId, intelNucCategoryId],
+        context?.previousAllAssets
+      );
+      queryClient.setQueryData(
+        ["printerAssets", printerCategoryId],
+        context?.previousPrinterAssets
+      );
+      console.error("Failed to delete asset:", err);
+    },
+    onSettled: () => {
+      // Always refetch after error or success:
+      queryClient.invalidateQueries({
+        queryKey: ["allAssets", laptopCategoryId, intelNucCategoryId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["printerAssets", printerCategoryId],
+      });
+    },
+  });
 
   const handleEdit = (asset: Asset) => {
     setSelectedAsset(asset);
@@ -43,21 +137,19 @@ export default function AssetsPage() {
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this asset?")) {
-      console.log(id)
-      try {
-        await deleteAsset(id);
-        fetchData(); // Refresh data
-      } catch (error) {
-        console.error("Failed to delete asset:", error);
-      }
+      deleteAssetMutation.mutate(id);
     }
   };
 
-   if (loading) {
+  const isLoading =
+    isLoadingCategories || isLoadingAllAssets || isLoadingPrinterAssets;
+  const isRefetching = isRefetchingAllAssets || isRefetchingPrinterAssets;
+
+  if (isLoading) {
     return (
       <div className="container mx-auto py-10">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Assigned Assets</h1>
+          <h1 className="text-3xl font-bold">Asset Management</h1>
           <Skeleton className="h-10 w-1/3" />
         </div>
         <TableSkeleton />
@@ -67,30 +159,74 @@ export default function AssetsPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Asset Management</h1>
-        <Button onClick={() => setIsAssignDialogOpen(true)}>Assign Asset</Button>
-        
-      </div>
-      <AssignAssetDialog
-        isOpen={isAssignDialogOpen}
-        onClose={() => setIsAssignDialogOpen(false)}
-        onSave={() => {
-          setIsAssignDialogOpen(false);
-          fetchData();
-        }}
-      />
-      <DataTable
-        columns={columns({ handleEdit, handleDelete })}
-        data={assets}
-      />
+      <h1 className="text-3xl font-bold mb-6">
+        Asset Management{" "}
+        {isRefetching && (
+          <span className="text-sm text-gray-500">(Updating...)</span>
+        )}
+      </h1>
+      <Tabs defaultValue="all-assets" onValueChange={setCurrentTab}>
+        {" "}
+        {/* Add onValueChange */}
+        <TabsList className="mb-4">
+          <TabsTrigger value="all-assets">Laptop, Intel NUC & PC</TabsTrigger>
+          <TabsTrigger value="printer-assets">Printer Assets</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all-assets">
+          <div className="flex justify-end items-center mb-6">
+            <Button onClick={() => setIsAssignDialogOpen(true)}>
+              Assign Asset
+            </Button>
+          </div>
+          <AssignAssetDialog
+            isOpen={isAssignDialogOpen}
+            onClose={() => setIsAssignDialogOpen(false)}
+            onSave={() => {
+              setIsAssignDialogOpen(false);
+              queryClient.invalidateQueries({ queryKey: ["allAssets"] });
+            }}
+            currentTab={currentTab}
+            laptopCategoryId={laptopCategoryId || null}
+            intelNucCategoryId={intelNucCategoryId || null}
+            printerCategoryId={printerCategoryId || null}
+          />
+          <DataTable
+            // @ts-expect-error it just error columns
+            columns={columns({ handleEdit, handleDelete })} data={allAssets || []}
+          />
+        </TabsContent>
+        <TabsContent value="printer-assets">
+          <div className="flex justify-end items-center mb-6">
+            <Button onClick={() => setIsAssignDialogOpen(true)}>
+              Assign Printer Asset
+            </Button>
+          </div>
+          <AssignAssetDialog
+            isOpen={isAssignDialogOpen}
+            onClose={() => setIsAssignDialogOpen(false)}
+            onSave={() => {
+              setIsAssignDialogOpen(false);
+              queryClient.invalidateQueries({ queryKey: ["printerAssets"] });
+            }}
+            currentTab={currentTab}
+            laptopCategoryId={laptopCategoryId || null}
+            intelNucCategoryId={intelNucCategoryId || null}
+            printerCategoryId={printerCategoryId || null}
+          />
+          <DataTable
+            // @ts-expect-error it just error columns
+            columns={columns({ handleEdit, handleDelete })} data={printerAssets || []}
+          />
+        </TabsContent>
+      </Tabs>
       {selectedAsset && (
         <EditAssetDialog
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
           onSave={() => {
             setIsEditDialogOpen(false);
-            fetchData();
+            queryClient.invalidateQueries({ queryKey: ["allAssets"] });
+            queryClient.invalidateQueries({ queryKey: ["printerAssets"] });
           }}
           asset={selectedAsset}
         />

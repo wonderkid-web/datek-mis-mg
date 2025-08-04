@@ -18,14 +18,29 @@ import { createAssignment } from "@/lib/assignmentService";
 import { getUsers } from "@/lib/userService";
 import { getAssets } from "@/lib/assetService";
 import { User, Asset } from "@prisma/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface AssignAssetDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
+  currentTab: string;
+  laptopCategoryId: number | null;
+  intelNucCategoryId: number | null;
+  printerCategoryId: number | null;
 }
 
-export function AssignAssetDialog({ isOpen, onClose, onSave }: AssignAssetDialogProps) {
+export function AssignAssetDialog({
+  isOpen,
+  onClose,
+  onSave,
+  currentTab,
+  laptopCategoryId,
+  intelNucCategoryId,
+  printerCategoryId,
+}: AssignAssetDialogProps) {
+  const queryClient = useQueryClient();
   const [assetId, setAssetId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [nomorAsset, setNomorAsset] = useState<string>("");
@@ -36,10 +51,26 @@ export function AssignAssetDialog({ isOpen, onClose, onSave }: AssignAssetDialog
   useEffect(() => {
     const fetchData = async () => {
       setUsers(await getUsers());
-      setAssets(await getAssets());
+
+      let fetchedAssets: Asset[] = [];
+      if (currentTab === "all-assets") {
+        const allCategoryIds : number[] = [];
+        if (laptopCategoryId) allCategoryIds.push(laptopCategoryId);
+        if (intelNucCategoryId) allCategoryIds.push(intelNucCategoryId);
+        
+        // Fetch all assets and then filter by categoryId for laptop/intel-nuc
+        const allFetchedAssets = await getAssets();
+        fetchedAssets = allFetchedAssets.filter(asset => allCategoryIds.includes(asset.categoryId));
+
+      } else if (currentTab === "printer-assets") {
+        if (printerCategoryId) {
+          fetchedAssets = await getAssets(printerCategoryId);
+        }
+      }
+      setAssets(fetchedAssets);
     };
     fetchData();
-  }, []);
+  }, [currentTab, laptopCategoryId, intelNucCategoryId, printerCategoryId]);
 
   const handleSubmit = async () => {
     try {
@@ -56,8 +87,12 @@ export function AssignAssetDialog({ isOpen, onClose, onSave }: AssignAssetDialog
       setUserId(null);
       setNomorAsset("");
       setCatatan("");
+      queryClient.invalidateQueries({ queryKey: ["allAssignments"] });
+      queryClient.invalidateQueries({ queryKey: ["printerAssignments"] });
+      toast.success("Assignment created successfully!");
     } catch (error) {
       console.error("Failed to create assignment:", error);
+      toast.error("Failed to create assignment.");
     }
   };
 
@@ -67,13 +102,13 @@ export function AssignAssetDialog({ isOpen, onClose, onSave }: AssignAssetDialog
         <DialogHeader>
           <DialogTitle>Assign Asset</DialogTitle>
           <DialogDescription>
-            Assign an asset to a user. Click save when you're done.
+            Assign an asset to a user. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="nomorAsset" className="text-right">Asset Number</Label>
-            <Input id="nomorAsset" value={nomorAsset} onChange={(e) => setNomorAsset(e.target.value)} className="col-span-3" />
+            <Input id="nomorAsset" value={nomorAsset} onChange={(e) => setNomorAsset(e.target.value.toUpperCase())} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="asset" className="text-right">Serial Number</Label>
@@ -86,8 +121,7 @@ export function AssignAssetDialog({ isOpen, onClose, onSave }: AssignAssetDialog
                 assetId
                   ? {
                       value: assetId,
-                      label: assets.find((a) => a.id.toString() === assetId)
-                        ?.namaAsset,
+                      label: `${assets.find((a) => a.id.toString() === assetId)?.nomorSeri} - ${assets.find((a) => a.id.toString() === assetId)?.namaAsset}`,
                     }
                   : null
               }

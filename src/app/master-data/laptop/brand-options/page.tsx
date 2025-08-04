@@ -1,12 +1,14 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LaptopBrandOption } from "@prisma/client";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { AddBrandDialog } from "./add-brand-dialog";
 import { EditBrandDialog } from "./edit-brand-dialog";
-import { getLaptopBrandOptions, deleteLaptopBrandOption } from "@/lib/laptopBrandService";
+import {
+  getLaptopBrandOptions,
+  deleteLaptopBrandOption,
+} from "@/lib/laptopBrandService";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
@@ -19,32 +21,52 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function BrandOptionsPage() {
-  const [data, setData] = useState<LaptopBrandOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingBrandOption, setEditingBrandOption] = useState<LaptopBrandOption | null>(null);
+  const queryClient = useQueryClient();
+  const [editingBrandOption, setEditingBrandOption] =
+    useState<LaptopBrandOption | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const brandOptions = await getLaptopBrandOptions();
-        {/* @ts-expect-error its okay */}
-      setData(brandOptions.filter(item => !item.isDeleted));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: brandOptions, isLoading } = useQuery({
+    queryKey: ["laptopBrandOptions"],
+    queryFn: async () => {
+      const fetchedOptions = await getLaptopBrandOptions();
+      return fetchedOptions
+    },
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const deleteBrandMutation = useMutation({
+    mutationFn: deleteLaptopBrandOption,
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["laptopBrandOptions"] });
+      const previousBrandOptions = queryClient.getQueryData<
+        LaptopBrandOption[]
+      >(["laptopBrandOptions"]);
+      queryClient.setQueryData<LaptopBrandOption[]>(
+        ["laptopBrandOptions"],
+        (old) => (old ? old.filter((item) => item.id !== idToDelete) : [])
+      );
+      return { previousBrandOptions };
+    },
+    onError: (err, idToDelete, context) => {
+      queryClient.setQueryData(
+        ["laptopBrandOptions"],
+        context?.previousBrandOptions
+      );
+      console.error("An error occurred:", err);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["laptopBrandOptions"] });
+    },
+  });
 
   const openDeleteDialog = (id: string) => {
     setItemToDelete(id);
@@ -53,16 +75,9 @@ export default function BrandOptionsPage() {
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      try {
-
-        await deleteLaptopBrandOption(Number(itemToDelete));
-        fetchData();
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setIsDeleteDialogOpen(false);
-        setItemToDelete(null);
-      }
+      deleteBrandMutation.mutate(Number(itemToDelete));
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -71,12 +86,21 @@ export default function BrandOptionsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const filteredData = data.filter((item) =>
-    item.value.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData =
+    brandOptions?.filter((item) =>
+      item.value.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Manage Brand Options</h1>
+          <Skeleton className="h-10 w-1/3" />
+        </div>
+        <TableSkeleton />
+      </div>
+    );
   }
 
   return (
@@ -92,15 +116,27 @@ export default function BrandOptionsPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="max-w-sm"
           />
-          <AddBrandDialog onSave={fetchData} />
+          <AddBrandDialog
+            onSave={() =>
+              queryClient.invalidateQueries({
+                queryKey: ["laptopBrandOptions"],
+              })
+            }
+          />
         </div>
-        <DataTable columns={columns({ handleDelete: openDeleteDialog, handleEdit })} data={filteredData} totalCount={filteredData.length} />
+        <DataTable
+          columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
+          data={filteredData}
+          totalCount={filteredData.length}
+        />
 
         {editingBrandOption && (
           <EditBrandDialog
             brandOption={editingBrandOption}
             onSave={() => {
-              fetchData();
+              queryClient.invalidateQueries({
+                queryKey: ["laptopBrandOptions"],
+              });
               setEditingBrandOption(null);
             }}
             open={isEditDialogOpen}
@@ -108,7 +144,10 @@ export default function BrandOptionsPage() {
           />
         )}
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -118,7 +157,9 @@ export default function BrandOptionsPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

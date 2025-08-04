@@ -1,62 +1,38 @@
-import { PrismaClient } from "@prisma/client"
+import { NextResponse } from "next/server";
+import {
+  updateLaptopOsOption,
+  deleteLaptopOsOption,
+} from "@/lib/laptopOsService";
 
-const prisma = new PrismaClient()
-
-export interface LaptopOsOption {
-  id: number
-  value: string
-  createdAt?: Date
-  updatedAt?: Date
-}
-
-export interface UpdateLaptopOsOptionData {
-  value: string
-}
-
-export async function updateLaptopOsOption(id: number, data: UpdateLaptopOsOptionData): Promise<LaptopOsOption> {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const laptopOsOption = await prisma.laptopOsOption.update({
-      where: { id },
-      data,
-    })
-    return laptopOsOption
+    const { id } = await params;
+    const body = await request.json();
+    const updatedOption = await updateLaptopOsOption(Number(id), body);
+    return NextResponse.json(updatedOption);
   } catch (error) {
-    console.error("Error updating laptop OS option:", error)
-    throw error
+    return NextResponse.json(
+      { error: "Failed to update laptop OS option" },
+      { status: 500 }
+    );
   }
 }
 
-export async function deleteLaptopOsOption(id: number): Promise<void> {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    await prisma.laptopOsOption.delete({
-      where: { id },
-    })
+    const { id } = await params;
+    await deleteLaptopOsOption(Number(id));
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("Error deleting laptop OS option:", error)
-    throw error
-  }
-}
-
-export async function getLaptopOsOptionById(id: number): Promise<LaptopOsOption | null> {
-  try {
-    const laptopOsOption = await prisma.laptopOsOption.findUnique({
-      where: { id },
-    })
-    return laptopOsOption
-  } catch (error) {
-    console.error("Error fetching laptop OS option:", error)
-    throw error
-  }
-}
-
-export async function getAllLaptopOsOptions(): Promise<LaptopOsOption[]> {
-  try {
-    const laptopOsOptions = await prisma.laptopOsOption.findMany({
-      orderBy: { value: "asc" },
-    })
-    return laptopOsOptions
-  } catch (error) {
-    console.error("Error fetching laptop OS options:", error)
-    throw error
+    return NextResponse.json(
+      { error: "Failed to delete laptop OS option" },
+      { status: 500 }
+    );
   }
 }

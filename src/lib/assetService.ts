@@ -120,8 +120,11 @@ export async function createAssetAndLaptopSpecs(
   return newAsset;
 }
 
-export async function getAssets(): Promise<Asset[]> {
+export async function getAssets(categoryId?: number): Promise<Asset[]> {
+  const whereClause = categoryId ? { categoryId } : {};
+
   const assets = await prisma.asset.findMany({
+    where: whereClause,
     include: {
       category: true, // Include category details
       laptopSpecs: {

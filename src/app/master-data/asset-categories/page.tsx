@@ -17,6 +17,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 export default function AssetCategoriesPage() {
   const [data, setData] = useState<AssetCategory[]>([]);
@@ -67,8 +69,16 @@ export default function AssetCategoriesPage() {
     setIsEditDialogOpen(true);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
+ if (loading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Assigned Assets</h1>
+          <Skeleton className="h-10 w-1/3" />
+        </div>
+        <TableSkeleton />
+      </div>
+    );
   }
 
   return (

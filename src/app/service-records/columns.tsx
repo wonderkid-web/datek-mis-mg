@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
@@ -15,35 +14,31 @@ export type ServiceRecordWithDetails = ServiceRecord & {
 export const columns: ColumnDef<ServiceRecordWithDetails>[] = [
   {
     accessorKey: "no",
-    header: "No",
-    headerClassName: "text-center",
+    header: () => <div className="text-center">No</div>,
     cell: ({ row }) => <p className="text-right">{row.index + 1}</p>,
   },
   {
     accessorKey: "ticketHelpdesk",
-    header: "Ticket Helpdesk",
-    headerClassName: "text-center",
+    header: () => <div className="text-center">No</div>,
   },
   {
     accessorKey: "assetAssignment.nomorAsset",
-    header: "Asset Number",
-    headerClassName: "text-center",
+    header: () => <div className="text-center">No</div>,
   },
   {
     accessorKey: "assetAssignment.user.namaLengkap",
-    header: "User",
-    headerClassName: "text-center",
+    header: () => <div className="text-center">No</div>,
   },
   {
     accessorKey: "repairType",
-    header: "Repair Type",
-    headerClassName: "text-center",
-    cell: ({ row }) => <div className="text-center">{row.getValue("repairType")}</div>,
+    header: () => <div className="text-center">No</div>,
+    cell: ({ row }) => (
+      <div className="text-center">{row.getValue("repairType")}</div>
+    ),
   },
   {
     accessorKey: "cost",
-    header: "Cost",
-    headerClassName: "text-center",
+    header: () => <div className="text-center">No</div>,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("cost"));
       const formatted = new Intl.NumberFormat("id-ID", {
@@ -55,13 +50,11 @@ export const columns: ColumnDef<ServiceRecordWithDetails>[] = [
   },
   {
     accessorKey: "remarks",
-    header: "Remarks",
-    headerClassName: "text-center",
+    header: () => <div className="text-center">No</div>,
   },
-    {
+  {
     accessorKey: "createdAt",
-    header: "Date",
-    headerClassName: "text-center",
+    header: () => <div className="text-center">No</div>,
     cell: ({ row }) => {
       const date = new Date(row.getValue("createdAt"));
       const formatted = date.toLocaleDateString("id-ID");

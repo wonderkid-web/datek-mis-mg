@@ -1,6 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
+"use client"
+import { useState } from "react";
 import { LaptopPowerOption } from "@prisma/client";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -19,31 +18,43 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function PowerOptionsPage() {
-  const [data, setData] = useState<LaptopPowerOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [editingPowerOption, setEditingPowerOption] = useState<LaptopPowerOption | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const powerOptions = await getLaptopPowerOptions();
-      setData(powerOptions.filter(item => !item.isDeleted));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: powerOptions, isLoading } = useQuery({
+    queryKey: ["laptopPowerOptions"],
+    queryFn: async () => {
+      const fetchedOptions = await getLaptopPowerOptions();
+      return fetchedOptions
+    },
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const deletePowerMutation = useMutation({
+    mutationFn: deleteLaptopPowerOption,
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["laptopPowerOptions"] });
+      const previousPowerOptions = queryClient.getQueryData<LaptopPowerOption[]>(["laptopPowerOptions"]);
+      queryClient.setQueryData<LaptopPowerOption[]>(["laptopPowerOptions"], (old) =>
+        old ? old.filter((item) => item.id !== Number(idToDelete)) : []
+      );
+      return { previousPowerOptions };
+    },
+    onError: (err, idToDelete, context) => {
+      queryClient.setQueryData(["laptopPowerOptions"], context?.previousPowerOptions);
+      console.error("An error occurred:", err);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["laptopPowerOptions"] });
+    },
+  });
 
   const openDeleteDialog = (id: string) => {
     setItemToDelete(id);
@@ -52,15 +63,9 @@ export default function PowerOptionsPage() {
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      try {
-        await deleteLaptopPowerOption(itemToDelete);
-        fetchData();
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setIsDeleteDialogOpen(false);
-        setItemToDelete(null);
-      }
+      deletePowerMutation.mutate(Number(itemToDelete));
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -69,12 +74,21 @@ export default function PowerOptionsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const filteredData = data.filter((item) =>
+  const filteredData = powerOptions?.filter((item) =>
     item.value.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) || [];
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Manage Power Options</h1>
+          {/* <Skeleton className="h-10 w-1/3" /> */}
+        </div>
+        {/* <TableSkeleton /> */}
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -90,15 +104,21 @@ export default function PowerOptionsPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="max-w-sm"
           />
-          <AddPowerDialog onSave={fetchData} />
+          <AddPowerDialog
+            onSave={() => queryClient.invalidateQueries({ queryKey: ["laptopPowerOptions"] })}
+          />
         </div>
-        <DataTable columns={columns({ handleDelete: openDeleteDialog, handleEdit })} data={filteredData} totalCount={filteredData.length} />
+        <DataTable
+          columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
+          data={filteredData}
+          totalCount={filteredData.length}
+        />
 
         {editingPowerOption && (
           <EditPowerDialog
             powerOption={editingPowerOption}
             onSave={() => {
-              fetchData();
+              queryClient.invalidateQueries({ queryKey: ["laptopPowerOptions"] });
               setEditingPowerOption(null);
             }}
             open={isEditDialogOpen}
@@ -106,7 +126,10 @@ export default function PowerOptionsPage() {
           />
         )}
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -116,7 +139,9 @@ export default function PowerOptionsPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

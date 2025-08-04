@@ -7,12 +7,12 @@ import {
 // PUT /api/laptop-graphics/[id]
 export async function PUT(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id } = await context.params;
     const data = await request.json();
-    const updatedOption = await updateLaptopGraphicOption(id, data);
+    const updatedOption = await updateLaptopGraphicOption(Number(id), data);
 
     return NextResponse.json(updatedOption, { status: 200 });
   } catch (error) {
@@ -27,11 +27,11 @@ export async function PUT(
 // DELETE /api/laptop-graphics/[id]
 export async function DELETE(
   _req: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
-    await deleteLaptopGraphicOption(id);
+    const { id } = await context.params;
+    await deleteLaptopGraphicOption(Number(id));
 
     // 204 biasanya tidak mengembalikan body
     return new NextResponse(null, { status: 204 });

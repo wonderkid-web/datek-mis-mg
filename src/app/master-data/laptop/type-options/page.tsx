@@ -1,6 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
+"use client"
+import { useState } from "react";
 import { LaptopTypeOption } from "@prisma/client";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -19,31 +18,45 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function TypeOptionsPage() {
-  const [data, setData] = useState<LaptopTypeOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [editingTypeOption, setEditingTypeOption] = useState<LaptopTypeOption | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const typeOptions = await getLaptopTypeOptions();
-      setData(typeOptions.filter(item => !item.isDeleted));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: typeOptions, isLoading } = useQuery({
+    queryKey: ["laptopTypeOptions"],
+    queryFn: async () => {
+      const fetchedOptions = await getLaptopTypeOptions();
+      return fetchedOptions
+    },
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const deleteTypeMutation = useMutation({
+    mutationFn: deleteLaptopTypeOption,
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: ["laptopTypeOptions"] });
+      const previousTypeOptions = queryClient.getQueryData<LaptopTypeOption[]>(["laptopTypeOptions"]);
+      queryClient.setQueryData<LaptopTypeOption[]>(["laptopTypeOptions"], (old) =>
+        old ? old.filter((item) => item.id !== Number(idToDelete)) : []
+      );
+      return { previousTypeOptions };
+    },
+    onError: (err, idToDelete, context) => {
+      queryClient.setQueryData(["laptopTypeOptions"], context?.previousTypeOptions);
+      console.error("An error occurred:", err);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["laptopTypeOptions"] });
+    },
+  });
 
   const openDeleteDialog = (id: string) => {
     setItemToDelete(id);
@@ -52,15 +65,9 @@ export default function TypeOptionsPage() {
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      try {
-        await deleteLaptopTypeOption(itemToDelete);
-        fetchData();
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setIsDeleteDialogOpen(false);
-        setItemToDelete(null);
-      }
+      deleteTypeMutation.mutate(Number(itemToDelete));
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -69,12 +76,20 @@ export default function TypeOptionsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const filteredData = data.filter((item) =>
+  const filteredData = typeOptions?.filter((item) =>
     item.value.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) || [];
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Manage Type Options</h1>
+          <Skeleton className="h-10 w-1/3" />
+        </div>
+        <TableSkeleton />
+      </div>
+    );
   }
 
   return (
@@ -90,15 +105,21 @@ export default function TypeOptionsPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="max-w-sm"
           />
-          <AddTypeDialog onSave={fetchData} />
+          <AddTypeDialog
+            onSave={() => queryClient.invalidateQueries({ queryKey: ["laptopTypeOptions"] })}
+          />
         </div>
-        <DataTable columns={columns({ handleDelete: openDeleteDialog, handleEdit })} data={filteredData} totalCount={filteredData.length} />
+        <DataTable
+          columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
+          data={filteredData}
+          totalCount={filteredData.length}
+        />
 
         {editingTypeOption && (
           <EditTypeDialog
             typeOption={editingTypeOption}
             onSave={() => {
-              fetchData();
+              queryClient.invalidateQueries({ queryKey: ["laptopTypeOptions"] });
               setEditingTypeOption(null);
             }}
             open={isEditDialogOpen}
@@ -106,7 +127,10 @@ export default function TypeOptionsPage() {
           />
         )}
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -116,7 +140,9 @@ export default function TypeOptionsPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

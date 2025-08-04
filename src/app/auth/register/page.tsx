@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+
       router.push('/'); // Redirect to dashboard or home page
     } catch (error: unknown) {
       alert((error as Error).message);

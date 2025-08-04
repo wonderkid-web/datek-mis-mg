@@ -20,9 +20,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User } from "@prisma/client";
+
 import { updateUser } from "@/lib/userService";
 import { COMPANIES, DEPARTMENTS } from "@/lib/constants";
+
+interface User {
+  id: number;
+  namaLengkap: string;
+  email: string | null;
+  departemen: string | null;
+  jabatan: string | null;
+  lokasiKantor: string | null;
+  isActive: boolean;
+}
 
 interface EditUserDialogProps {
   user: User;
@@ -99,8 +109,17 @@ export function EditUserDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="email" className="text-right">Email</Label>
-            <Input id="email" type="email" value={email!} onChange={(e) => setEmail(e.target.value)} className="col-span-3" required />
+            <Label htmlFor="email" className="text-right">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={email!}
+              onChange={(e) => setEmail(e.target.value)}
+              className="col-span-3"
+              required
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="departemen" className="text-right">
@@ -120,7 +139,7 @@ export function EditUserDialog({
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-             <Label htmlFor="jabatan" className="text-right">
+            <Label htmlFor="jabatan" className="text-right">
               Position
             </Label>
             <Select onValueChange={setJabatan} value={jabatan}>
