@@ -42,6 +42,11 @@ export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
               licenseOption: true,
             },
           },
+          printerSpecs:{
+            include:{
+              brandOption: true
+            }
+          }
         },
       },
     },

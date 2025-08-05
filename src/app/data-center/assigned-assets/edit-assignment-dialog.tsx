@@ -88,7 +88,7 @@ export function EditAssignmentDialog({ isOpen, onClose, onSave, assignment }: Ed
               <SelectContent>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.namaLengkap} ({user.email})
+                    {user.namaLengkap}
                   </SelectItem>
                 ))}
               </SelectContent>

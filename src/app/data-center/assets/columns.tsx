@@ -5,6 +5,7 @@ import { Asset } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Pencil, Trash, Edit } from "lucide-react";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import Inspect from "@/components/Inspect";
 
 interface ColumnsProps {
   handleEdit: (asset: Asset) => void;
@@ -71,11 +72,19 @@ export const columns = ({
   {
     accessorKey: "model",
     header: () => <div className="text-center">Model</div>,
-    cell: ({ row }) => (
-      <p className="text-center">
-        {row.original.printerSpecs?.modelOption?.value || "N/A"}
-      </p>
-    ),
+    cell: ({ row }) => {
+      const asset = row.original;
+      const model =
+        asset?.laptopSpecs?.brandOption?.value ||
+        asset?.intelNucSpecs?.brandOption?.value ||
+        asset?.printerSpecs?.brandOption?.value ||
+        "Unknown";
+      return (
+        <p className="text-center">
+          {model}
+        </p>
+      );
+    },
   },
 
   {

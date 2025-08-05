@@ -56,6 +56,7 @@ export function ViewAssignmentDialog({
 }: ViewAssignmentDialogProps) {
   const asset = assignment.asset;
   const laptopSpecs = asset?.laptopSpecs;
+  const printerSpecs = asset?.printerSpecs;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -113,7 +114,7 @@ export function ViewAssignmentDialog({
                     Brand
                   </TableCell>
                   <TableCell>
-                    {laptopSpecs?.brandOption?.value || "-"}
+                    {printerSpecs?.brandOption?.value || "-"}
                   </TableCell>
                 </TableRow>
                 <TableRow>

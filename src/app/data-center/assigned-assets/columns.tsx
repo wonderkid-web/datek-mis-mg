@@ -4,8 +4,16 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { AssetAssignment } from "@prisma/client";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Pencil, Eye, Trash, CalendarX, CalendarCheck } from "lucide-react";
+import {
+  ArrowUpDown,
+  Pencil,
+  Eye,
+  Trash,
+  CalendarX,
+  CalendarCheck,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Inspect from "@/components/Inspect";
 
 interface ColumnsProps {
   handleEdit: (assignment: AssetAssignment) => void;
@@ -23,7 +31,7 @@ export const columns = ({
     header: () => <div className="text-center">No</div>,
     cell: ({ row }) => <div className="text-right">{row.index + 1}</div>,
   },
- 
+
   {
     accessorKey: "nomorAsset",
     header: ({ column }) => (
@@ -36,7 +44,7 @@ export const columns = ({
       </Button>
     ),
   },
-   {
+  {
     accessorKey: "user.namaLengkap",
     header: ({ column }) => (
       <Button
@@ -53,11 +61,13 @@ export const columns = ({
     accessorKey: "asset.category.nama",
     header: "Kategori",
     cell: ({ row }) => {
-      const category = row.original.asset.categoryId;
-      return category == 1 ? "Laptop" : "Intel NUC" || "Unknown";
-    }
+      const categoryId = row.original.asset.categoryId;
+      if (categoryId == 1) return "Laptop";
+      else if (categoryId == 2) return "Intel NUC";
+      else if (categoryId == 3) return "Printer";
+    },
   },
-    {
+  {
     accessorKey: "brand",
     header: ({ column }) => (
       <Button
@@ -70,8 +80,16 @@ export const columns = ({
     ),
     cell: ({ row }) => {
       const asset = row.original.asset;
-      const brand = asset.laptopSpecs?.brandOption?.value || asset.intelNucSpecs?.brandOption?.value || "Unknown";
-      return <p className="text-center">{brand}</p>;
+      const brand =
+        asset.laptopSpecs?.brandOption?.value ||
+        asset.intelNucSpecs?.brandOption?.value ||
+        asset.printerSpecs?.brandOption?.value ||
+        "Unknown";
+      return (
+        <p className="text-center">
+          {brand}
+        </p>
+      );
     },
   },
   {
@@ -85,7 +103,9 @@ export const columns = ({
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) =>  <p className="text-center">{row.original.asset.namaAsset}</p>,
+    cell: ({ row }) => (
+      <p className="text-center">{row.original.asset.namaAsset}</p>
+    ),
   },
   {
     accessorKey: "asset.tanggalPembelian",
@@ -100,9 +120,11 @@ export const columns = ({
     ),
     cell: ({ row }) => {
       const purchaseDate = row.original.asset.tanggalPembelian;
-      return <p className="text-center">
-        {purchaseDate ? new Date(purchaseDate).toLocaleDateString() : "-"}
-      </p>
+      return (
+        <p className="text-center">
+          {purchaseDate ? new Date(purchaseDate).toLocaleDateString() : "-"}
+        </p>
+      );
     },
   },
   {
@@ -124,15 +146,21 @@ export const columns = ({
       const dateString = new Date(warrantyDate).toLocaleDateString();
 
       return (
-        <Badge variant={isExpired ? "destructive" : "default"} className="flex mx-auto items-center justify-center">
-          {isExpired ? <CalendarX className="h-3 w-3 mr-1" /> : <CalendarCheck className="h-3 w-3 mr-1" />}
+        <Badge
+          variant={isExpired ? "destructive" : "default"}
+          className="flex mx-auto items-center justify-center"
+        >
+          {isExpired ? (
+            <CalendarX className="h-3 w-3 mr-1" />
+          ) : (
+            <CalendarCheck className="h-3 w-3 mr-1" />
+          )}
           {dateString}
         </Badge>
       );
     },
   },
 
-  
   {
     accessorKey: "catatan",
     header: "Notes",
@@ -145,11 +173,19 @@ export const columns = ({
 
       return (
         <div className="flex items-center justify-center space-x-2">
-          <Button variant="ghost" size="icon" onClick={() => handleView(assignment)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleView(assignment)}
+          >
             <Eye className="h-4 w-4" />
             <span className="sr-only">View</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(assignment)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleEdit(assignment)}
+          >
             <Pencil className="h-4 w-4" />
             <span className="sr-only">Edit</span>
           </Button>
@@ -165,5 +201,4 @@ export const columns = ({
       );
     },
   },
- 
 ];
