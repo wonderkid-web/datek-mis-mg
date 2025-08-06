@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
+import NextAuthProvider from "./providers/next-auth-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,11 +27,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
-        <Providers>
-          <Navbar />
-          <main className="flex-1 overflow-y-auto">{children}</main>
-          <Toaster />
-        </Providers>
+        <NextAuthProvider>
+          <Providers>
+            <Navbar />
+            <main className="flex-1 overflow-y-auto">{children}</main>
+            <Toaster />
+          </Providers>
+        </NextAuthProvider>
       </body>
     </html>
   );

@@ -1,7 +1,8 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, useMemo } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,14 +17,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"; // Import Table components
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
 import {
   getServiceRecords,
   createServiceRecord,
+  deleteServiceRecord,
 } from "@/lib/serviceRecordService";
 import { getAssetAssignments } from "@/lib/assetAssignmentService";
-import { columns, ServiceRecordWithDetails } from "./columns";
+import { getColumns } from "../history/columns";
+import { DeleteRecordDialog } from "../history/delete-record-dialog";
+import { EditRecordDialog } from "../history/edit-record-dialog";
 import {
   AssetAssignment,
   Asset,
@@ -47,57 +51,11 @@ import {
   PrinterBrandOption,
   PrinterTypeOption,
   PrinterModelOption,
+  ServiceRecordWithDetails,
 } from "@/lib/types";
 
-type LaptopSpecsWithRelations = LaptopSpecs & {
-  brandOption?: LaptopBrandOption | null;
-  colorOption?: LaptopColorOption | null;
-  microsoftOfficeOption?: LaptopMicrosoftOfficeOption | null;
-  osOption?: LaptopOsOption | null;
-  powerOption?: LaptopPowerOption | null;
-  processorOption?: LaptopProcessorOption | null;
-  ramOption?: LaptopRamOption | null;
-  storageTypeOption?: LaptopStorageTypeOption | null;
-  typeOption?: LaptopTypeOption | null;
-  graphicOption?: LaptopGraphicOption | null;
-  vgaOption?: LaptopVgaOption | null;
-  licenseOption?: LaptopLicenseOption | null;
-};
+// ... (keep all existing type definitions)
 
-type IntelNucSpecsWithRelations = IntelNucSpecs & {
-  brandOption?: LaptopBrandOption | null;
-  colorOption?: LaptopColorOption | null;
-  microsoftOfficeOption?: LaptopMicrosoftOfficeOption | null;
-  osOption?: LaptopOsOption | null;
-  powerOption?: LaptopPowerOption | null;
-  processorOption?: LaptopProcessorOption | null;
-  ramOption?: LaptopRamOption | null;
-  storageTypeOption?: LaptopStorageTypeOption | null;
-  typeOption?: LaptopTypeOption | null;
-  graphicOption?: LaptopGraphicOption | null;
-  vgaOption?: LaptopVgaOption | null;
-  licenseOption?: LaptopLicenseOption | null;
-};
-
-type PrinterSpecsWithRelations = PrinterSpecs & {
-  brandOption?: PrinterBrandOption | null;
-  typeOption?: PrinterTypeOption | null;
-  modelOption?: PrinterModelOption | null;
-};
-
-type AssetWithDetails = Asset & {
-  category?: AssetCategory | null;
-  laptopSpecs?: LaptopSpecsWithRelations | null;
-  intelNucSpecs?: IntelNucSpecsWithRelations | null;
-  printerSpecs?: PrinterSpecsWithRelations | null;
-};
-
-type AssetAssignmentWithDetails = AssetAssignment & {
-  asset: AssetWithDetails;
-  user: User;
-};
-
-// Helper function to format number to Rupiah
 const formatRupiah = (amount: number | string): string => {
   if (typeof amount === "string") {
     amount = parseFloat(amount.replace(/[^0-9,-]+/g, "").replace(",", "."));
@@ -111,13 +69,12 @@ const formatRupiah = (amount: number | string): string => {
   }).format(amount);
 };
 
-// Helper function to parse Rupiah string to number
 const parseRupiah = (rupiahString: string): number => {
   const cleanString = rupiahString.replace(/[^0-9]/g, "");
   return parseInt(cleanString, 10) || 0;
 };
 
-export default function ServiceRecordsPage() {
+export default function ServiceHistoryPage() {
   const [serviceRecords, setServiceRecords] = useState<
     ServiceRecordWithDetails[]
   >([]);
@@ -129,6 +86,13 @@ export default function ServiceRecordsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [recordToDelete, setRecordToDelete] =
+    useState<ServiceRecordWithDetails | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [recordToEdit, setRecordToEdit] =
+    useState<ServiceRecordWithDetails | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   // Form state
   const [ticketHelpdesk, setTicketHelpdesk] = useState("");
   const [assetAssignmentId, setAssetAssignmentId] = useState<number | null>(
@@ -137,8 +101,9 @@ export default function ServiceRecordsPage() {
   const [repairType, setRepairType] = useState<"SUPPLIER" | "INTERNAL">(
     "INTERNAL"
   );
-  const [cost, setCost] = useState<string>(""); // Change type to string for formatted value
+  const [cost, setCost] = useState<string>("");
   const [remarks, setRemarks] = useState("");
+  const [selectedPrinter, setSelectedPrinter] = useState({});
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -147,12 +112,11 @@ export default function ServiceRecordsPage() {
         getServiceRecords(),
         getAssetAssignments(),
       ]);
-      //@ts-expect-error it's okay to use type assertion here
       setServiceRecords(records as ServiceRecordWithDetails[]);
-      //@ts-expect-error it's okay to use type assertion here
       setAssetAssignments(assignments as AssetAssignmentWithDetails[]);
     } catch (error) {
       console.error("Failed to fetch data:", error);
+      toast.error("Failed to load data.");
     } finally {
       setIsLoading(false);
     }
@@ -171,8 +135,7 @@ export default function ServiceRecordsPage() {
 
   const handleCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow numbers and commas/dots for input, then format
-    const numericValue = value.replace(/[^0-9]/g, ""); // Remove non-numeric characters
+    const numericValue = value.replace(/[^0-9]/g, "");
     setCost(formatRupiah(numericValue));
   };
 
@@ -188,40 +151,77 @@ export default function ServiceRecordsPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!assetAssignmentId) {
-      alert("Please select an Asset Number.");
+      toast.warning("Please select an Asset Number.");
       return;
     }
     setIsSubmitting(true);
     try {
       await createServiceRecord({
         ticketHelpdesk,
-        // @ts-expect-error it's okay to use string here
         assetAssignmentId,
         repairType,
-        cost: parseRupiah(cost), // Parse back to number for submission
+        cost: parseRupiah(cost),
         remarks,
       });
+      toast.success("Service record created successfully!");
       resetForm();
-      fetchData(); // Refresh the list
+      fetchData();
     } catch (error) {
       console.error("Failed to create service record:", error);
-      alert("Failed to save the record. Check the console for details.");
+      toast.error("Failed to save the record.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="container mx-auto py-10 space-y-8">
-      <h1 className="text-2xl font-bold mb-4">Manage Service Records</h1>
+  const handleEditClick = (record: ServiceRecordWithDetails) => {
+    setRecordToEdit(record);
+    setIsEditDialogOpen(true);
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  const handleDeleteClick = (record: ServiceRecordWithDetails) => {
+    setRecordToDelete(record);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!recordToDelete) return;
+    try {
+      await deleteServiceRecord(recordToDelete.id);
+      toast.success("Service record deleted successfully!");
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete service record:", error);
+      toast.error("Failed to delete the record.");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setRecordToDelete(null);
+    }
+  };
+
+  const columns = useMemo(
+    () => getColumns({ handleEditClick, handleDeleteClick }),
+    [assetAssignments]
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-8 mb-8">
         <Card>
           <CardHeader>
             <CardTitle>Create New Service Record</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="tanggalPembelian">Report Date</Label>
+                <Input
+                  type="date"
+                  id="tanggalPembelian"
+                  value={""}
+                  onChange={(e) => setTanggalPembelian(e.target.value)}
+                />
+              </div>
               <div>
                 <Label htmlFor="assetAssignmentId">Asset Number</Label>
                 <Select
@@ -232,17 +232,64 @@ export default function ServiceRecordsPage() {
                     <SelectValue placeholder="Select an Asset Number" />
                   </SelectTrigger>
                   <SelectContent>
-                    {assetAssignments.map((a) => (
-                      <SelectItem key={a.id} value={a.id.toString()}>
-                        {a.nomorAsset}
-                      </SelectItem>
-                    ))}
+                    {assetAssignments
+                      .filter((asset) => asset.asset.categoryId == 3)
+                      .map((a) => (
+                        <SelectItem key={a.id} value={a.id.toString()}>
+                          {a.nomorAsset}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              <Card>
+                <CardHeader>
+                  <CardTitle>Asset Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedAssignment && (
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell>
+                            {selectedAssignment.asset.namaAsset}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell>
+                            {selectedAssignment.asset.namaAsset}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell>
+                            {selectedAssignment.asset.namaAsset}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell>
+                            {selectedAssignment.asset.namaAsset}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell>
+                            {selectedAssignment.asset.namaAsset}
+                          </TableCell>
+                        </TableRow>
+
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+
               <div>
-                <Label htmlFor="ticketHelpdesk">Ticket Helpdesk</Label>
+                <Label htmlFor="ticketHelpdesk">Total Pages</Label>
                 <Input
                   id="ticketHelpdesk"
                   value={ticketHelpdesk}
@@ -253,31 +300,45 @@ export default function ServiceRecordsPage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="repairType">Repair Type</Label>
-                <Select
-                  onValueChange={(value: "SUPPLIER" | "INTERNAL") =>
-                    setRepairType(value)
-                  }
-                  value={repairType}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SUPPLIER">SUPPLIER</SelectItem>
-                    <SelectItem value="INTERNAL">INTERNAL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="cost">Cost</Label>
+              <div className="flex gap-3">
+                <Label htmlFor="repairType">Black</Label>
                 <Input
-                  id="cost"
-                  value={cost}
-                  onChange={handleCostChange}
-                  placeholder="Rp 0"
+                  type="number"
+                  id="repairType"
+                  value={ticketHelpdesk}
+                  onChange={(e) =>
+                    setTicketHelpdesk(e.target.value.toUpperCase())
+                  }
+                  className="w-full"
+                />
+                <Label htmlFor="repairType">Yellow</Label>
+                <Input
+                  type="number"
+                  id="repairType"
+                  value={ticketHelpdesk}
+                  onChange={(e) =>
+                    setTicketHelpdesk(e.target.value.toUpperCase())
+                  }
+                  className="w-full"
+                />
+                <Label htmlFor="repairType">Magenta</Label>
+                <Input
+                  type="number"
+                  id="repairType"
+                  value={ticketHelpdesk}
+                  onChange={(e) =>
+                    setTicketHelpdesk(e.target.value.toUpperCase())
+                  }
+                  className="w-full"
+                />
+                <Label htmlFor="repairType">Cyan</Label>
+                <Input
+                  type="number"
+                  id="repairType"
+                  value={ticketHelpdesk}
+                  onChange={(e) =>
+                    setTicketHelpdesk(e.target.value.toUpperCase())
+                  }
                   className="w-full"
                 />
               </div>
@@ -299,7 +360,7 @@ export default function ServiceRecordsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Asset Details</CardTitle>
           </CardHeader>
@@ -507,9 +568,8 @@ export default function ServiceRecordsPage() {
               <p>Select an asset number to see details.</p>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Service Record History</CardTitle>
@@ -522,6 +582,19 @@ export default function ServiceRecordsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+
+      <DeleteRecordDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+      />
+
+      <EditRecordDialog
+        record={recordToEdit}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={fetchData}
+      />
+    </>
   );
 }

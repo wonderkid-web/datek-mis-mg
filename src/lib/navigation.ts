@@ -58,7 +58,7 @@ export const navigationItems: NavigationItem[] = [
   },
   {
     name: "Service Record",
-    href: "/service-records",
+    href: "/service-records/history",
     icon: ToolCaseIcon,
   },
 ];

@@ -11,20 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { LaptopSpecs } from "@/lib/types";
-import {
-  Laptop,
-  MemoryStick,
-  Cpu,
-  HardDrive,
-  Monitor,
-  BatteryCharging,
-  CircuitBoard,
-  Key,
-  Wifi,
-  Cable,
-  FileText,
-  User,
-} from "lucide-react";
 
 interface ViewAssignmentDialogProps {
   isOpen: boolean;
@@ -57,213 +43,146 @@ export function ViewAssignmentDialog({
   const asset = assignment.asset;
   const laptopSpecs = asset?.laptopSpecs;
   const printerSpecs = asset?.printerSpecs;
+  const intelNucSpecs = asset?.intelNucSpecs;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Assignment Details</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-1 gap-6 py-4">
-          {/* Assignment Details */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <User className="mr-2" />
-              Assignment Info
-            </h3>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">User</TableCell>
-                  <TableCell>{assignment.user.namaLengkap}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Department</TableCell>
-                  <TableCell>{assignment.user.departemen || "-"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Company</TableCell>
-                  <TableCell>{assignment.user.lokasiKantor || "-"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Position</TableCell>
-                  <TableCell>{assignment.user.jabatan || "-"}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
+        <div className="py-4">
+          <Table>
+            <TableBody>
+              {/* Assignment Info */}
+              <TableRow>
+                <TableCell className="font-medium">User</TableCell>
+                <TableCell>{assignment.user.namaLengkap}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Department</TableCell>
+                <TableCell>{assignment.user.departemen || "-"}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Company</TableCell>
+                <TableCell>{assignment.user.lokasiKantor || "-"}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Position</TableCell>
+                <TableCell>{assignment.user.jabatan || "-"}</TableCell>
+              </TableRow>
 
-          {/* Asset Details */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <Laptop className="mr-2" />
-              Asset Info
-            </h3>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Asset Number</TableCell>
-                  <TableCell>{assignment.nomorAsset || "-"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Category</TableCell>
-                  <TableCell>{asset.category?.nama || "Laptop"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium flex items-center">
-                    Brand
-                  </TableCell>
-                  <TableCell>
-                    {printerSpecs?.brandOption?.value || "-"}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium flex items-center ">
-                    Color{" "}
-                  </TableCell>
-                  <TableCell>
-                    {laptopSpecs?.colorOption?.value || "-"}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Asset Name</TableCell>
-                  <TableCell>{asset.namaAsset}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Serial Number</TableCell>
-                  <TableCell>{asset.nomorSeri}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Purchase Date</TableCell>
-                  <TableCell>
-                    {asset.tanggalPembelian
-                      ? new Date(asset.tanggalPembelian).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Warranty Date:</TableCell>
-                  <TableCell>
-                    {asset.tanggalGaransi
-                      ? new Date(asset.tanggalGaransi).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                </TableRow>
+              {/* Asset Info */}
+              <TableRow>
+                <TableCell className="font-medium">Asset Number</TableCell>
+                <TableCell>{assignment.nomorAsset || "-"}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Category</TableCell>
+                <TableCell>{asset.category?.nama || "Laptop"}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Brand</TableCell>
+                <TableCell>
+                  {printerSpecs?.brandOption?.value || laptopSpecs?.brandOption?.value || intelNucSpecs?.brandOption?.value || "-"}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Color</TableCell>
+                <TableCell>
+                  {printerSpecs?.colorOption?.value || laptopSpecs?.colorOption?.value || intelNucSpecs?.colorOption?.value || "-"}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Asset Name</TableCell>
+                <TableCell>{asset.namaAsset}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Serial Number</TableCell>
+                <TableCell>{asset.nomorSeri}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Purchase Date</TableCell>
+                <TableCell>
+                  {asset.tanggalPembelian
+                    ? new Date(asset.tanggalPembelian).toLocaleDateString()
+                    : "-"}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Warranty Date</TableCell>
+                <TableCell>
+                  {asset.tanggalGaransi
+                    ? new Date(asset.tanggalGaransi).toLocaleDateString()
+                    : "-"}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Status</TableCell>
+                <TableCell>{asset.statusAsset}</TableCell>
+              </TableRow>
 
-                <TableRow>
-                  <TableCell className="font-medium">Status:</TableCell>
-                  <TableCell>{asset.statusAsset}</TableCell>
-                </TableRow>
-                {/* <TableRow>
-                  <TableCell className="font-medium">Notes</TableCell>
-                  <TableCell>{assignment.catatan || "-"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Assigned Date</TableCell>
-                  <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                </TableRow> */}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Laptop Specific Details */}
-          {laptopSpecs && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center">
-                <Laptop className="mr-2" />
-                Laptop Specifications
-              </h3>
-              <Table>
-                <TableBody>
+              {/* Specifications */}
+              {(laptopSpecs || intelNucSpecs) && (
+                <>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <Cpu className="mr-2" />
-                      Processor
-                    </TableCell>
+                    <TableCell className="font-medium">Processor</TableCell>
                     <TableCell>
-                      {laptopSpecs?.processorOption?.value || "-"}
+                      {laptopSpecs?.processorOption?.value || intelNucSpecs?.processorOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <MemoryStick className="mr-2" />
-                      RAM
-                    </TableCell>
+                    <TableCell className="font-medium">RAM</TableCell>
                     <TableCell>
-                      {laptopSpecs?.ramOption?.value || "-"}
+                      {laptopSpecs?.ramOption?.value || intelNucSpecs?.ramOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <HardDrive className="mr-2" />
-                      Storage Type
-                    </TableCell>
+                    <TableCell className="font-medium">Storage Type</TableCell>
                     <TableCell>
-                      {laptopSpecs?.storageTypeOption?.value || "-"}
+                      {laptopSpecs?.storageTypeOption?.value || intelNucSpecs?.storageTypeOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <CircuitBoard className="mr-2" />
-                      Graphic
-                    </TableCell>
+                    <TableCell className="font-medium">Graphic</TableCell>
                     <TableCell>
-                      {laptopSpecs?.graphicOption?.value || "-"}
+                      {laptopSpecs?.graphicOption?.value || intelNucSpecs?.graphicOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <Wifi className="mr-2" />
-                      MAC WLAN
-                    </TableCell>
-                    <TableCell>{laptopSpecs?.macWlan || "-"}</TableCell>
+                    <TableCell className="font-medium">MAC WLAN</TableCell>
+                    <TableCell>{laptopSpecs?.macWlan || intelNucSpecs?.macWlan || "-"}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <Cable className="mr-2" />
-                      MAC LAN
-                    </TableCell>
-                    <TableCell>{laptopSpecs?.macLan || "-"}</TableCell>
+                    <TableCell className="font-medium">MAC LAN</TableCell>
+                    <TableCell>{laptopSpecs?.macLan || intelNucSpecs?.macLan || "-"}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <BatteryCharging className="mr-2" />
-                      Power
-                    </TableCell>
+                    <TableCell className="font-medium">Power</TableCell>
                     <TableCell>
-                      {laptopSpecs?.powerOption?.value || "-"}
+                      {laptopSpecs?.powerOption?.value || intelNucSpecs?.powerOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <Monitor className="mr-2" />
-                      OS
-                    </TableCell>
-                    <TableCell>{laptopSpecs?.osOption?.value || "-"}</TableCell>
+                    <TableCell className="font-medium">OS</TableCell>
+                    <TableCell>{laptopSpecs?.osOption?.value || intelNucSpecs?.osOption?.value || "-"}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <Key className="mr-2" />
-                      License
-                    </TableCell>
+                    <TableCell className="font-medium">License</TableCell>
                     <TableCell>
-                      {laptopSpecs?.licenseOption?.value || "-"}
+                      {laptopSpecs?.licenseOption?.value || intelNucSpecs?.licenseOption?.value || "-"}
                     </TableCell>
                   </TableRow>
-
                   <TableRow>
-                    <TableCell className="font-medium flex items-center">
-                      <FileText className="mr-2" />
-                      Microsoft Office
-                    </TableCell>
+                    <TableCell className="font-medium">Microsoft Office</TableCell>
                     <TableCell>
-                      {laptopSpecs?.microsoftOfficeOption?.value || "-"}
+                      {laptopSpecs?.microsoftOfficeOption?.value || intelNucSpecs?.microsoftOfficeOption?.value || "-"}
                     </TableCell>
                   </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                </>
+              )}
+            </TableBody>
+          </Table>
         </div>
         <DialogFooter>
           <Button onClick={onClose}>Close</Button>

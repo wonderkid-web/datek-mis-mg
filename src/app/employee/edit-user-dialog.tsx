@@ -32,6 +32,7 @@ interface User {
   jabatan: string | null;
   lokasiKantor: string | null;
   isActive: boolean;
+  role: string | null;
 }
 
 interface EditUserDialogProps {
@@ -53,6 +54,8 @@ export function EditUserDialog({
   const [jabatan, setJabatan] = useState(user.jabatan || "");
   const [lokasiKantor, setLokasiKantor] = useState(user.lokasiKantor || "");
   const [isActive, setIsActive] = useState(user.isActive);
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState(user.role || "");
 
   useEffect(() => {
     setNamaLengkap(user.namaLengkap);
@@ -61,18 +64,27 @@ export function EditUserDialog({
     setJabatan(user.jabatan || "");
     setLokasiKantor(user.lokasiKantor || "");
     setIsActive(user.isActive);
+    setRole(user.role || "");
+    setPassword(""); // Reset password field on dialog open
   }, [user]);
 
   const handleSubmit = async () => {
     try {
-      await updateUser(user.id, {
+      const userData: any = {
         namaLengkap,
         email,
         departemen,
         jabatan,
         lokasiKantor,
         isActive,
-      });
+        role,
+      };
+
+      if (password) {
+        userData.password = password;
+      }
+
+      await updateUser(user.id, userData);
 
       console.log("User updated successfully");
       onSave();
@@ -88,14 +100,10 @@ export function EditUserDialog({
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
-            Edit the user details. Click save when {"you're"} done.
+            Edit the user details. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {/* <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="nik" className="text-right">NIK</Label>
-            <Input id="nik" value={nik} onChange={(e) => setNik(e.target.value)} className="col-span-3" required />
-          </div> */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="namaLengkap" className="text-right">
               Full Name
@@ -140,7 +148,7 @@ export function EditUserDialog({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="jabatan" className="text-right">
-              Position
+              Homebase
             </Label>
             <Select onValueChange={setJabatan} value={jabatan}>
               <SelectTrigger className="col-span-3 w-full ">
@@ -169,6 +177,33 @@ export function EditUserDialog({
                     {company.description}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="password_new" className="text-left">
+              Password
+            </Label>
+            <Input
+              id="password_new"
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="col-span-3"
+              placeholder="Leave blank to keep current password"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="role" className="text-right">
+              Authorization
+            </Label>
+            <Select onValueChange={setRole} value={role}>
+              <SelectTrigger className="col-span-3 w-full ">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="operator">Operator</SelectItem>
+                <SelectItem value="administrator">Administrator</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -99,7 +99,7 @@ export const columns = ({
   },
   {
     accessorKey: "jabatan",
-    header: () => <div className="text-center">Home Base</div>,
+    header: () => <div className="text-center">Homebase</div>,
     cell: ({ row }) => (
       <div className="text-center">{row.original.jabatan}</div>
     ),

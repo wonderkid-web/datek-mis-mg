@@ -13,6 +13,7 @@ export interface User {
   jabatan: string | null;
   lokasiKantor: string | null;
   isActive: boolean;
+  role: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

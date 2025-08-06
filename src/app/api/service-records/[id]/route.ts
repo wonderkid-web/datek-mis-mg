@@ -1,39 +1,39 @@
+'use server';
 
 import { NextResponse } from 'next/server';
-import {
-  updateServiceRecord,
-  deleteServiceRecord,
-} from '@/lib/serviceRecordService';
+import { updateServiceRecord, deleteServiceRecord } from '@/lib/serviceRecordService';
 
-export async function PUT(
+export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = Number((await params).id)
-    const data = await request.json();
-    const updatedServiceRecord = await updateServiceRecord(id, data);
-    return NextResponse.json(updatedServiceRecord);
+    const id = Number(params.id);
+    const body = await request.json();
+    const updatedRecord = await updateServiceRecord(id, body);
+    return NextResponse.json(updatedRecord);
   } catch (error) {
-    return new NextResponse(
-      JSON.stringify({ message: (error as Error).message }),
-      { status: 400 }
+    console.error(`Error updating service record with id ${params.id}:`, error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
     );
   }
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+    request: Request,
+    { params }: { params: { id: string } }
 ) {
-  try {
-    const id = Number((await params).id)
-    await deleteServiceRecord(id);
-    return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    return new NextResponse(
-      JSON.stringify({ message: (error as Error).message }),
-      { status: 500 }
-    );
-  }
+    try {
+        const id = Number(params.id);
+        await deleteServiceRecord(id);
+        return NextResponse.json({ message: 'Record deleted successfully' }, { status: 200 });
+    } catch (error) {
+        console.error(`Error deleting service record with id ${params.id}:`, error);
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        );
+    }
 }

@@ -13,6 +13,8 @@ model User {
   email            String?           @unique @db.VarChar(255)
   departemen       String?           @db.VarChar(100)
   jabatan          String?           @db.VarChar(100)
+  password         String?           @db.VarChar(100)
+  role             String?           @db.VarChar(15)
   lokasiKantor     String?           @map("lokasi_kantor") @db.VarChar(100)
   isActive         Boolean           @default(true) @map("is_active")
   createdAt        DateTime          @default(now()) @map("created_at")
