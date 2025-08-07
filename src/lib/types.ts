@@ -50,12 +50,30 @@ export interface AssetAssignment {
   updatedAt: Date;
   nomorAsset: string;
   // Menambahkan relasi yang mungkin di-include
+  asset?: Asset;
+  user?: User;
+}
+
+
+export interface AssetAssignmentPrinter {
+  id: number;
+  assetId: number;
+  userId: number;
+  catatan: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  nomorAsset: string;
+  // Menambahkan relasi yang mungkin di-include
   asset?: {
     namaAsset: Asset["namaAsset"];
     categoryId: Asset["categoryId"];
     nomorSeri: Asset["nomorSeri"];
+    printerSpecs:{
+      brandOption: {
+        value: string;
+      }
+    }
   };
-  user?: User;
 }
 
 export interface ServiceRecord {
@@ -153,9 +171,9 @@ export interface IntelNucSpecs extends AssetSpecs {
 // Spesifikasi untuk Printer
 export interface PrinterSpecs {
   assetId: number;
-  typeOptionId?: number | null;
-  brandOptionId?: number | null;
-  modelOptionId?: number | null;
+  typeOptionId?: number | null  ;
+  brandOptionId?: number | null  ;
+  modelOptionId?: number | null ;
   // Properti relasi
   typeOption?: PrinterTypeOption;
   brandOption?: PrinterBrandOption;

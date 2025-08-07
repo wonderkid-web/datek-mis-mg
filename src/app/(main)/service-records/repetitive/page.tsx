@@ -21,15 +21,15 @@ import {
   updatePrinterRepetitiveMaintenance,
   deletePrinterRepetitiveMaintenance,
 } from "@/lib/printerRepetitiveMaintenanceService";
-import { getAssetAssignments } from "@/lib/assetAssignmentService";
+import { getAssetAssignmentsPrinter } from "@/lib/assetAssignmentService";
 import { getColumns } from "./columns";
 import { DeleteRecordDialog } from "./delete-record-dialog";
 import { EditRecordDialog } from "./edit-record-dialog";
-import { AssetAssignment, PrinterRepetitiveMaintenance } from "@/lib/types";
+import { AssetAssignment, AssetAssignmentPrinter, PrinterRepetitiveMaintenance } from "@/lib/types";
 
 export default function RepetitiveServicePage() {
   const [records, setRecords] = useState<PrinterRepetitiveMaintenance[]>([]);
-  const [assetAssignments, setAssetAssignments] = useState<AssetAssignment[]>(
+  const [assetAssignments, setAssetAssignments] = useState<AssetAssignmentPrinter[]>(
     []
   );
   const [selectedAssignment, setSelectedAssignment] =
@@ -62,9 +62,11 @@ export default function RepetitiveServicePage() {
     try {
       const [fetchedRecords, assignments] = await Promise.all([
         getPrinterRepetitiveMaintenances(),
-        getAssetAssignments(),
+        getAssetAssignmentsPrinter(),
       ]);
       setRecords(fetchedRecords);
+
+      // @ts-expect-error its okay
       setAssetAssignments(assignments);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -81,11 +83,15 @@ export default function RepetitiveServicePage() {
   const handleAssetSelect = (assignmentIdStr: string) => {
     const id = parseInt(assignmentIdStr, 10);
     const assignment = assetAssignments.find((a) => a.id === id) || null;
+    // @ts-expect-error its okay
     setSelectedAssignment(assignment);
     setAssetAssignmentId(id);
     if (assignment) {
       setAssetDetails(
-        `Asset: ${assignment.asset?.namaAsset || "N/A"} - User: ${assignment.user?.namaLengkap || "N/A"}`
+        `Asset: ${assignment.asset?.namaAsset || "N/A"} - User: ${
+          // @ts-expect-error its okay
+          assignment.user?.namaLengkap || "N/A"
+        }`
       );
     } else {
       setAssetDetails(null);
@@ -189,12 +195,10 @@ export default function RepetitiveServicePage() {
                     Asset Number (Printer)
                   </Label>
                   <Select
-                    options={assetAssignments
-                      .filter((asset) => asset.asset?.categoryId === 3)
-                      .map((a) => ({
-                        value: a.id.toString(),
-                        label: `${a.nomorAsset}`,
-                      }))}
+                    options={assetAssignments.map((a) => ({
+                      value: a.id.toString(),
+                      label: `${a.asset?.nomorSeri}`,
+                    }))}
                     onChange={(selectedOption) =>
                       handleAssetSelect(selectedOption?.value || "")
                     }
@@ -223,7 +227,15 @@ export default function RepetitiveServicePage() {
                       <TableBody>
                         <TableRow>
                           <TableCell className="font-semibold">
-                            Asset Name:
+                            Brand:
+                          </TableCell>
+                          <TableCell>
+                            {selectedAssignment.asset?.printerSpecs?.brandOption?.value || "N/A"}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-semibold">
+                            Brand:
                           </TableCell>
                           <TableCell>
                             {selectedAssignment.asset?.namaAsset || "N/A"}
