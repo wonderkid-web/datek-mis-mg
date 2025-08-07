@@ -4,10 +4,10 @@ import bcrypt from "bcryptjs";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id } = await params;
     const body = await request.json();
 
     // Hash password if it exists in the body
@@ -15,7 +15,7 @@ export async function PATCH(
       body.password = await bcrypt.hash(body.password, 10);
     }
 
-    const updatedUser = await updateUser(id, body);
+    const updatedUser = await updateUser(Number(id), body);
     return NextResponse.json(updatedUser);
   } catch (error: any) {
     console.error("Error updating user:", error);
@@ -36,11 +36,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
-    await deleteUser(id);
+    const { id } = await params;
+    await deleteUser(Number(id));
     return NextResponse.json(
       { message: "User deleted successfully" },
       { status: 200 }
@@ -56,4 +56,3 @@ export async function DELETE(
     );
   }
 }
-

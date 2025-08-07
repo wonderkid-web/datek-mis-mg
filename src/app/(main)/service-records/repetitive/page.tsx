@@ -1,119 +1,71 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect, FormEvent, useMemo } from "react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import Select from "react-select";
 import { DataTable } from "@/components/ui/data-table";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 import {
-  getServiceRecords,
-  createServiceRecord,
-  deleteServiceRecord,
-} from "@/lib/serviceRecordService";
+  getPrinterRepetitiveMaintenances,
+  createPrinterRepetitiveMaintenance,
+  updatePrinterRepetitiveMaintenance,
+  deletePrinterRepetitiveMaintenance,
+} from "@/lib/printerRepetitiveMaintenanceService";
 import { getAssetAssignments } from "@/lib/assetAssignmentService";
-import { getColumns } from "../history/columns";
-import { DeleteRecordDialog } from "../history/delete-record-dialog";
-import { EditRecordDialog } from "../history/edit-record-dialog";
-import {
-  AssetAssignment,
-  Asset,
-  User,
-  LaptopSpecs,
-  IntelNucSpecs,
-  LaptopBrandOption,
-  LaptopColorOption,
-  LaptopMicrosoftOfficeOption,
-  LaptopOsOption,
-  LaptopPowerOption,
-  LaptopProcessorOption,
-  LaptopRamOption,
-  LaptopStorageTypeOption,
-  LaptopTypeOption,
-  LaptopGraphicOption,
-  LaptopVgaOption,
-  LaptopLicenseOption,
-  AssetCategory,
-  PrinterSpecs,
-  PrinterBrandOption,
-  PrinterTypeOption,
-  PrinterModelOption,
-  ServiceRecordWithDetails,
-} from "@/lib/types";
+import { getColumns } from "./columns";
+import { DeleteRecordDialog } from "./delete-record-dialog";
+import { EditRecordDialog } from "./edit-record-dialog";
+import { AssetAssignment, PrinterRepetitiveMaintenance } from "@/lib/types";
 
-// ... (keep all existing type definitions)
-
-const formatRupiah = (amount: number | string): string => {
-  if (typeof amount === "string") {
-    amount = parseFloat(amount.replace(/[^0-9,-]+/g, "").replace(",", "."));
-  }
-  if (isNaN(amount)) return "";
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const parseRupiah = (rupiahString: string): number => {
-  const cleanString = rupiahString.replace(/[^0-9]/g, "");
-  return parseInt(cleanString, 10) || 0;
-};
-
-export default function ServiceHistoryPage() {
-  const [serviceRecords, setServiceRecords] = useState<
-    ServiceRecordWithDetails[]
-  >([]);
-  const [assetAssignments, setAssetAssignments] = useState<
-    AssetAssignmentWithDetails[]
-  >([]);
+export default function RepetitiveServicePage() {
+  const [records, setRecords] = useState<PrinterRepetitiveMaintenance[]>([]);
+  const [assetAssignments, setAssetAssignments] = useState<AssetAssignment[]>(
+    []
+  );
   const [selectedAssignment, setSelectedAssignment] =
-    useState<AssetAssignmentWithDetails | null>(null);
+    useState<AssetAssignment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [recordToDelete, setRecordToDelete] =
-    useState<ServiceRecordWithDetails | null>(null);
+    useState<PrinterRepetitiveMaintenance | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [recordToEdit, setRecordToEdit] =
-    useState<ServiceRecordWithDetails | null>(null);
+    useState<PrinterRepetitiveMaintenance | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Form state
-  const [ticketHelpdesk, setTicketHelpdesk] = useState("");
+  // Form state for PrinterRepetitiveMaintenance
+  const [reportDate, setReportDate] = useState<string>("");
   const [assetAssignmentId, setAssetAssignmentId] = useState<number | null>(
     null
   );
-  const [repairType, setRepairType] = useState<"SUPPLIER" | "INTERNAL">(
-    "INTERNAL"
-  );
-  const [cost, setCost] = useState<string>("");
-  const [remarks, setRemarks] = useState("");
-  const [selectedPrinter, setSelectedPrinter] = useState({});
+  const [assetDetails, setAssetDetails] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState<number | null>(null);
+  const [blackCount, setBlackCount] = useState<number | null>(null);
+  const [yellowCount, setYellowCount] = useState<number | null>(null);
+  const [magentaCount, setMagentaCount] = useState<number | null>(null);
+  const [cyanCount, setCyanCount] = useState<number | null>(null);
+  const [remarks, setRemarks] = useState<string | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [records, assignments] = await Promise.all([
-        getServiceRecords(),
+      const [fetchedRecords, assignments] = await Promise.all([
+        getPrinterRepetitiveMaintenances(),
         getAssetAssignments(),
       ]);
-      setServiceRecords(records as ServiceRecordWithDetails[]);
-      setAssetAssignments(assignments as AssetAssignmentWithDetails[]);
+      setRecords(fetchedRecords);
+      setAssetAssignments(assignments);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error("Failed to load data.");
@@ -131,55 +83,63 @@ export default function ServiceHistoryPage() {
     const assignment = assetAssignments.find((a) => a.id === id) || null;
     setSelectedAssignment(assignment);
     setAssetAssignmentId(id);
-  };
-
-  const handleCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const numericValue = value.replace(/[^0-9]/g, "");
-    setCost(formatRupiah(numericValue));
+    if (assignment) {
+      setAssetDetails(
+        `Asset: ${assignment.asset?.namaAsset || "N/A"} - User: ${assignment.user?.namaLengkap || "N/A"}`
+      );
+    } else {
+      setAssetDetails(null);
+    }
   };
 
   const resetForm = () => {
-    setTicketHelpdesk("");
+    setReportDate("");
     setAssetAssignmentId(null);
-    setRepairType("INTERNAL");
-    setCost("");
-    setRemarks("");
+    setAssetDetails(null);
+    setTotalPages(null);
+    setBlackCount(null);
+    setYellowCount(null);
+    setMagentaCount(null);
+    setCyanCount(null);
+    setRemarks(null);
     setSelectedAssignment(null);
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!assetAssignmentId) {
-      toast.warning("Please select an Asset Number.");
+    if (!assetAssignmentId || !reportDate) {
+      toast.warning("Please select an Asset Number and Report Date.");
       return;
     }
     setIsSubmitting(true);
     try {
-      await createServiceRecord({
-        ticketHelpdesk,
-        assetAssignmentId,
-        repairType,
-        cost: parseRupiah(cost),
-        remarks,
+      await createPrinterRepetitiveMaintenance({
+        reportDate: new Date(reportDate),
+        assetDetails: assetDetails,
+        totalPages: totalPages,
+        blackCount: blackCount,
+        yellowCount: yellowCount,
+        magentaCount: magentaCount,
+        cyanCount: cyanCount,
+        remarks: remarks,
       });
-      toast.success("Service record created successfully!");
+      toast.success("Repetitive maintenance record created successfully!");
       resetForm();
       fetchData();
     } catch (error) {
-      console.error("Failed to create service record:", error);
+      console.error("Failed to create record:", error);
       toast.error("Failed to save the record.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEditClick = (record: ServiceRecordWithDetails) => {
+  const handleEditClick = (record: PrinterRepetitiveMaintenance) => {
     setRecordToEdit(record);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteClick = (record: ServiceRecordWithDetails) => {
+  const handleDeleteClick = (record: PrinterRepetitiveMaintenance) => {
     setRecordToDelete(record);
     setIsDeleteDialogOpen(true);
   };
@@ -187,11 +147,11 @@ export default function ServiceHistoryPage() {
   const handleConfirmDelete = async () => {
     if (!recordToDelete) return;
     try {
-      await deleteServiceRecord(recordToDelete.id);
-      toast.success("Service record deleted successfully!");
+      await deletePrinterRepetitiveMaintenance(recordToDelete.id);
+      toast.success("Repetitive maintenance record deleted successfully!");
       fetchData();
     } catch (error) {
-      console.error("Failed to delete service record:", error);
+      console.error("Failed to delete record:", error);
       toast.error("Failed to delete the record.");
     } finally {
       setIsDeleteDialogOpen(false);
@@ -201,153 +161,192 @@ export default function ServiceHistoryPage() {
 
   const columns = useMemo(
     () => getColumns({ handleEditClick, handleDeleteClick }),
-    [assetAssignments]
+    [assetAssignments] // Dependency array, re-create columns if assetAssignments change
   );
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>Create New Service Record</CardTitle>
+            <CardTitle>Create New Repetitive Maintenance Record</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="tanggalPembelian">Report Date</Label>
-                <Input
-                  type="date"
-                  id="tanggalPembelian"
-                  value={""}
-                  onChange={(e) => setTanggalPembelian(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="assetAssignmentId">Asset Number</Label>
-                <Select
-                  onValueChange={handleAssetSelect}
-                  value={assetAssignmentId?.toString() ?? ""}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an Asset Number" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assetAssignments
-                      .filter((asset) => asset.asset.categoryId == 3)
-                      .map((a) => (
-                        <SelectItem key={a.id} value={a.id.toString()}>
-                          {a.nomorAsset}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="reportDate">Report Date</Label>
+                  <Input
+                    type="date"
+                    id="reportDate"
+                    value={reportDate}
+                    onChange={(e) => setReportDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="assetAssignmentId">
+                    Asset Number (Printer)
+                  </Label>
+                  <Select
+                    options={assetAssignments
+                      .filter((asset) => asset.asset?.categoryId === 3)
+                      .map((a) => ({
+                        value: a.id.toString(),
+                        label: `${a.nomorAsset}`,
+                      }))}
+                    onChange={(selectedOption) =>
+                      handleAssetSelect(selectedOption?.value || "")
+                    }
+                    value={
+                      assetAssignmentId
+                        ? {
+                            value: assetAssignmentId.toString(),
+                            label: `${selectedAssignment?.nomorAsset} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
+                          }
+                        : null
+                    }
+                    placeholder="Select a Printer Asset Number"
+                    className="w-full"
+                    classNamePrefix="react-select"
+                  />
+                </div>
               </div>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Asset Details</CardTitle>
+                  <CardTitle>Selected Printer Details</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {selectedAssignment && (
+                  {selectedAssignment ? (
                     <Table>
                       <TableBody>
                         <TableRow>
-                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell className="font-semibold">
+                            Asset Name:
+                          </TableCell>
                           <TableCell>
-                            {selectedAssignment.asset.namaAsset}
+                            {selectedAssignment.asset?.namaAsset || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell className="font-semibold">
+                            Serial Number:
+                          </TableCell>
                           <TableCell>
-                            {selectedAssignment.asset.namaAsset}
+                            {selectedAssignment.asset?.nomorSeri || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell className="font-semibold">
+                            Assigned User:
+                          </TableCell>
                           <TableCell>
-                            {selectedAssignment.asset.namaAsset}
+                            {selectedAssignment.user?.namaLengkap || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell className="font-semibold">
+                            Department:
+                          </TableCell>
                           <TableCell>
-                            {selectedAssignment.asset.namaAsset}
+                            {selectedAssignment.user?.departemen || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">Nama Asset:</TableCell>
+                          <TableCell className="font-semibold">
+                            Company:
+                          </TableCell>
                           <TableCell>
-                            {selectedAssignment.asset.namaAsset}
+                            {selectedAssignment.user?.lokasiKantor || "N/A"}
                           </TableCell>
                         </TableRow>
-
                       </TableBody>
                     </Table>
+                  ) : (
+                    <p>Select a printer asset number to see details.</p>
                   )}
                 </CardContent>
               </Card>
 
-              <div>
-                <Label htmlFor="ticketHelpdesk">Total Pages</Label>
-                <Input
-                  id="ticketHelpdesk"
-                  value={ticketHelpdesk}
-                  onChange={(e) =>
-                    setTicketHelpdesk(e.target.value.toUpperCase())
-                  }
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <Label htmlFor="repairType">Black</Label>
-                <Input
-                  type="number"
-                  id="repairType"
-                  value={ticketHelpdesk}
-                  onChange={(e) =>
-                    setTicketHelpdesk(e.target.value.toUpperCase())
-                  }
-                  className="w-full"
-                />
-                <Label htmlFor="repairType">Yellow</Label>
-                <Input
-                  type="number"
-                  id="repairType"
-                  value={ticketHelpdesk}
-                  onChange={(e) =>
-                    setTicketHelpdesk(e.target.value.toUpperCase())
-                  }
-                  className="w-full"
-                />
-                <Label htmlFor="repairType">Magenta</Label>
-                <Input
-                  type="number"
-                  id="repairType"
-                  value={ticketHelpdesk}
-                  onChange={(e) =>
-                    setTicketHelpdesk(e.target.value.toUpperCase())
-                  }
-                  className="w-full"
-                />
-                <Label htmlFor="repairType">Cyan</Label>
-                <Input
-                  type="number"
-                  id="repairType"
-                  value={ticketHelpdesk}
-                  onChange={(e) =>
-                    setTicketHelpdesk(e.target.value.toUpperCase())
-                  }
-                  className="w-full"
-                />
+              <div className="grid grid-cols-5 gap-4">
+                <div>
+                  <Label htmlFor="totalPages">Total Pages</Label>
+                  <Input
+                    type="number"
+                    id="totalPages"
+                    value={totalPages ?? ""}
+                    onChange={(e) =>
+                      setTotalPages(
+                        e.target.value ? parseInt(e.target.value, 10) : null
+                      )
+                    }
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="blackCount">Black Count</Label>
+                  <Input
+                    type="number"
+                    id="blackCount"
+                    value={blackCount ?? ""}
+                    onChange={(e) =>
+                      setBlackCount(
+                        e.target.value ? parseInt(e.target.value, 10) : null
+                      )
+                    }
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="yellowCount">Yellow Count</Label>
+                  <Input
+                    type="number"
+                    id="yellowCount"
+                    value={yellowCount ?? ""}
+                    onChange={(e) =>
+                      setYellowCount(
+                        e.target.value ? parseInt(e.target.value, 10) : null
+                      )
+                    }
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="magentaCount">Magenta Count</Label>
+                  <Input
+                    type="number"
+                    id="magentaCount"
+                    value={magentaCount ?? ""}
+                    onChange={(e) =>
+                      setMagentaCount(
+                        e.target.value ? parseInt(e.target.value, 10) : null
+                      )
+                    }
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cyanCount">Cyan Count</Label>
+                  <Input
+                    type="number"
+                    id="cyanCount"
+                    value={cyanCount ?? ""}
+                    onChange={(e) =>
+                      setCyanCount(
+                        e.target.value ? parseInt(e.target.value, 10) : null
+                      )
+                    }
+                    className="w-full"
+                  />
+                </div>
               </div>
 
               <div>
                 <Label htmlFor="remarks">Remarks</Label>
                 <Textarea
                   id="remarks"
-                  value={remarks}
+                  value={remarks ?? ""}
                   onChange={(e) => setRemarks(e.target.value.toUpperCase())}
                   className="w-full"
                 />
@@ -359,226 +358,25 @@ export default function ServiceHistoryPage() {
             </form>
           </CardContent>
         </Card>
-
-        {/* <Card>
-          <CardHeader>
-            <CardTitle>Asset Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {selectedAssignment ? (
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-semibold">User:</TableCell>
-                    <TableCell>{selectedAssignment.user.namaLengkap}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Department:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.user.departemen ?? "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Company:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.user.lokasiKantor ?? "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Brand:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.brandOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.brandOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Model:</TableCell>
-                    <TableCell>{selectedAssignment.asset.namaAsset}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Serial Number:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.nomorSeri || "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Processor:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.processorOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.processorOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">RAM:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.ramOption?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.ramOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Storage Type:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.storageTypeOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs
-                          ?.storageTypeOption?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Graphic:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.graphicOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.graphicOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Power Adaptor:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.powerOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.powerOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Color:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.colorOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.colorOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">MAC WLAN:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.macWlan ||
-                        selectedAssignment.asset.intelNucSpecs?.macWlan ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">MAC LAN:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.macLan ||
-                        selectedAssignment.asset.intelNucSpecs?.macLan ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Operating System:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.osOption?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.osOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      License Type:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.licenseOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.licenseOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      License Key:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.licenseKey ||
-                        selectedAssignment.asset.intelNucSpecs?.licenseKey ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Microsoft Office:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs
-                        ?.microsoftOfficeOption?.value ||
-                        selectedAssignment.asset.intelNucSpecs
-                          ?.microsoftOfficeOption?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Purchase Date:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.tanggalPembelian
-                        ? new Date(
-                            selectedAssignment.asset.tanggalPembelian
-                          ).toLocaleDateString()
-                        : "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Warranty End:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.tanggalGaransi
-                        ? new Date(
-                            selectedAssignment.asset.tanggalGaransi
-                          ).toLocaleDateString()
-                        : "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Asset Status:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.statusAsset || "N/A"}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            ) : (
-              <p>Select an asset number to see details.</p>
-            )}
-          </CardContent>
-        </Card> */}
       </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Service Record History</CardTitle>
+          <CardTitle>Repetitive Maintenance History</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p>Loading records...</p>
+            <div className="container mx-auto py-10">
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold">
+                  Repetitive Maintenance History
+                </h1>
+                <Skeleton className="h-10 w-1/3" />
+              </div>
+              <TableSkeleton />
+            </div>
           ) : (
-            <DataTable columns={columns} data={serviceRecords} />
+            <DataTable columns={columns} data={records} />
           )}
         </CardContent>
       </Card>

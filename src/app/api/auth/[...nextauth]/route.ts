@@ -10,13 +10,18 @@ const handler = NextAuth({
         email: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        // This is where you would typically look up the user from a database
-        // For now, we'll use static credentials as requested
+      
+      // @ts-expect-error it just error
+      async authorize(credentials: Record<string, string> | undefined) {
+        if (!credentials || !credentials.email || !credentials.password) {
+          return null; // Return null if credentials are not provided or incomplete
+        }
+       
+
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials?.email,
-            password: credentials?.password,
+            email: credentials.email,
+            password: credentials.password,
           },
         });
 

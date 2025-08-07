@@ -22,7 +22,7 @@ export function TableSkeleton() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {Array.from({ length: 10 }).map((_, rowIndex) => (
+          {Array.from({ length: 5 }).map((_, rowIndex) => (
             <TableRow key={rowIndex}>
               {Array.from({ length: 10 }).map((_, cellIndex) => (
                 <TableCell key={cellIndex}>

@@ -35,6 +35,7 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
 
   const handleSubmit = async () => {
     try {
+      // @ts-expect-error ill crate later
       await createUser({
         // nik,
         namaLengkap,

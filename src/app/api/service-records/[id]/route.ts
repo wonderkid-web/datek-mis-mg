@@ -1,39 +1,51 @@
-'use server';
+"use server";
 
-import { NextResponse } from 'next/server';
-import { updateServiceRecord, deleteServiceRecord } from '@/lib/serviceRecordService';
+import { NextResponse } from "next/server";
+import {
+  updateServiceRecord,
+  deleteServiceRecord,
+} from "@/lib/serviceRecordService";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id } = await params;
     const body = await request.json();
-    const updatedRecord = await updateServiceRecord(id, body);
+    const updatedRecord = await updateServiceRecord(Number(id), body);
     return NextResponse.json(updatedRecord);
   } catch (error) {
-    console.error(`Error updating service record with id ${params.id}:`, error);
+    console.error(
+      `Error updating service record with id ${(await params).id}:`,
+      error
+    );
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-    try {
-        const id = Number(params.id);
-        await deleteServiceRecord(id);
-        return NextResponse.json({ message: 'Record deleted successfully' }, { status: 200 });
-    } catch (error) {
-        console.error(`Error deleting service record with id ${params.id}:`, error);
-        return NextResponse.json(
-            { error: 'Internal Server Error' },
-            { status: 500 }
-        );
-    }
+  try {
+    const { id } = await params;
+    await deleteServiceRecord(Number(id));
+    return NextResponse.json(
+      { message: "Record deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error(
+      `Error deleting service record with id  ${(await params).id}:`,
+      error
+    );
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }

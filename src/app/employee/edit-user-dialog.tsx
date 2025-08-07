@@ -32,7 +32,7 @@ interface User {
   jabatan: string | null;
   lokasiKantor: string | null;
   isActive: boolean;
-  role: string | null;
+  role?: string | null;
 }
 
 interface EditUserDialogProps {
@@ -100,7 +100,7 @@ export function EditUserDialog({
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
-            Edit the user details. Click save when you're done.
+            Edit the user details. Click save when {"you're"} done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

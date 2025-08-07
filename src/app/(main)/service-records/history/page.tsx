@@ -3,6 +3,7 @@
 
 import { useState, useEffect, FormEvent, useMemo } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ import {
   PrinterTypeOption,
   PrinterModelOption,
   ServiceRecordWithDetails,
+  AssetAssignmentWithDetails,
 } from "@/lib/types";
 
 // ... (keep all existing type definitions)
@@ -75,21 +77,32 @@ const parseRupiah = (rupiahString: string): number => {
 };
 
 export default function ServiceHistoryPage() {
-  const [serviceRecords, setServiceRecords] = useState<ServiceRecordWithDetails[]>([]);
-  const [assetAssignments, setAssetAssignments] = useState<AssetAssignmentWithDetails[]>([]);
-  const [selectedAssignment, setSelectedAssignment] = useState<AssetAssignmentWithDetails | null>(null);
+  const [serviceRecords, setServiceRecords] = useState<
+    ServiceRecordWithDetails[]
+  >([]);
+  const [assetAssignments, setAssetAssignments] = useState<
+    AssetAssignmentWithDetails[]
+  >([]);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<AssetAssignmentWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [recordToDelete, setRecordToDelete] = useState<ServiceRecordWithDetails | null>(null);
+
+  const [recordToDelete, setRecordToDelete] =
+    useState<ServiceRecordWithDetails | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [recordToEdit, setRecordToEdit] = useState<ServiceRecordWithDetails | null>(null);
+  const [recordToEdit, setRecordToEdit] =
+    useState<ServiceRecordWithDetails | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Form state
   const [ticketHelpdesk, setTicketHelpdesk] = useState("");
-  const [assetAssignmentId, setAssetAssignmentId] = useState<number | null>(null);
-  const [repairType, setRepairType] = useState<"SUPPLIER" | "INTERNAL">("INTERNAL");
+  const [assetAssignmentId, setAssetAssignmentId] = useState<number | null>(
+    null
+  );
+  const [repairType, setRepairType] = useState<"SUPPLIER" | "INTERNAL">(
+    "INTERNAL"
+  );
   const [cost, setCost] = useState<string>("");
   const [remarks, setRemarks] = useState("");
 
@@ -187,93 +200,96 @@ export default function ServiceHistoryPage() {
     }
   };
 
-  const columns = useMemo(() => getColumns({ handleEditClick, handleDeleteClick }), [assetAssignments]);
+  const columns = useMemo(
+    () => getColumns({ handleEditClick, handleDeleteClick }),
+    [assetAssignments]
+  );
 
   return (
     <>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Service Record</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="assetAssignmentId">Asset Number</Label>
-                  <Select
-                    onValueChange={handleAssetSelect}
-                    value={assetAssignmentId?.toString() ?? ""}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select an Asset Number" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assetAssignments.map((a) => (
-                        <SelectItem key={a.id} value={a.id.toString()}>
-                          {a.nomorAsset}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Create New Service Record</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="assetAssignmentId">Asset Number</Label>
+                <Select
+                  onValueChange={handleAssetSelect}
+                  value={assetAssignmentId?.toString() ?? ""}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an Asset Number" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assetAssignments.map((a) => (
+                      <SelectItem key={a.id} value={a.id.toString()}>
+                        {a.nomorAsset}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label htmlFor="ticketHelpdesk">Ticket Helpdesk</Label>
-                  <Input
-                    id="ticketHelpdesk"
-                    value={ticketHelpdesk}
-                    onChange={(e) =>
-                      setTicketHelpdesk(e.target.value.toUpperCase())
-                    }
-                    className="w-full"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="ticketHelpdesk">Ticket Helpdesk</Label>
+                <Input
+                  id="ticketHelpdesk"
+                  value={ticketHelpdesk}
+                  onChange={(e) =>
+                    setTicketHelpdesk(e.target.value.toUpperCase())
+                  }
+                  className="w-full"
+                />
+              </div>
 
-                <div>
-                  <Label htmlFor="repairType">Repair Type</Label>
-                  <Select
-                    onValueChange={(value: "SUPPLIER" | "INTERNAL") =>
-                      setRepairType(value)
-                    }
-                    value={repairType}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SUPPLIER">SUPPLIER</SelectItem>
-                      <SelectItem value="INTERNAL">INTERNAL</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="repairType">Repair Type</Label>
+                <Select
+                  onValueChange={(value: "SUPPLIER" | "INTERNAL") =>
+                    setRepairType(value)
+                  }
+                  value={repairType}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SUPPLIER">SUPPLIER</SelectItem>
+                    <SelectItem value="INTERNAL">INTERNAL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label htmlFor="cost">Cost</Label>
-                  <Input
-                    id="cost"
-                    value={cost}
-                    onChange={handleCostChange}
-                    placeholder="Rp 0"
-                    className="w-full"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="cost">Cost</Label>
+                <Input
+                  id="cost"
+                  value={cost}
+                  onChange={handleCostChange}
+                  placeholder="Rp 0"
+                  className="w-full"
+                />
+              </div>
 
-                <div>
-                  <Label htmlFor="remarks">Remarks</Label>
-                  <Textarea
-                    id="remarks"
-                    value={remarks}
-                    onChange={(e) => setRemarks(e.target.value.toUpperCase())}
-                    className="w-full"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="remarks">Remarks</Label>
+                <Textarea
+                  id="remarks"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value.toUpperCase())}
+                  className="w-full"
+                />
+              </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full">
-                  {isSubmitting ? "Saving..." : "Save Record"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Saving..." : "Save Record"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -484,20 +500,22 @@ export default function ServiceHistoryPage() {
             )}
           </CardContent>
         </Card>
-        </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Service Record History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p>Loading records...</p>
-            ) : (
-              <DataTable columns={columns} data={serviceRecords} />
-            )}
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Record History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-5">
+              <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <DataTable columns={columns} data={serviceRecords} />
+          )}
+        </CardContent>
+      </Card>
 
       <DeleteRecordDialog
         open={isDeleteDialogOpen}
@@ -509,7 +527,7 @@ export default function ServiceHistoryPage() {
         record={recordToEdit}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        onSave={fetchData} 
+        onSave={fetchData}
       />
     </>
   );
