@@ -6,17 +6,13 @@ const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
-      credentials: {
-        email: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
-      
+      credentials: {},
+
       // @ts-expect-error it just error
       async authorize(credentials: Record<string, string> | undefined) {
         if (!credentials || !credentials.email || !credentials.password) {
           return null; // Return null if credentials are not provided or incomplete
         }
-       
 
         const user = await prisma.user.findUnique({
           where: {
@@ -54,6 +50,10 @@ const handler = NextAuth({
       }
       return session;
     },
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
   },
 });
 

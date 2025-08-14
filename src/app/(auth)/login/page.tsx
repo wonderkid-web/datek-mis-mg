@@ -20,30 +20,25 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
+      await signIn("credentials", {
+        callbackUrl: "/",
         email,
         password,
-        callbackUrl: "/", // atau ambil dari searchParams
       });
-
-      if (res?.error) {
-        toast.error("Password atau E-mail kamu salah nih!");
-        return;
-      }
 
       toast.success("Login berhasil Lur..! Selamat datang kembali.");
 
       // Delay dikit supaya toast kebaca sebelum redirect
       setTimeout(() => {
-        router.replace(res?.url || "/");
+        router.replace("/");
         router.refresh(); // biar session langsung kebaca di App Router
       }, 1200); // 1,2 detik
     } catch {
+      toast.error("Mungkin Password atau E-mail kamu salah nih!");
+
       toast.error("Terjadi kesalahan saat mencoba login. Coba lagi nanti.");
     }
   };
