@@ -207,6 +207,7 @@ export default function ServiceHistoryPage() {
 
   return (
     <>
+      {/* INI FORM  dan ini STATIC */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <Card>
           <CardHeader>
@@ -502,6 +503,7 @@ export default function ServiceHistoryPage() {
         </Card>
       </div>
 
+      {/* INI Table dan ini Promise */}
       <Card>
         <CardHeader>
           <CardTitle>Service Record History</CardTitle>

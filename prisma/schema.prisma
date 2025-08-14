@@ -339,19 +339,19 @@ model PrinterSpecs {
   @@map("printer_specs")
 }
 
-
 model PrinterRepetitiveMaintenance {
-  id              Int      @id @default(autoincrement())
-  reportDate      DateTime
-  assetDetails    String?
-  totalPages      Int?
-  blackCount      Int?
-  yellowCount     Int?
-  magentaCount    Int?
-  cyanCount       Int?
-  remarks         String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  reportDate   DateTime
+  assetDetails String?
+  catatan      String?
+  totalPages   Int?
+  blackCount   Int?
+  yellowCount  Int?
+  magentaCount Int?
+  cyanCount    Int?
+  remarks      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Jika Anda ingin menambahkan relasi ke tabel aset di kemudian hari, 
   // Anda bisa menggunakan kode seperti ini:

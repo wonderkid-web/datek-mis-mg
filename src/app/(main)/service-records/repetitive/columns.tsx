@@ -2,13 +2,21 @@ import { ColumnDef } from "@tanstack/react-table";
 import { PrinterRepetitiveMaintenance } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Edit, Trash2 } from "lucide-react";
+import { getNotesPrinter } from "@/lib/printerRepetitiveMaintenanceService";
+import Inspect from "@/components/Inspect";
+import React from "react";
 
 interface ColumnsProps {
   handleEditClick: (record: PrinterRepetitiveMaintenance) => void;
   handleDeleteClick: (record: PrinterRepetitiveMaintenance) => void;
 }
 
-export const getColumns = ({ handleEditClick, handleDeleteClick }: ColumnsProps): ColumnDef<PrinterRepetitiveMaintenance>[] => {
+export const getColumns = ({
+  handleEditClick,
+  handleDeleteClick,
+}: ColumnsProps): ColumnDef<PrinterRepetitiveMaintenance>[] => {
+  // const notes = await prisma.
+
   return [
     {
       accessorKey: "no",
@@ -48,32 +56,51 @@ export const getColumns = ({ handleEditClick, handleDeleteClick }: ColumnsProps)
     {
       accessorKey: "totalPages",
       header: () => <div className="text-center">Total Pages</div>,
-      cell: ({ row }) => <div className="text-center">{row.getValue("totalPages")}</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("totalPages")}</div>
+      ),
+    },
+    {
+      accessorKey: "catatan",
+      header: () => <div className="text-center">Notes</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("catatan")}</div>
+      ),
     },
     {
       accessorKey: "blackCount",
-      header: () => <div className="text-center">Black Count</div>,
-      cell: ({ row }) => <div className="text-center">{row.getValue("blackCount")}</div>,
+      header: () => <div className="text-center">Black</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("blackCount")}</div>
+      ),
     },
     {
       accessorKey: "yellowCount",
-      header: () => <div className="text-center">Yellow Count</div>,
-      cell: ({ row }) => <div className="text-center">{row.getValue("yellowCount")}</div>,
+      header: () => <div className="text-center">Yellow</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("yellowCount")}</div>
+      ),
     },
     {
       accessorKey: "magentaCount",
-      header: () => <div className="text-center">Magenta Count</div>,
-      cell: ({ row }) => <div className="text-center">{row.getValue("magentaCount")}</div>,
+      header: () => <div className="text-center">Magenta</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("magentaCount")}</div>
+      ),
     },
     {
       accessorKey: "cyanCount",
-      header: () => <div className="text-center">Cyan Count</div>,
-      cell: ({ row }) => <div className="text-center">{row.getValue("cyanCount")}</div>,
+      header: () => <div className="text-center">Cyan</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("cyanCount")}</div>
+      ),
     },
     {
       accessorKey: "remarks",
       header: () => <div className="text-center">Remarks</div>,
-      cell: ({ row }) => <div className="text-center">{row.getValue("remarks")}</div>,
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("remarks")}</div>
+      ),
     },
     {
       id: "actions",
@@ -83,10 +110,18 @@ export const getColumns = ({ handleEditClick, handleDeleteClick }: ColumnsProps)
 
         return (
           <div className="flex space-x-2 justify-center">
-            <Button variant="outline" size="icon" onClick={() => handleEditClick(record)}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handleEditClick(record)}
+            >
               <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="destructive" size="icon" onClick={() => handleDeleteClick(record)}>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={() => handleDeleteClick(record)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -95,3 +130,12 @@ export const getColumns = ({ handleEditClick, handleDeleteClick }: ColumnsProps)
     },
   ];
 };
+
+function NotesCell({ printerId }: { printerId: string }) {
+  const [notes, setNotes] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  if (loading) return <div className="text-center">Loading...</div>;
+
+  return <div className="text-center">{notes}</div>;
+}

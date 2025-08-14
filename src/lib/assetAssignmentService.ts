@@ -64,32 +64,30 @@ export const getAssetAssignments = unstable_cache(
   }
 );
 
-
-
 export const getAssetAssignmentsPrinter = unstable_cache(
   async () => {
     try {
       const assetAssignmentsPrinter = await prisma.assetAssignment.findMany({
-        where:{
-          asset:{
-            categoryId:3
-          }
+        where: {
+          asset: {
+            categoryId: 3,
+          },
         },
         include: {
           asset: {
             include: {
               category: true,
-              printerSpecs:{
-                include:{
+              printerSpecs: {
+                include: {
                   brandOption: true,
                   modelOption: true,
                   typeOption: true,
                 },
-              }
+              },
             },
           },
           user: true, // Include related User
-        }
+        },
       });
       return assetAssignmentsPrinter;
     } catch (error) {

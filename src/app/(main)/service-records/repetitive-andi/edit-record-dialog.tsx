@@ -34,7 +34,6 @@ export function EditRecordDialog({
 }: EditRecordDialogProps) {
   const [reportDate, setReportDate] = useState<string>("");
   const [totalPages, setTotalPages] = useState<number | null>(null);
-  const [catatan, setCatatan] = useState<string | null>(null);
   const [blackCount, setBlackCount] = useState<number | null>(null);
   const [yellowCount, setYellowCount] = useState<number | null>(null);
   const [magentaCount, setMagentaCount] = useState<number | null>(null);
@@ -50,7 +49,6 @@ export function EditRecordDialog({
           : ""
       );
       setTotalPages(record.totalPages);
-      setCatatan(record.catatan);
       setBlackCount(record.blackCount);
       setYellowCount(record.yellowCount);
       setMagentaCount(record.magentaCount);
@@ -64,7 +62,6 @@ export function EditRecordDialog({
   const resetForm = () => {
     setReportDate("");
     setTotalPages(null);
-    setCatatan(null);
     setBlackCount(null);
     setYellowCount(null);
     setMagentaCount(null);
@@ -74,7 +71,7 @@ export function EditRecordDialog({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!record || typeof record.id !== "number") {
+    if (!record || typeof record.id !== 'number') {
       toast.error("Invalid record for update.");
       return;
     }
@@ -84,7 +81,6 @@ export function EditRecordDialog({
       await updatePrinterRepetitiveMaintenance(record.id, {
         reportDate: new Date(reportDate),
         totalPages: totalPages,
-        catatan: catatan,
         blackCount: blackCount,
         yellowCount: yellowCount,
         magentaCount: magentaCount,
@@ -132,25 +128,7 @@ export function EditRecordDialog({
               id="totalPages"
               type="number"
               value={totalPages ?? ""}
-              onChange={(e) =>
-                setTotalPages(
-                  e.target.value ? parseInt(e.target.value, 10) : null
-                )
-              }
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="catatan" className="text-right">
-              Notes
-            </Label>
-            <Input
-              id="catatan"
-              type="text"
-              value={catatan ?? ""}
-              onChange={(e) =>
-                setCatatan(e.target.value ? e.target.value : null)
-              }
+              onChange={(e) => setTotalPages(e.target.value ? parseInt(e.target.value, 10) : null)}
               className="col-span-3"
             />
           </div>
@@ -162,11 +140,7 @@ export function EditRecordDialog({
               id="blackCount"
               type="number"
               value={blackCount ?? ""}
-              onChange={(e) =>
-                setBlackCount(
-                  e.target.value ? parseInt(e.target.value, 10) : null
-                )
-              }
+              onChange={(e) => setBlackCount(e.target.value ? parseInt(e.target.value, 10) : null)}
               className="col-span-3"
             />
           </div>
@@ -178,11 +152,7 @@ export function EditRecordDialog({
               id="yellowCount"
               type="number"
               value={yellowCount ?? ""}
-              onChange={(e) =>
-                setYellowCount(
-                  e.target.value ? parseInt(e.target.value, 10) : null
-                )
-              }
+              onChange={(e) => setYellowCount(e.target.value ? parseInt(e.target.value, 10) : null)}
               className="col-span-3"
             />
           </div>
@@ -194,11 +164,7 @@ export function EditRecordDialog({
               id="magentaCount"
               type="number"
               value={magentaCount ?? ""}
-              onChange={(e) =>
-                setMagentaCount(
-                  e.target.value ? parseInt(e.target.value, 10) : null
-                )
-              }
+              onChange={(e) => setMagentaCount(e.target.value ? parseInt(e.target.value, 10) : null)}
               className="col-span-3"
             />
           </div>
@@ -210,11 +176,7 @@ export function EditRecordDialog({
               id="cyanCount"
               type="number"
               value={cyanCount ?? ""}
-              onChange={(e) =>
-                setCyanCount(
-                  e.target.value ? parseInt(e.target.value, 10) : null
-                )
-              }
+              onChange={(e) => setCyanCount(e.target.value ? parseInt(e.target.value, 10) : null)}
               className="col-span-3"
             />
           </div>

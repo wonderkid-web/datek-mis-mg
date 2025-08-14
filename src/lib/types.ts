@@ -185,6 +185,7 @@ export interface PrinterRepetitiveMaintenance {
   reportDate: Date;
   assetDetails: string | null;
   totalPages: number | null;
+  catatan: string | null;
   blackCount: number | null;
   yellowCount: number | null;
   magentaCount: number | null;

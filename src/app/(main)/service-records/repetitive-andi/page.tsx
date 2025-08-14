@@ -20,7 +20,6 @@ import {
   createPrinterRepetitiveMaintenance,
   updatePrinterRepetitiveMaintenance,
   deletePrinterRepetitiveMaintenance,
-  getNotesPrinter,
 } from "@/lib/printerRepetitiveMaintenanceService";
 import { getAssetAssignmentsPrinter } from "@/lib/assetAssignmentService";
 import { getColumns } from "./columns";
@@ -31,16 +30,9 @@ import {
   AssetAssignmentPrinter,
   PrinterRepetitiveMaintenance,
 } from "@/lib/types";
-import Inspect from "@/components/Inspect";
 
 export default function RepetitiveServicePage() {
   const [records, setRecords] = useState<PrinterRepetitiveMaintenance[]>([]);
-  const [notes, setNotes] = useState<
-    {
-      catatan: string | null;
-      nomorAsset: string;
-    }[]
-  >([]);
   const [assetAssignments, setAssetAssignments] = useState<
     AssetAssignmentPrinter[]
   >([]);
@@ -72,13 +64,11 @@ export default function RepetitiveServicePage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [fetchedRecords, assignments, fetchedNotes] = await Promise.all([
+      const [fetchedRecords, assignments] = await Promise.all([
         getPrinterRepetitiveMaintenances(),
         getAssetAssignmentsPrinter(),
-        getNotesPrinter(),
       ]);
       setRecords(fetchedRecords);
-      setNotes(fetchedNotes);
 
       // @ts-expect-error its okay
       setAssetAssignments(assignments);
@@ -135,7 +125,6 @@ export default function RepetitiveServicePage() {
     try {
       await createPrinterRepetitiveMaintenance({
         reportDate: new Date(reportDate),
-        catatan: assetAssignments[0].catatan,
         assetDetails: assetDetails,
         totalPages: totalPages,
         blackCount: blackCount,
@@ -386,28 +375,29 @@ export default function RepetitiveServicePage() {
             </form>
           </CardContent>
         </Card>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Repetitive Maintenance History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="container mx-auto py-10">
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">
-                  Repetitive Maintenance History
-                </h1>
-                <Skeleton className="h-10 w-1/3" />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Repetitive Maintenance History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="container mx-auto py-10">
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-3xl font-bold">
+                    Repetitive Maintenance History
+                  </h1>
+                  <Skeleton className="h-10 w-1/3" />
+                </div>
+                <TableSkeleton />
               </div>
-              <TableSkeleton />
-            </div>
-          ) : (
-            <DataTable columns={columns} data={records}  />
-          )}
-        </CardContent>
-      </Card>
+            ) : (
+              <DataTable columns={columns} data={records} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <DeleteRecordDialog
         open={isDeleteDialogOpen}
