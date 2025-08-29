@@ -1,4 +1,3 @@
-
 export const COMPANIES = [
   {
     type: "BIP",
@@ -101,6 +100,9 @@ export const COMPANIES = [
 export const DEPARTMENTS = [
   "ACC - Accounting",
   "Admin SBU",
+  "Warehouse",
+  "Office SBU",
+  "WeighBridge",
   "AI -  Audit Internal",
   "CS - Corporate Secretariat",
   "FNC - Finance",
@@ -115,7 +117,6 @@ export const DEPARTMENTS = [
   "TAX - TAX",
 ];
 
-
 export const STATUSES = [
   { type: "01", description: "GOOD" },
   { type: "02", description: "NEED REPARATION" },
@@ -124,7 +125,6 @@ export const STATUSES = [
   { type: "05", description: "SELL" },
   { type: "06", description: "LEASED TO SBU" },
 ];
-
 
 export const MANUFACTURE_COLORS = [
   { value: "red", label: "Red" },
