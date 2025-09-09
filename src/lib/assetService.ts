@@ -604,3 +604,54 @@ export async function getTotalIdleAssets() {
   });
   return count;
 }
+
+export async function getAssetBreakdownByCategory() {
+  const result = await prisma.asset.groupBy({
+    by: ["categoryId"],
+    _count: {
+      id: true,
+    },
+    orderBy: {
+      _count: {
+        id: "desc",
+      },
+    },
+  });
+
+  const categories = await prisma.assetCategory.findMany({
+    where: {
+      id: {
+        in: result.map((item) => item.categoryId),
+      },
+    },
+  });
+
+  const categoryMap = categories.reduce((acc, category) => {
+    acc[category.id] = category.nama;
+    return acc;
+  }, {} as Record<number, string>);
+
+  return result.map((item) => ({
+    name: categoryMap[item.categoryId],
+    total: item._count.id,
+  }));
+}
+
+export async function getAssetBreakdownByStatus() {
+  const result = await prisma.asset.groupBy({
+    by: ["statusAsset"],
+    _count: {
+      id: true,
+    },
+    orderBy: {
+      _count: {
+        id: "desc",
+      },
+    },
+  });
+
+  return result.map((item) => ({
+    name: item.statusAsset,
+    total: item._count.id,
+  }));
+}

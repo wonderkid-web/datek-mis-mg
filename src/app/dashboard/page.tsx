@@ -1,372 +1,117 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  getAssetTotal,
-  getAssetBreakdownByLocation,
-  getOperatingSystemBreakdown,
-  getTotalIdleAssets,
-} from "@/lib/assetService";
-import { Package, Laptop, Cpu, Printer, UserX, Monitor } from "lucide-react";
+import { getAssetTotal, getAssetBreakdownByCategory } from "@/lib/assetService";
+import { Package, Laptop, Cpu, Printer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AssetsDetailDialog } from "@/components/dialogs/AssetDetailDialog";
+import dynamic from "next/dynamic";
+import AssetStatusChart from "@/components/charts/AssetStatusChart";
+import AssetCategoryChart from "@/components/charts/AssetCategoryChart";
 
-import { getAssetCategories } from "@/lib/assetCategoryService";
+// Dynamically import the map component to avoid SSR issues with Leaflet
+const AssetLocationMap = dynamic(
+  () => import("@/components/charts/AssetLocationMap"),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[400px] w-full" />,
+  }
+);
 
 function DashboardPage() {
-  const [isDialogOpen, setDialogOpen] = useState(false);
-  const [dialogTitle, setDialogTitle] = useState("");
-  const [dialogFilters, setDialogFilters] = useState({});
-
   const { data: assetTotal, isLoading: isLoadingTotal } = useQuery({
     queryKey: ["assetTotal"],
     queryFn: getAssetTotal,
   });
 
-  const { data: assetBreakdown, isLoading: isLoadingBreakdown } = useQuery({
-    queryKey: ["assetBreakdown"],
-    queryFn: getAssetBreakdownByLocation,
+  const { data: categoryBreakdown, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["assetCategoryBreakdown"],
+    queryFn: getAssetBreakdownByCategory,
   });
 
-  const { data: osBreakdown, isLoading: isLoadingOs } = useQuery({
-    queryKey: ["osBreakdown"],
-    queryFn: getOperatingSystemBreakdown,
-  });
-
-  const { data: idleAssets, isLoading: isLoadingIdle } = useQuery({
-    queryKey: ["idleAssets"],
-    queryFn: getTotalIdleAssets,
-  });
-
-  const { data: categories, isLoading: isLoadingCategories } = useQuery({
-    queryKey: ["assetCategories"],
-    queryFn: getAssetCategories,
-  });
-
-  const handleCardClick = (title: string, filters: Record<string, any>) => {
-    setDialogTitle(title);
-    setDialogFilters(filters);
-    setDialogOpen(true);
-  };
-
-  const getGlobalCategoryTotal = (categoryName: string) => {
-    if (!assetBreakdown) return 0;
-    return assetBreakdown
-      .flatMap((location) => location.data)
-      .filter((d) => d.name === categoryName)
-      .reduce((sum, item) => sum + item.total, 0);
-  };
-
-  const getLocationCategoryTotal = (
-    locationData: { name: string; total: number }[],
-    categoryName: string
-  ) => {
-    const category = locationData.find((d) => d.name === categoryName);
+  const getCategoryTotal = (categoryName: string) => {
+    if (!categoryBreakdown) return 0;
+    const category = categoryBreakdown.find((c) => c.name === categoryName);
     return category ? category.total : 0;
   };
 
-  const getOsTotal = (osName: string) => {
-    if (!osBreakdown) return 0;
-    const os = osBreakdown.find((o) => o.name === osName);
-    return os ? os.total : 0;
-  };
-
-  const getCategoryId = (name: string) => {
-    return categories?.find((c) => c.nama === name)?.id;
-  };
-
-  const isLoading = isLoadingTotal || isLoadingBreakdown || isLoadingOs || isLoadingIdle || isLoadingCategories;
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
-        <div className="space-y-6">
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
-        </div>
-      </div>
-    );
-  }
+  const isLoading = isLoadingTotal || isLoadingCategories;
 
   return (
-    <>
-      <div className="container mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div
-            className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-            onClick={() => handleCardClick("All Assets", {})}
-          >
+    <div className="container mx-auto py-10">
+      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {isLoading ? (
+          <>
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </>
+        ) : (
+          <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Aset
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Total Aset</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{assetTotal}</div>
               </CardContent>
             </Card>
-          </div>
-          <div
-            className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-            onClick={() =>
-              handleCardClick("Laptops", { categoryId: getCategoryId("Laptop") })
-            }
-          >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Laptop
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Laptop</CardTitle>
                 <Laptop className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {getGlobalCategoryTotal("Laptop")}
+                  {getCategoryTotal("Laptop")}
                 </div>
               </CardContent>
             </Card>
-          </div>
-          <div
-            className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-            onClick={() =>
-              handleCardClick("Intel NUCs", {
-                categoryId: getCategoryId("Intel NUC"),
-              })
-            }
-          >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Intel NUC
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Intel NUC</CardTitle>
                 <Cpu className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {getGlobalCategoryTotal("Intel NUC")}
+                  {getCategoryTotal("Intel NUC")}
                 </div>
               </CardContent>
             </Card>
-          </div>
-          <div
-            className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-            onClick={() =>
-              handleCardClick("Printers", { categoryId: getCategoryId("Printer") })
-            }
-          >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Printer
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Printer</CardTitle>
                 <Printer className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {getGlobalCategoryTotal("Printer")}
+                  {getCategoryTotal("Printer")}
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </>
+        )}
+      </div>
+
+      {/* Main Dashboard Layout (Map and Charts) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Map */}
+        <div className="lg:col-span-2">
+          <AssetLocationMap />
         </div>
 
-        <div className="space-y-8">
-          {assetBreakdown?.map((locationData) => (
-            <div key={locationData.location}>
-              <h2 className="text-xl font-bold mb-4">
-                {locationData.location}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div
-                  className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-                  onClick={() =>
-                    handleCardClick(`All Assets in ${locationData.location}`, {
-                      lokasiFisik: locationData.location,
-                    })
-                  }
-                >
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Total Items
-                      </CardTitle>
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {locationData.data.reduce(
-                          (sum, item) => sum + item.total,
-                          0
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div
-                  className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-                  onClick={() =>
-                    handleCardClick(`Laptops in ${locationData.location}`, {
-                      lokasiFisik: locationData.location,
-                      categoryId: getCategoryId("Laptop"),
-                    })
-                  }
-                >
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Laptops
-                      </CardTitle>
-                      <Laptop className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {getLocationCategoryTotal(locationData.data, "Laptop")}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div
-                  className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-                  onClick={() =>
-                    handleCardClick(`Intel NUCs in ${locationData.location}`, {
-                      lokasiFisik: locationData.location,
-                      categoryId: getCategoryId("Intel NUC"),
-                    })
-                  }
-                >
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Intel NUCs
-                      </CardTitle>
-                      <Cpu className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {getLocationCategoryTotal(
-                          locationData.data,
-                          "Intel NUC"
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div
-                  className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-                  onClick={() =>
-                    handleCardClick(`Printers in ${locationData.location}`, {
-                      lokasiFisik: locationData.location,
-                      categoryId: getCategoryId("Printer"),
-                    })
-                  }
-                >
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Printers
-                      </CardTitle>
-                      <Printer className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {getLocationCategoryTotal(locationData.data, "Printer")}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4">
-            Management Information Systems
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 11 Pro
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 11 Pro 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 10 Pro
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 10 Pro 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 11 Home
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 11 Home SL 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 10 Home
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 10 Home SL 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Idle Assets</CardTitle>
-                <UserX className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{idleAssets}</div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Right Column: Charts */}
+        <div className="space-y-6">
+          <AssetCategoryChart />
+          <AssetStatusChart />
         </div>
       </div>
-      <AssetsDetailDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setDialogOpen}
-        title={dialogTitle}
-        filters={dialogFilters}
-      />
-    </>
+    </div>
   );
 }
 
