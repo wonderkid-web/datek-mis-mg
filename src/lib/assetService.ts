@@ -411,7 +411,7 @@ export async function getAssetTotal(): Promise<number> {
 }
 
 export async function getAssetBreakdownByLocation() {
-  const mergedIsaName = "PT Intan Sejati Andalan (Gabungan)";
+  const mergedIsaName = "PT Intan Sejati Andalan (Group)";
   const finalLocations = [
     ...ALL_LOCATIONS.filter(l => !l.startsWith("PT Intan Sejati Andalan")),
     mergedIsaName
@@ -444,4 +444,74 @@ export async function getAssetBreakdownByLocation() {
     location,
     data: Object.entries(categories).map(([name, total]) => ({ name, total })), 
   }));
+}
+
+export async function getOperatingSystemBreakdown() {
+  const laptopCounts = await prisma.laptopSpecs.groupBy({
+    by: ["osOptionId"],
+    _count: {
+      assetId: true,
+    },
+  });
+
+  const nucCounts = await prisma.intelNucSpecs.groupBy({
+    by: ["osOptionId"],
+    _count: {
+      assetId: true,
+    },
+  });
+
+  const mergedCounts: Record<number, number> = {};
+
+  laptopCounts.forEach((item) => {
+    // @ts-expect-error its fine
+    if (item.osOptionId) {
+      // @ts-expect-error its fine
+      mergedCounts[item.osOptionId] =
+      // @ts-expect-error its fine
+      (mergedCounts[item.osOptionId] || 0) + item._count.assetId;
+    }
+  });
+  
+  nucCounts.forEach((item) => {
+    // @ts-expect-error its fine
+    if (item.osOptionId) {
+      // @ts-expect-error its fine
+      mergedCounts[item.osOptionId] =
+      // @ts-expect-error its fine
+        (mergedCounts[item.osOptionId] || 0) + item._count.assetId;
+    }
+  });
+
+  const osOptions = await prisma.laptopOsOption.findMany({
+    where: {
+      id: {
+        in: Object.keys(mergedCounts).map(Number),
+      },
+      value: {
+        in: [
+          "Windows 11 Pro 64 Bit",
+          "Windows 10 Pro 64 Bit",
+          "Windows 11 Home SL 64 Bit",
+          "Windows 10 Home SL 64 Bit",
+        ],
+      },
+    },
+  });
+
+  return osOptions.map((option) => ({
+    name: option.value,
+    total: mergedCounts[option.id] || 0,
+  }));
+}
+
+export async function getTotalIdleAssets() {
+  const count = await prisma.assetAssignment.count({
+    where: {
+      user: {
+        isActive: false,
+      },
+    },
+  });
+  return count;
 }
