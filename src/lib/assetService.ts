@@ -370,6 +370,95 @@ export async function updateAssetAndPrinterSpecs(
     },
   });
   return updatedAsset;
+} 
+
+export async function getPaginatedAssets({
+  page = 1,
+  pageSize = 10,
+  namaAsset,
+  statusAsset,
+  lokasiFisik,
+  categoryId,
+  categorySlug,         // ← opsional, kalau mau pakai slug
+}: {
+  page?: number;
+  pageSize?: number;
+  namaAsset?: string;
+  statusAsset?: string;
+  lokasiFisik?: string;
+  categoryId?: number;
+  categorySlug?: string;
+}) {
+  const skip = (page - 1) * pageSize;
+  const take = pageSize;
+
+  const AND = [];
+
+  if (namaAsset) {
+    AND.push({ namaAsset: { contains: namaAsset} });
+  }
+  if (statusAsset) {
+    AND.push({ statusAsset });
+  }
+  if (lokasiFisik) {
+    if (lokasiFisik === "PT Intan Sejati Andalan (Group)") {
+      AND.push({
+        assignments: {
+          some: {
+            user: {
+              lokasiKantor: {
+                startsWith: "PT Intan Sejati Andalan",
+              },
+            },
+          },
+        },
+      });
+    } else {
+      AND.push({
+        assignments: {
+          some: {
+            user: {
+              lokasiKantor: lokasiFisik === "Unassigned" ? null : lokasiFisik,
+            },
+          },
+        },
+      });
+    }
+  }
+  if (typeof categoryId === "number") {
+    AND.push({ categoryId });
+  }
+  if (categorySlug) {
+    AND.push({ category: { is: { slug: categorySlug } } });
+  }
+
+  const where = AND.length ? { AND } : {};
+
+  const [assets, total] = await prisma.$transaction([
+    prisma.asset.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { id: "desc" },
+      include: {
+        category: true,
+        assignments: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { user: { select: { namaLengkap: true } } },
+        },
+      },
+    }),
+    prisma.asset.count({ where }),
+  ]);
+
+  return {
+    data: assets,
+    total,
+    page,
+    pageSize,
+    pageCount: Math.ceil(total / pageSize),
+  };
 }
 
 export async function deleteAsset(id: number): Promise<Asset> {
