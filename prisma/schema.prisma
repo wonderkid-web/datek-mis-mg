@@ -13,12 +13,12 @@ model User {
   email            String?           @unique @db.VarChar(255)
   departemen       String?           @db.VarChar(100)
   jabatan          String?           @db.VarChar(100)
-  password         String?           @db.VarChar(100)
-  role             String?           @db.VarChar(15)
   lokasiKantor     String?           @map("lokasi_kantor") @db.VarChar(100)
   isActive         Boolean           @default(true) @map("is_active")
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
+  password         String?           @db.VarChar(100)
+  role             String?           @db.VarChar(15)
   assetAssignments AssetAssignment[] @relation("UserAssetAssignments")
 
   @@map("users")
@@ -41,13 +41,13 @@ model Asset {
   tanggalPembelian DateTime?         @map("tanggal_pembelian") @db.Date
   tanggalGaransi   DateTime?         @map("tanggal_garansi") @db.Date
   statusAsset      String            @map("status_asset") @db.VarChar(50)
-  lokasiFisik      String?           @map("lokasi_fisik") @db.VarChar(255)
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
+  lokasiFisik      String?           @map("lokasi_fisik") @db.VarChar(255)
   assignments      AssetAssignment[]
   category         AssetCategory     @relation(fields: [categoryId], references: [id])
-  laptopSpecs      LaptopSpecs?
   intelNucSpecs    IntelNucSpecs?
+  laptopSpecs      LaptopSpecs?
   printerSpecs     PrinterSpecs?
 
   @@index([categoryId], map: "assets_categoryId_fkey")
@@ -55,10 +55,9 @@ model Asset {
 }
 
 model AssetAssignment {
-  id      Int @id @default(autoincrement())
-  assetId Int
-  userId  Int
-
+  id             Int             @id @default(autoincrement())
+  assetId        Int
+  userId         Int
   catatan        String?         @db.Text
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
@@ -73,26 +72,25 @@ model AssetAssignment {
 }
 
 model ServiceRecord {
-  id             Int      @id @default(autoincrement())
-  ticketHelpdesk String
-  repairType     String // "SUPPLIER" atau "INTERNAL"
-  cost           Decimal  @db.Decimal(12, 2)
-  remarks        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relasi ke AssetAssignment
+  id                Int             @id @default(autoincrement())
+  ticketHelpdesk    String
+  repairType        String
+  cost              Decimal         @db.Decimal(12, 2)
+  remarks           String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   assetAssignmentId Int
   assetAssignment   AssetAssignment @relation(fields: [assetAssignmentId], references: [id])
 
+  @@index([assetAssignmentId], map: "service_records_assetAssignmentId_fkey")
   @@map("service_records")
 }
 
 model LaptopRamOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(50)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_ram_options")
 }
@@ -100,8 +98,8 @@ model LaptopRamOption {
 model LaptopProcessorOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_processor_options")
 }
@@ -109,8 +107,8 @@ model LaptopProcessorOption {
 model LaptopStorageTypeOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(50)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_storage_type_options")
 }
@@ -118,8 +116,8 @@ model LaptopStorageTypeOption {
 model LaptopOsOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_os_options")
 }
@@ -127,8 +125,8 @@ model LaptopOsOption {
 model LaptopPowerOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_power_options")
 }
@@ -136,8 +134,8 @@ model LaptopPowerOption {
 model LaptopLicenseKeyOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_license_key_options")
 }
@@ -145,8 +143,8 @@ model LaptopLicenseKeyOption {
 model LaptopMicrosoftOfficeOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_microsoft_office_options")
 }
@@ -154,8 +152,8 @@ model LaptopMicrosoftOfficeOption {
 model LaptopColorOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(50)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_color_options")
 }
@@ -163,8 +161,8 @@ model LaptopColorOption {
 model LaptopBrandOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(50)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_brand_options")
 }
@@ -172,8 +170,8 @@ model LaptopBrandOption {
 model LaptopLicenseOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(50)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_licence_options")
 }
@@ -181,8 +179,8 @@ model LaptopLicenseOption {
 model LaptopTypeOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(50)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_type_options")
 }
@@ -190,8 +188,8 @@ model LaptopTypeOption {
 model LaptopGraphicOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_graphic_options")
 }
@@ -199,8 +197,8 @@ model LaptopGraphicOption {
 model LaptopVgaOption {
   id            Int             @id @default(autoincrement())
   value         String          @unique @db.VarChar(100)
-  laptopSpecs   LaptopSpecs[]
   IntelNucSpecs IntelNucSpecs[]
+  laptopSpecs   LaptopSpecs[]
 
   @@map("laptop_vga_options")
 }
@@ -210,23 +208,25 @@ model LaptopSpecs {
   processorOptionId       Int?
   ramOptionId             Int?
   storageTypeOptionId     Int?
-  licenseOptionId         Int?
   osOptionId              Int?
   portOptionId            Int?
   powerOptionId           Int?
-  LicenseKeyOptionId      Int?
   microsoftOfficeOptionId Int?
   colorOptionId           Int?
-  graphicOptionId         Int? // New field for Graphic
-  vgaOptionId             Int? // New field for VGA Option
+  graphicOptionId         Int?
+  vgaOptionId             Int?
   macWlan                 String?                      @unique @map("mac_wlan") @db.VarChar(17)
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
   brandOptionId           Int?
   typeOptionId            Int?
+  licenseOptionId         Int?
+  LicenseKeyOptionId      Int?
+  LicenseKeyOption        LaptopLicenseKeyOption?      @relation(fields: [LicenseKeyOptionId], references: [id])
   asset                   Asset                        @relation(fields: [assetId], references: [id])
   brandOption             LaptopBrandOption?           @relation(fields: [brandOptionId], references: [id])
   colorOption             LaptopColorOption?           @relation(fields: [colorOptionId], references: [id])
-  graphicOption           LaptopGraphicOption?         @relation(fields: [graphicOptionId], references: [id]) // New relation
+  graphicOption           LaptopGraphicOption?         @relation(fields: [graphicOptionId], references: [id])
+  licenseOption           LaptopLicenseOption?         @relation(fields: [licenseOptionId], references: [id])
   microsoftOfficeOption   LaptopMicrosoftOfficeOption? @relation(fields: [microsoftOfficeOptionId], references: [id])
   osOption                LaptopOsOption?              @relation(fields: [osOptionId], references: [id])
   powerOption             LaptopPowerOption?           @relation(fields: [powerOptionId], references: [id])
@@ -234,9 +234,7 @@ model LaptopSpecs {
   ramOption               LaptopRamOption?             @relation(fields: [ramOptionId], references: [id])
   storageTypeOption       LaptopStorageTypeOption?     @relation(fields: [storageTypeOptionId], references: [id])
   typeOption              LaptopTypeOption?            @relation(fields: [typeOptionId], references: [id])
-  vgaOption               LaptopVgaOption?             @relation(fields: [vgaOptionId], references: [id]) // New relation
-  licenseOption           LaptopLicenseOption?         @relation(fields: [licenseOptionId], references: [id]) // New relation
-  LicenseKeyOption        LaptopLicenseKeyOption?      @relation(fields: [LicenseKeyOptionId], references: [id])
+  vgaOption               LaptopVgaOption?             @relation(fields: [vgaOptionId], references: [id])
 
   @@index([brandOptionId], map: "laptop_specs_brandOptionId_fkey")
   @@index([colorOptionId], map: "laptop_specs_colorOptionId_fkey")
@@ -248,7 +246,9 @@ model LaptopSpecs {
   @@index([ramOptionId], map: "laptop_specs_ramOptionId_fkey")
   @@index([storageTypeOptionId], map: "laptop_specs_storageTypeOptionId_fkey")
   @@index([typeOptionId], map: "laptop_specs_typeOptionId_fkey")
-  @@index([vgaOptionId], map: "laptop_specs_vgaOptionId_fkey") // New index
+  @@index([vgaOptionId], map: "laptop_specs_vgaOptionId_fkey")
+  @@index([LicenseKeyOptionId], map: "laptop_specs_LicenseKeyOptionId_fkey")
+  @@index([licenseOptionId], map: "laptop_specs_licenseOptionId_fkey")
   @@map("laptop_specs")
 }
 
@@ -264,16 +264,18 @@ model IntelNucSpecs {
   microsoftOfficeOptionId Int?
   colorOptionId           Int?
   graphicOptionId         Int?
-  licenseKeyOptionId      Int?
   vgaOptionId             Int?
   macWlan                 String?                      @unique @map("mac_wlan") @db.VarChar(17)
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
   brandOptionId           Int?
   typeOptionId            Int?
+  licenseKeyOptionId      Int?
   asset                   Asset                        @relation(fields: [assetId], references: [id])
   brandOption             LaptopBrandOption?           @relation(fields: [brandOptionId], references: [id])
   colorOption             LaptopColorOption?           @relation(fields: [colorOptionId], references: [id])
   graphicOption           LaptopGraphicOption?         @relation(fields: [graphicOptionId], references: [id])
+  LaptopLicenseKeyOption  LaptopLicenseKeyOption?      @relation(fields: [licenseKeyOptionId], references: [id])
+  licenseOption           LaptopLicenseOption?         @relation(fields: [licenseOptionId], references: [id])
   microsoftOfficeOption   LaptopMicrosoftOfficeOption? @relation(fields: [microsoftOfficeOptionId], references: [id])
   osOption                LaptopOsOption?              @relation(fields: [osOptionId], references: [id])
   powerOption             LaptopPowerOption?           @relation(fields: [powerOptionId], references: [id])
@@ -282,8 +284,6 @@ model IntelNucSpecs {
   storageTypeOption       LaptopStorageTypeOption?     @relation(fields: [storageTypeOptionId], references: [id])
   typeOption              LaptopTypeOption?            @relation(fields: [typeOptionId], references: [id])
   vgaOption               LaptopVgaOption?             @relation(fields: [vgaOptionId], references: [id])
-  licenseOption           LaptopLicenseOption?         @relation(fields: [licenseOptionId], references: [id])
-  LaptopLicenseKeyOption  LaptopLicenseKeyOption?      @relation(fields: [licenseKeyOptionId], references: [id])
 
   @@index([brandOptionId], map: "intel_nuc_specs_brandOptionId_fkey")
   @@index([colorOptionId], map: "intel_nuc_specs_colorOptionId_fkey")
@@ -296,6 +296,8 @@ model IntelNucSpecs {
   @@index([storageTypeOptionId], map: "intel_nuc_specs_storageTypeOptionId_fkey")
   @@index([typeOptionId], map: "intel_nuc_specs_typeOptionId_fkey")
   @@index([vgaOptionId], map: "intel_nuc_specs_vgaOptionId_fkey")
+  @@index([licenseKeyOptionId], map: "intel_nuc_specs_licenseKeyOptionId_fkey")
+  @@index([licenseOptionId], map: "intel_nuc_specs_licenseOptionId_fkey")
   @@map("intel_nuc_specs")
 }
 
@@ -329,9 +331,9 @@ model PrinterSpecs {
   brandOptionId Int?
   modelOptionId Int?
   asset         Asset               @relation(fields: [assetId], references: [id])
-  typeOption    PrinterTypeOption?  @relation(fields: [typeOptionId], references: [id])
   brandOption   PrinterBrandOption? @relation(fields: [brandOptionId], references: [id])
   modelOption   PrinterModelOption? @relation(fields: [modelOptionId], references: [id])
+  typeOption    PrinterTypeOption?  @relation(fields: [typeOptionId], references: [id])
 
   @@index([typeOptionId], map: "printer_specs_typeOptionId_fkey")
   @@index([brandOptionId], map: "printer_specs_brandOptionId_fkey")
@@ -343,7 +345,6 @@ model PrinterRepetitiveMaintenance {
   id           Int      @id @default(autoincrement())
   reportDate   DateTime
   assetDetails String?
-  catatan      String?
   totalPages   Int?
   blackCount   Int?
   yellowCount  Int?
@@ -352,9 +353,5 @@ model PrinterRepetitiveMaintenance {
   remarks      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  // Jika Anda ingin menambahkan relasi ke tabel aset di kemudian hari, 
-  // Anda bisa menggunakan kode seperti ini:
-  // asset         Asset    @relation(fields: [assetId], references: [id])
-  // assetId       Int
+  catatan      String?
 }

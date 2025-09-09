@@ -1,70 +1,36 @@
-// @ts-nocheck
 "use client";
 
-import React from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Item } from "@/lib/types";
-import { LOCATIONS } from "@/lib/constants";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
-interface ItemsByLocationChartProps {
-  items: Item[];
+interface Props {
+  data: {
+    location: string;
+    total: number;
+  }[];
 }
 
-const COLORS = [
-  "#0088FE",
-  "#00C49F",
-  "#FFBB28",
-  "#FF8042",
-  "#A28DFF",
-  "#FF6666",
-  "#66B2FF",
-  "#FFD700",
-  "#ADFF2F",
-  "#FF69B4",
-];
-
-export default function ItemsByLocationChart({ items }: ItemsByLocationChartProps) {
-  const data = React.useMemo(() => {
-    const locationCounts: { [key: string]: number } = {};
-    items.forEach((item) => {
-      const locationName =
-      // @ts-expect-error its okay
-        LOCATIONS.find((l) => l.type === item.location)?.description ||
-        "Tidak Diketahui";
-      locationCounts[locationName] = (locationCounts[locationName] || 0) + 1;
-    });
-
-    return Object.entries(locationCounts).map(([name, value], index) => ({
-      name,
-      value,
-      color: COLORS[index % COLORS.length],
-    }));
-  }, [items]);
-
+function ItemsByLocationChart({ data }: Props) {
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="value"
-          nameKey="name"
-          label={({ name, percent }) =>
-            // @ts-expect-error its okay
-            `${name} (${(percent * 100).toFixed(0)}%)`
-          }
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
-          ))}
-        </Pie>
-        <Tooltip />
-        <Legend />
-      </PieChart>
+    <ResponsiveContainer width="100%" height={350}>
+      <BarChart data={data}>
+        <XAxis
+          dataKey="location"
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(value) => `${value}`}
+        />
+        <Bar dataKey="total" fill="#00612c" radius={[4, 4, 0, 0]} />
+      </BarChart>
     </ResponsiveContainer>
   );
 }
+
+export default ItemsByLocationChart;

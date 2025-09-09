@@ -1,29 +1,16 @@
-// @ts-nocheck
 "use client";
 
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Item, User } from "@/lib/types";
 
-interface ItemsByUserChartProps {
-  items: Item[];
-  users: User[];
+interface Props {
+  data: {
+    user: string;
+    total: number;
+  }[];
 }
 
-export default function ItemsByUserChart({ items, users }: ItemsByUserChartProps) {
-  const data = React.useMemo(() => {
-    const userItemCounts: { [key: string]: number } = {};
-    items.forEach((item) => {
-      const userName = users.find((u) => u.id === item.user)?.name || "Tidak Diketahui";
-      userItemCounts[userName] = (userItemCounts[userName] || 0) + 1;
-    });
-
-    return Object.entries(userItemCounts)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5); // Top 5 users with most items
-  }, [items, users]);
-
+export default function ItemsByUserChart({ data }: Props) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart
@@ -36,11 +23,11 @@ export default function ItemsByUserChart({ items, users }: ItemsByUserChartProps
         }}
       >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
+        <XAxis dataKey="user" />
         <YAxis />
         <Tooltip />
         <Legend />
-        <Bar dataKey="value" fill="#ffc658" />
+        <Bar dataKey="total" fill="#ffc658" />
       </BarChart>
     </ResponsiveContainer>
   );

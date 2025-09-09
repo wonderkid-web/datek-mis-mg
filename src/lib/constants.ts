@@ -133,3 +133,22 @@ export const MANUFACTURE_COLORS = [
   { value: "black", label: "Black" },
   { value: "silver", label: "Silver" },
 ];
+
+export const ALL_LOCATIONS = [
+  'PT Berlian Inti Mekar - Palembang',
+  'PT Berlian Inti Mekar - Rengat',
+  'PT Berlian Inti Mekar - Siak',
+  'PT Dumai Paricipta Abadi',
+  'PT Intan Sejati Andalan',
+  'PT Intan Sejati Andalan - Refinery',
+  'PT Intan Sejati Andalan - KCP',
+  'PT Intan Sejati Andalan - BIOGAS',
+  'PT Intan Sejati Andalan - FOF',
+  'PT Intan Sejati Andalan - SOLVENT',
+  'PT Intan Sejati Andalan - TRAINING CENTER',
+  'PT Intan Sejati Andalan - SSL',
+  'PT Karya Mitra Andalan',
+  'PT Karya Pratama NiagaJaya',
+  'PT Mahkota Group Tbk',
+  'PT Mutiara Unggul Lestari'
+];

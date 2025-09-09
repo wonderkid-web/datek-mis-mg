@@ -5,6 +5,7 @@ import {
   List,
   ToolCaseIcon,
   Database,
+  LayoutGrid,
 } from "lucide-react";
 
 interface ChildNavigationItem {
@@ -21,9 +22,14 @@ interface NavigationItem {
 
 export const navigationItems: NavigationItem[] = [
   {
-    name: "Dashboard",
+    name: "Home",
     href: "/",
     icon: Home,
+  },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutGrid,
   },
   {
     name: "Employee",

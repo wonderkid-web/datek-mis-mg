@@ -4,17 +4,25 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 interface Props {
   data: {
-    status: string;
+    name: string;
     total: number;
   }[];
 }
 
-function ItemsByStatusChart({ data }: Props) {
+function CategoryBreakdownChart({ data }: Props) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[350px]">
+        <p className="text-muted-foreground">No data available</p>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>
         <XAxis
-          dataKey="status"
+          dataKey="name"
           stroke="#888888"
           fontSize={12}
           tickLine={false}
@@ -33,4 +41,4 @@ function ItemsByStatusChart({ data }: Props) {
   );
 }
 
-export default ItemsByStatusChart;
+export default CategoryBreakdownChart;

@@ -1,6 +1,7 @@
 "use server";
 import { prisma } from "./prisma";
 import { Asset } from "@prisma/client";
+import { ALL_LOCATIONS } from "./constants";
 
 interface CreateAssetData {
   namaAsset: string;
@@ -403,4 +404,44 @@ export async function deleteAsset(id: number): Promise<Asset> {
 
     return deletedAsset;
   });
+}
+
+export async function getAssetTotal(): Promise<number> {
+  return await prisma.asset.count();
+}
+
+export async function getAssetBreakdownByLocation() {
+  const mergedIsaName = "PT Intan Sejati Andalan (Gabungan)";
+  const finalLocations = [
+    ...ALL_LOCATIONS.filter(l => !l.startsWith("PT Intan Sejati Andalan")),
+    mergedIsaName
+  ];
+
+  const breakdown: Record<string, Record<string, number>> = {};
+  finalLocations.forEach(loc => breakdown[loc] = {});
+
+
+  const assignments = await prisma.assetAssignment.findMany({
+    select: {
+      user: { select: { lokasiKantor: true } },
+      asset: { select: { category: { select: { nama: true } } } },
+    },
+  });
+
+  assignments.forEach(assignment => {
+    let location = assignment.user.lokasiKantor ?? "Unassigned";
+    if (location.startsWith("PT Intan Sejati Andalan")) {
+      location = mergedIsaName;
+    }
+
+    if (breakdown[location]) {
+        const category = assignment.asset.category.nama;
+        breakdown[location][category] = (breakdown[location][category] || 0) + 1;
+    }
+  });
+
+  return Object.entries(breakdown).map(([location, categories]) => ({
+    location,
+    data: Object.entries(categories).map(([name, total]) => ({ name, total })), 
+  }));
 }
