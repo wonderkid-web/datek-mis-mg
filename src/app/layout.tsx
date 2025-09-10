@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
 import NextAuthProvider from "./providers/next-auth-provider";
+import { usePathname } from "next/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +23,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAuthRoute = pathname === "/login" || pathname?.startsWith("/auth");
   return (
     <html lang="en">
       <body
@@ -29,7 +32,7 @@ export default function RootLayout({
       >
         <NextAuthProvider>
           <Providers>
-            <Navbar />
+            {!isAuthRoute && <Navbar />}
             <main className="flex-1 overflow-y-auto">{children}</main>
             <Toaster />
           </Providers>
@@ -38,4 +41,3 @@ export default function RootLayout({
     </html>
   );
 }
-

@@ -136,7 +136,6 @@ interface UpdateIntelNucSpecsDataInput {
   graphicOptionId?: number | null;
   vgaOptionId?: number | null;
   licenseOptionId?: number | null;
-  licenseKey?: string | null;
 }
 
 export async function updateAssetAndIntelNucSpecs(
@@ -152,9 +151,7 @@ export async function updateAssetAndIntelNucSpecs(
   if (intelNucSpecsDataInput.macLan !== undefined) {
     intelNucSpecsUpdateData.macLan = intelNucSpecsDataInput.macLan;
   }
-  if (intelNucSpecsDataInput.licenseKey !== undefined) {
-    intelNucSpecsUpdateData.licenseKey = intelNucSpecsDataInput.licenseKey;
-  }
+  // Note: license key is modeled as LicenseKeyOption relation in schema, not free text.
 
   if (intelNucSpecsDataInput.processorOptionId !== undefined) {
     intelNucSpecsUpdateData.processorOption = intelNucSpecsDataInput.processorOptionId === null ? { disconnect: true } : { connect: { id: intelNucSpecsDataInput.processorOptionId } };

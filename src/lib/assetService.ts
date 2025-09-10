@@ -259,7 +259,6 @@ interface UpdateLaptopSpecsDataInput {
   graphicOptionId?: number | null;
   vgaOptionId?: number | null;
   licenseOptionId?: number | null;
-  licenseKey?: string | null;
 }
 
 interface UpdatePrinterSpecsDataInput {
@@ -281,9 +280,8 @@ export async function updateAssetAndLaptopSpecs(
   if (laptopSpecsDataInput.macLan !== undefined) {
     laptopSpecsUpdateData.macLan = laptopSpecsDataInput.macLan;
   }
-  if (laptopSpecsDataInput.licenseKey !== undefined) {
-    laptopSpecsUpdateData.licenseKey = laptopSpecsDataInput.licenseKey;
-  }
+  // Note: license key is modeled as an option relation in schema (LicenseKeyOptionId),
+  // not a free text field. We intentionally ignore any free-text licenseKey.
 
   if (laptopSpecsDataInput.processorOptionId !== undefined) {
     laptopSpecsUpdateData.processorOption = laptopSpecsDataInput.processorOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.processorOptionId } };

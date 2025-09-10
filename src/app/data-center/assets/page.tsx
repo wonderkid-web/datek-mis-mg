@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { getAssets, deleteAsset } from "@/lib/assetService";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -16,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExportActions } from "@/components/ExportActions";
 
 export default function AssetsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -204,8 +206,10 @@ export default function AssetsPage() {
             printerCategoryId={printerCategoryId || null}
           />
           <DataTable
-            // @ts-expect-error it just error columns
-            columns={columns({ handleEdit, handleDelete })} data={allAssets || []}
+            // @ts-expect-error its okay
+            columns={columns({ handleEdit, handleDelete, router })}
+            // @ts-expect-error its okay
+            data={allAssets || []}
           />
         </TabsContent>
         <TabsContent value="printer-assets">
@@ -232,8 +236,10 @@ export default function AssetsPage() {
             printerCategoryId={printerCategoryId || null}
           />
           <DataTable
-            // @ts-expect-error it just error columns
-            columns={columns({ handleEdit, handleDelete })} data={printerAssets || []}
+            // @ts-expect-error its okay
+            columns={columns({ handleEdit, handleDelete, router })}
+            // @ts-expect-error its okay
+            data={printerAssets || []}
           />
         </TabsContent>
       </Tabs>

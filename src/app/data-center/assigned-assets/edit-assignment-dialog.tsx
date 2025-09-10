@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -61,6 +62,7 @@ export function EditAssignmentDialog({
         assetId: formData.assetId,
         userId: formData.userId,
         catatan: formData.catatan,
+        nomorAsset: formData.nomorAsset,
       });
       onSave();
     } catch (error) {
@@ -85,6 +87,20 @@ export function EditAssignmentDialog({
           <DialogTitle>Edit Assignment</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="nomorAsset" className="text-right">
+              Asset Number
+            </Label>
+            <Input
+              id="nomorAsset"
+              name="nomorAsset"
+              value={formData.nomorAsset || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, nomorAsset: e.target.value.toUpperCase() }))
+              }
+              className="col-span-3"
+            />
+          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="assetId" className="text-right">
               Asset

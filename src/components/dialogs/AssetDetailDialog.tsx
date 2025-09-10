@@ -33,6 +33,8 @@ import { Input } from "@/components/ui/input";
 import { Asset } from "@/lib/types";
 import { ArrowUpDown } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import { ExportActions } from "../ExportActions";
+import { exportColumns } from "./exportColumns";
 
 // Read-only columns definition
 const columns: ColumnDef<Asset>[] = [
@@ -168,12 +170,18 @@ function AssetTable({ filters }: AssetTableProps) {
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center justify-between py-4">
         <Input
           placeholder="Filter by asset name..."
           value={globalFilter ?? ""}
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
+        />
+        <ExportActions
+        // @ts-expect-error its okay
+          columns={exportColumns}
+          data={data?.data ?? []}
+          fileName="assets_export"
         />
       </div>
       <div className="rounded-md border">
