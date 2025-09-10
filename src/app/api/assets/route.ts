@@ -25,9 +25,19 @@ export async function GET(request: NextRequest) {
     // mis: 'laptop' | 'intel-nuc' | 'printer'
     const specType = searchParams.get("specType") || undefined;
 
+    const osValue    = searchParams.get("osValue") || undefined;
+    const idleOnly   = searchParams.get("idleOnly") === "true" ? true : undefined;
+
     const result = await getPaginatedAssets({
-      page, pageSize, namaAsset, statusAsset, lokasiFisik,
-      categoryId, categorySlug,
+      page,
+      pageSize,
+      namaAsset,
+      statusAsset,
+      lokasiFisik,
+      categoryId,
+      categorySlug,
+      osValue,
+      idleOnly,
     });
 
     return NextResponse.json(result);

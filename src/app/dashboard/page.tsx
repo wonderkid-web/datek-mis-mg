@@ -296,6 +296,14 @@ function DashboardPage() {
             Management Information Systems
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div
+              className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+              onClick={() =>
+                handleCardClick("Windows 11 Pro", {
+                  osValue: "Windows 11 Pro 64 Bit",
+                })
+              }
+            >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -309,6 +317,15 @@ function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
+            </div>
+            <div
+              className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+              onClick={() =>
+                handleCardClick("Windows 10 Pro", {
+                  osValue: "Windows 10 Pro 64 Bit",
+                })
+              }
+            >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -322,6 +339,15 @@ function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
+            </div>
+            <div
+              className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+              onClick={() =>
+                handleCardClick("Windows 11 Home", {
+                  osValue: "Windows 11 Home SL 64 Bit",
+                })
+              }
+            >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -335,6 +361,15 @@ function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
+            </div>
+            <div
+              className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+              onClick={() =>
+                handleCardClick("Windows 10 Home", {
+                  osValue: "Windows 10 Home SL 64 Bit",
+                })
+              }
+            >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -348,6 +383,13 @@ function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
+            </div>
+            <div
+              className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+              onClick={() =>
+                handleCardClick("Idle Assets", { idleOnly: true })
+              }
+            >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Idle Assets</CardTitle>
@@ -357,6 +399,7 @@ function DashboardPage() {
                 <div className="text-2xl font-bold">{idleAssets}</div>
               </CardContent>
             </Card>
+            </div>
           </div>
         </div>
       </div>

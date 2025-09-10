@@ -378,6 +378,8 @@ export async function getPaginatedAssets({
   lokasiFisik,
   categoryId,
   categorySlug,         // ← opsional, kalau mau pakai slug
+  osValue,              // ← filter by OS option value (Laptop/Intel NUC)
+  idleOnly,             // ← only assets assigned to inactive users
 }: {
   page?: number;
   pageSize?: number;
@@ -386,6 +388,8 @@ export async function getPaginatedAssets({
   lokasiFisik?: string;
   categoryId?: number;
   categorySlug?: string;
+  osValue?: string;
+  idleOnly?: boolean;
 }) {
   const skip = (page - 1) * pageSize;
   const take = pageSize;
@@ -430,6 +434,25 @@ export async function getPaginatedAssets({
     AND.push({ category: { is: { slug: categorySlug } } });
   }
 
+  if (osValue) {
+    AND.push({
+      OR: [
+        { laptopSpecs: { is: { osOption: { is: { value: osValue } } } } },
+        { intelNucSpecs: { is: { osOption: { is: { value: osValue } } } } },
+      ],
+    });
+  }
+
+  if (idleOnly) {
+    AND.push({
+      assignments: {
+        some: {
+          user: { isActive: false },
+        },
+      },
+    });
+  }
+
   const where = AND.length ? { AND } : {};
 
   const [assets, total] = await prisma.$transaction([
@@ -440,6 +463,8 @@ export async function getPaginatedAssets({
       orderBy: { id: "desc" },
       include: {
         category: true,
+        laptopSpecs: { select: { osOption: { select: { value: true } } } },
+        intelNucSpecs: { select: { osOption: { select: { value: true } } } },
         assignments: {
           orderBy: { createdAt: "desc" },
           take: 1,
