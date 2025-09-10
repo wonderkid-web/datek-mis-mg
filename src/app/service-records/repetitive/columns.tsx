@@ -39,7 +39,7 @@ export const getColumns = ({
       },
       cell: ({ row }) => {
         const date = new Date(row.getValue("reportDate"));
-        return <div className="text-center">{date.toLocaleDateString()}</div>;
+        return <div className="text-center">{date.toLocaleDateString('id-ID')}</div>;
       },
     },
     {

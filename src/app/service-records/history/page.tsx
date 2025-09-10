@@ -27,6 +27,7 @@ import {
 } from "@/lib/serviceRecordService";
 import { getAssetAssignments } from "@/lib/assetAssignmentService";
 import { getColumns } from "./columns";
+import { exportColumns } from "./exportColumns";
 import { DeleteRecordDialog } from "./delete-record-dialog";
 import { EditRecordDialog } from "./edit-record-dialog";
 import {
@@ -55,6 +56,7 @@ import {
   ServiceRecordWithDetails,
   AssetAssignmentWithDetails,
 } from "@/lib/types";
+import { ExportActions } from "@/components/ExportActions";
 
 // ... (keep all existing type definitions)
 
@@ -514,7 +516,16 @@ export default function ServiceHistoryPage() {
               <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <DataTable columns={columns} data={serviceRecords} />
+            <>
+              <div className="flex justify-end mb-4">
+                <ExportActions
+                  columns={exportColumns}
+                  data={serviceRecords}
+                  fileName="Service_Record_History"
+                />
+              </div>
+              <DataTable columns={columns} data={serviceRecords} />
+            </>
           )}
         </CardContent>
       </Card>

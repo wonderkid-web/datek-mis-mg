@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAssetCategories } from "@/lib/assetCategoryService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ExportActions } from "@/components/ExportActions";
 
 export default function AssignedAssetsPage() {
   const queryClient = useQueryClient();
@@ -162,18 +163,6 @@ export default function AssignedAssetsPage() {
   const isRefetching =
     isRefetchingAllAssignments || isRefetchingPrinterAssignments;
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Assigned Assets</h1>
-          <Skeleton className="h-10 w-1/3" />
-        </div>
-        <TableSkeleton />
-      </div>
-    );
-  }
-
   const filteredAllAssignments =
     allAssignments?.filter(
       (assignment) =>
@@ -204,6 +193,27 @@ export default function AssignedAssetsPage() {
         assignment.catatan?.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
+  const exportColumns = [
+    { header: "Asset Number", accessorKey: "nomorAsset" },
+    { header: "User Name", accessorKey: "user.namaLengkap" },
+    { header: "Asset Name", accessorKey: "asset.namaAsset" },
+    { header: "Purchase Date", accessorKey: "asset.tanggalPembelian" },
+    { header: "Warranty Date", accessorKey: "asset.tanggalGaransi" },
+    { header: "Notes", accessorKey: "catatan" },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Assigned Assets</h1>
+          <Skeleton className="h-10 w-1/3" />
+        </div>
+        <TableSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">
@@ -230,12 +240,26 @@ export default function AssignedAssetsPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="all-assigned-assets">
+          <div className="flex justify-end mb-4">
+            <ExportActions
+              columns={exportColumns}
+              data={filteredAllAssignments}
+              fileName="Laptop_IntelNUC_Assignments"
+            />
+          </div>
           <DataTable
             columns={columns({ handleEdit, handleView, handleDelete })}
             data={filteredAllAssignments}
           />
         </TabsContent>
         <TabsContent value="printer-assigned-assets">
+          <div className="flex justify-end mb-4">
+            <ExportActions
+              columns={exportColumns}
+              data={filteredPrinterAssignments}
+              fileName="Printer_Assignments"
+            />
+          </div>
           <DataTable
             columns={columns({ handleEdit, handleView, handleDelete })}
             data={filteredPrinterAssignments}

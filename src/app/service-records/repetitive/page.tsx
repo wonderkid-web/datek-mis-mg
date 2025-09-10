@@ -2,7 +2,6 @@
 
 import { useState, useEffect, FormEvent, useMemo } from "react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,6 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
   getPrinterRepetitiveMaintenances,
   createPrinterRepetitiveMaintenance,
-  updatePrinterRepetitiveMaintenance,
   deletePrinterRepetitiveMaintenance,
   getNotesPrinter,
 } from "@/lib/printerRepetitiveMaintenanceService";
@@ -31,7 +29,7 @@ import {
   AssetAssignmentPrinter,
   PrinterRepetitiveMaintenance,
 } from "@/lib/types";
-import Inspect from "@/components/Inspect";
+import { ExportActions } from "@/components/ExportActions";
 
 export default function RepetitiveServicePage() {
   const [records, setRecords] = useState<PrinterRepetitiveMaintenance[]>([]);
@@ -184,6 +182,18 @@ export default function RepetitiveServicePage() {
     () => getColumns({ handleEditClick, handleDeleteClick }),
     [assetAssignments] // Dependency array, re-create columns if assetAssignments change
   );
+
+  const exportColumns = [
+    { header: "Report Date", accessorKey: "reportDate" },
+    { header: "Asset Details", accessorKey: "assetDetails" },
+    { header: "Total Pages", accessorKey: "totalPages" },
+    { header: "Notes", accessorKey: "catatan" },
+    { header: "Black Count", accessorKey: "blackCount" },
+    { header: "Yellow Count", accessorKey: "yellowCount" },
+    { header: "Magenta Count", accessorKey: "magentaCount" },
+    { header: "Cyan Count", accessorKey: "cyanCount" },
+    { header: "Remarks", accessorKey: "remarks" },
+  ];
 
   return (
     <>
@@ -404,7 +414,16 @@ export default function RepetitiveServicePage() {
               <TableSkeleton />
             </div>
           ) : (
-            <DataTable columns={columns} data={records}  />
+            <>
+              <div className="flex justify-end mb-4">
+                <ExportActions
+                  columns={exportColumns}
+                  data={records}
+                  fileName="Repetitive_Maintenance_Records"
+                />
+              </div>
+              <DataTable columns={columns} data={records} />
+            </>
           )}
         </CardContent>
       </Card>
@@ -424,3 +443,4 @@ export default function RepetitiveServicePage() {
     </>
   );
 }
+

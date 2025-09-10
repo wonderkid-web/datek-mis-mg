@@ -3,8 +3,14 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import Select from "react-select";
 import { Textarea } from "@/components/ui/textarea";
 import { AssetAssignment, Asset, User } from "@prisma/client";
 import { updateAssignment } from "@/lib/assignmentService";
@@ -18,7 +24,12 @@ interface EditAssignmentDialogProps {
   assignment: AssetAssignment;
 }
 
-export function EditAssignmentDialog({ isOpen, onClose, onSave, assignment }: EditAssignmentDialogProps) {
+export function EditAssignmentDialog({
+  isOpen,
+  onClose,
+  onSave,
+  assignment,
+}: EditAssignmentDialogProps) {
   const [formData, setFormData] = useState<Partial<AssetAssignment>>(assignment);
   const [users, setUsers] = useState<User[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -35,13 +46,13 @@ export function EditAssignmentDialog({ isOpen, onClose, onSave, assignment }: Ed
     fetchData();
   }, []);
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: parseInt(value) }));
+  const handleSelectChange = (name: string, value: string | null) => {
+    setFormData((prev) => ({ ...prev, [name]: value ? parseInt(value) : null }));
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
@@ -57,6 +68,16 @@ export function EditAssignmentDialog({ isOpen, onClose, onSave, assignment }: Ed
     }
   };
 
+  const assetOptions = assets.map((asset) => ({
+    value: asset.id.toString(),
+    label: asset.namaAsset,
+  }));
+
+  const userOptions = users.map((user) => ({
+    value: user.id.toString(),
+    label: user.namaLengkap,
+  }));
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
@@ -65,42 +86,64 @@ export function EditAssignmentDialog({ isOpen, onClose, onSave, assignment }: Ed
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="assetId" className="text-right">Asset</Label>
-            <Select onValueChange={(value) => handleSelectChange("assetId", value)} value={formData.assetId?.toString() || ""}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Asset" />
-              </SelectTrigger>
-              <SelectContent>
-                {assets.map((asset) => (
-                  <SelectItem key={asset.id} value={asset.id.toString()}>
-                    {asset.namaAsset}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="assetId" className="text-right">
+              Asset
+            </Label>
+            <Select
+              options={assetOptions}
+              value={assetOptions.find(
+                (option) => option.value === formData.assetId?.toString()
+              )}
+              onChange={(selectedOption) =>
+                handleSelectChange(
+                  "assetId",
+                  selectedOption ? selectedOption.value : null
+                )
+              }
+              placeholder="Select Asset"
+              isClearable
+              isSearchable
+              className="col-span-3"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="userId" className="text-right">User</Label>
-            <Select onValueChange={(value) => handleSelectChange("userId", value)} value={formData.userId?.toString() || ""}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select User" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.namaLengkap}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="userId" className="text-right">
+              User
+            </Label>
+            <Select
+              options={userOptions}
+              value={userOptions.find(
+                (option) => option.value === formData.userId?.toString()
+              )}
+              onChange={(selectedOption) =>
+                handleSelectChange(
+                  "userId",
+                  selectedOption ? selectedOption.value : null
+                )
+              }
+              placeholder="Select User"
+              isClearable
+              isSearchable
+              className="col-span-3"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="catatan" className="text-right">Notes</Label>
-            <Textarea id="catatan" name="catatan" value={formData.catatan || ""} onChange={handleTextareaChange} className="col-span-3" />
+            <Label htmlFor="catatan" className="text-right">
+              Notes
+            </Label>
+            <Textarea
+              id="catatan"
+              name="catatan"
+              value={formData.catatan || ""}
+              onChange={handleTextareaChange}
+              className="col-span-3"
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={onClose} variant="outline">Cancel</Button>
+          <Button onClick={onClose} variant="outline">
+            Cancel
+          </Button>
           <Button onClick={handleSubmit}>Save Changes</Button>
         </DialogFooter>
       </DialogContent>

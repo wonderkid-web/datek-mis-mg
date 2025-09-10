@@ -13,6 +13,7 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAssetCategories } from "@/lib/assetCategoryService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ExportActions } from "@/components/ExportActions";
 
 export default function AssetsPage() {
   const queryClient = useQueryClient();
@@ -145,6 +146,13 @@ export default function AssetsPage() {
     isLoadingCategories || isLoadingAllAssets || isLoadingPrinterAssets;
   const isRefetching = isRefetchingAllAssets || isRefetchingPrinterAssets;
 
+  const exportColumns = [
+    { header: "Asset Name", accessorKey: "namaAsset" },
+    { header: "Serial Number", accessorKey: "nomorSeri" },
+    { header: "Status", accessorKey: "statusAsset" },
+    { header: "Category", accessorKey: "category.nama" },
+  ];
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10">
@@ -173,7 +181,12 @@ export default function AssetsPage() {
           <TabsTrigger value="printer-assets">Printer Assets</TabsTrigger>
         </TabsList>
         <TabsContent value="all-assets">
-          <div className="flex justify-end items-center mb-6">
+          <div className="flex justify-between items-center mb-6">
+            <ExportActions
+              columns={exportColumns}
+              data={allAssets || []}
+              fileName="Laptop_IntelNUC_Assets"
+            />
             <Button onClick={() => setIsAssignDialogOpen(true)}>
               Assign Asset
             </Button>
@@ -196,7 +209,12 @@ export default function AssetsPage() {
           />
         </TabsContent>
         <TabsContent value="printer-assets">
-          <div className="flex justify-end items-center mb-6">
+          <div className="flex justify-between items-center mb-6">
+            <ExportActions
+              columns={exportColumns}
+              data={printerAssets || []}
+              fileName="Printer_Assets"
+            />
             <Button onClick={() => setIsAssignDialogOpen(true)}>
               Assign Printer Asset
             </Button>

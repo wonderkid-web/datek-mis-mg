@@ -15,17 +15,19 @@ import { Button } from "./button";
 interface ComboboxProps {
   options: { value: string; label: string }[];
   value?: string;
-  onValueChange: (value: string) => void;
+  onChange: (value: string) => void;
   placeholder?: string;
   searchPlaceholder?: string;
+  className?: string;
 }
 
 export function Combobox({
   options,
   value,
-  onValueChange,
+  onChange,
   placeholder = "Select option...",
   searchPlaceholder = "Search...",
+  className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -36,7 +38,7 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className={cn("w-full justify-between", className)}
         >
           {value
             ? options.find((option) => option.value === value)?.label
@@ -46,7 +48,7 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-[300px] overflow-y-auto">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} className="w-full p-1 border-2" />
+          <CommandInput placeholder={searchPlaceholder} />
           <CommandEmpty>No option found.</CommandEmpty>
           <CommandGroup>
             {options.map((option) => (
@@ -54,7 +56,7 @@ export function Combobox({
                 key={option.value}
                 value={option.label}
                 onSelect={() => {
-                  onValueChange(option.value === value ? "" : option.value);
+                  onChange(option.value === value ? "" : option.value);
                   setOpen(false);
                 }}
               >

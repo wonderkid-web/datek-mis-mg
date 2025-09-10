@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ExportActions } from "@/components/ExportActions";
 
 interface User {
   id: number;
@@ -113,6 +114,15 @@ export default function UsersPage() {
         user.lokasiKantor?.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
+  const exportColumns = [
+    { header: "Full Name", accessorKey: "namaLengkap" },
+    { header: "Email", accessorKey: "email" },
+    { header: "Department", accessorKey: "departemen" },
+    { header: "Corporate", accessorKey: "lokasiKantor" },
+    { header: "Homebase", accessorKey: "jabatan" },
+    { header: "Active", accessorKey: "isActive" },
+  ];
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10">
@@ -129,12 +139,19 @@ export default function UsersPage() {
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-4">Manage Users</h1>
       <div className="flex items-center justify-between mb-4">
-        <Input
-          placeholder="Search users..."
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="max-w-sm"
+          />
+          <ExportActions
+            columns={exportColumns}
+            data={filteredData}
+            fileName="Daftar_Karyawan"
+          />
+        </div>
         <AddUserDialog
           onSave={() => {
             queryClient.invalidateQueries({ queryKey: ["users"] });

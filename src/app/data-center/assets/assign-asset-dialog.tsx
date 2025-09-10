@@ -139,13 +139,13 @@ export function AssignAssetDialog({
             <Select
               options={users.map((user) => ({
                 value: user.id.toString(),
-                label: `${user.namaLengkap} (${user.email})`,
+                label: `${user.namaLengkap}`,
               }))}
               value={
                 userId
                   ? {
                       value: userId,
-                      label: `${users.find((u) => u.id.toString() === userId)?.namaLengkap} (${users.find((u) => u.id.toString() === userId)?.email})`,
+                      label: `${users.find((u) => u.id.toString() === userId)?.namaLengkap}`,
                     }
                   : null
               }
