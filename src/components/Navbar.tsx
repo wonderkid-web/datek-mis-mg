@@ -125,7 +125,7 @@ export default function Navbar() {
             )}
             <div className="flex items-center space-x-2 border-l border-green-400 pl-4 ml-4">
                 <UserCircle className="h-6 w-6" />
-                <span className="font-semibold">{session.user?.name}</span>
+                <span className="font-semibold">{session.user?.name?.split(" ")[0]}</span>
             </div>
             <Button
               onClick={handleLogout}

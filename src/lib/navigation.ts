@@ -21,11 +21,11 @@ interface NavigationItem {
 }
 
 export const navigationItems: NavigationItem[] = [
-  {
-    name: "Home",
-    href: "/",
-    icon: Home,
-  },
+  // {
+  //   name: "Home",
+  //   href: "/",
+  //   icon: Home,
+  // },
   {
     name: "Dashboard",
     href: "/dashboard",
