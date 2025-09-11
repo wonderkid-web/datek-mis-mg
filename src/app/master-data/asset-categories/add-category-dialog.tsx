@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,8 +21,11 @@ interface AddCategoryDialogProps {
 }
 
 export function AddCategoryDialog({ onSave }: AddCategoryDialogProps) {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [nama, setNama] = useState("");
+  const isAdmin = (session?.user as any)?.role === "administrator";
+  if (!isAdmin) return null;
 
   const handleSubmit = async () => {
     try {

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, FormEvent, useMemo } from "react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,6 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
   getPrinterRepetitiveMaintenances,
   createPrinterRepetitiveMaintenance,
-  updatePrinterRepetitiveMaintenance,
   deletePrinterRepetitiveMaintenance,
 } from "@/lib/printerRepetitiveMaintenanceService";
 import { getAssetAssignmentsPrinter } from "@/lib/assetAssignmentService";

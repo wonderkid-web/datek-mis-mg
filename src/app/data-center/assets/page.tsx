@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getAssets, deleteAsset } from "@/lib/assetService";
 import { columns } from "./columns";
@@ -17,6 +18,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExportActions } from "@/components/ExportActions";
 
 export default function AssetsPage() {
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === "administrator";
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -189,22 +192,26 @@ export default function AssetsPage() {
               data={allAssets || []}
               fileName="Laptop_IntelNUC_Assets"
             />
-            <Button onClick={() => setIsAssignDialogOpen(true)}>
-              Assign Asset
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsAssignDialogOpen(true)}>
+                Assign Asset
+              </Button>
+            )}
           </div>
-          <AssignAssetDialog
-            isOpen={isAssignDialogOpen}
-            onClose={() => setIsAssignDialogOpen(false)}
-            onSave={() => {
-              setIsAssignDialogOpen(false);
-              queryClient.invalidateQueries({ queryKey: ["allAssets"] });
-            }}
-            currentTab={currentTab}
-            laptopCategoryId={laptopCategoryId || null}
-            intelNucCategoryId={intelNucCategoryId || null}
-            printerCategoryId={printerCategoryId || null}
-          />
+          {isAdmin && (
+            <AssignAssetDialog
+              isOpen={isAssignDialogOpen}
+              onClose={() => setIsAssignDialogOpen(false)}
+              onSave={() => {
+                setIsAssignDialogOpen(false);
+                queryClient.invalidateQueries({ queryKey: ["allAssets"] });
+              }}
+              currentTab={currentTab}
+              laptopCategoryId={laptopCategoryId || null}
+              intelNucCategoryId={intelNucCategoryId || null}
+              printerCategoryId={printerCategoryId || null}
+            />
+          )}
           <DataTable
             // @ts-expect-error its okay
             columns={columns({ handleEdit, handleDelete, router })}
@@ -219,22 +226,26 @@ export default function AssetsPage() {
               data={printerAssets || []}
               fileName="Printer_Assets"
             />
-            <Button onClick={() => setIsAssignDialogOpen(true)}>
-              Assign Printer Asset
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsAssignDialogOpen(true)}>
+                Assign Printer Asset
+              </Button>
+            )}
           </div>
-          <AssignAssetDialog
-            isOpen={isAssignDialogOpen}
-            onClose={() => setIsAssignDialogOpen(false)}
-            onSave={() => {
-              setIsAssignDialogOpen(false);
-              queryClient.invalidateQueries({ queryKey: ["printerAssets"] });
-            }}
-            currentTab={currentTab}
-            laptopCategoryId={laptopCategoryId || null}
-            intelNucCategoryId={intelNucCategoryId || null}
-            printerCategoryId={printerCategoryId || null}
-          />
+          {isAdmin && (
+            <AssignAssetDialog
+              isOpen={isAssignDialogOpen}
+              onClose={() => setIsAssignDialogOpen(false)}
+              onSave={() => {
+                setIsAssignDialogOpen(false);
+                queryClient.invalidateQueries({ queryKey: ["printerAssets"] });
+              }}
+              currentTab={currentTab}
+              laptopCategoryId={laptopCategoryId || null}
+              intelNucCategoryId={intelNucCategoryId || null}
+              printerCategoryId={printerCategoryId || null}
+            />
+          )}
           <DataTable
             // @ts-expect-error its okay
             columns={columns({ handleEdit, handleDelete, router })}

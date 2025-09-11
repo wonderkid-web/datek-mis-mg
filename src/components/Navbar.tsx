@@ -56,6 +56,9 @@ export default function Navbar() {
     };
   }, [openDropdown]);
 
+  const isAdmin = (session?.user as any)?.role === "administrator";
+  const navItems = navigationItems.filter((item) => isAdmin || item.name !== "Asset");
+
   return (
     <nav className="bg-primary text-primary-foreground p-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
@@ -76,7 +79,7 @@ export default function Navbar() {
         {/* Desktop Menu */}
         {status === "authenticated" && (
           <div className="hidden md:flex items-center space-x-4">
-            {navigationItems.map((item) =>
+            {navItems.map((item) =>
               item.children ? (
                 <div
                   key={item.name}
@@ -160,7 +163,7 @@ export default function Navbar() {
                     <span className="font-semibold">{session.user?.name}</span>
                 </div>
                 <div className="mt-4 space-y-2">
-                  {navigationItems.map((item) =>
+                  {navItems.map((item) =>
                     item.children ? (
                       <Collapsible key={item.name}>
                         <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-3 rounded-md hover:bg-primary-foreground/10">

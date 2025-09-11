@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,8 +22,11 @@ interface AddVgaDialogProps {
 }
 
 export function AddVgaDialog({ onSave }: AddVgaDialogProps) {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
+  const isAdmin = (session?.user as any)?.role === "administrator";
+  if (!isAdmin) return null;
 
   const handleSubmit = async () => {
     try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ interface AddUserDialogProps {
 }
 
 export function AddUserDialog({ onSave }: AddUserDialogProps) {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   // const [nik, setNik] = useState("");
   const [namaLengkap, setNamaLengkap] = useState("");
@@ -32,6 +34,8 @@ export function AddUserDialog({ onSave }: AddUserDialogProps) {
   const [jabatan, setJabatan] = useState("");
   const [lokasiKantor, setLokasiKantor] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const isAdmin = (session?.user as any)?.role === "administrator";
+  if (!isAdmin) return null;
 
   const handleSubmit = async () => {
     try {

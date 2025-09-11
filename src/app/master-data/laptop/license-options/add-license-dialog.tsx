@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +19,12 @@ interface AddLicenseDialogProps {
 }
 
 export function AddLicenseDialog({ onSave }: AddLicenseDialogProps) {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
+  const isAdmin = (session?.user as any)?.role === "administrator";
+  if (!isAdmin) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

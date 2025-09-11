@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,8 +17,11 @@ import { Label } from "@/components/ui/label";
 import { createPrinterTypeOption } from "@/lib/printerTypeService";
 
 export function AddTypeDialog({ onSave }: { onSave: () => void }) {
+  const { data: session } = useSession();
   const [value, setValue] = useState("");
   const [open, setOpen] = useState(false);
+  const isAdmin = (session?.user as any)?.role === "administrator";
+  if (!isAdmin) return null;
 
   const handleSave = async () => {
     try {
