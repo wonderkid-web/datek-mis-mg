@@ -34,7 +34,7 @@ export default function RootLayout({
           <Providers>
             {!isAuthRoute && <Navbar />}
             <main className="flex-1 overflow-y-auto">{children}</main>
-            <Toaster />
+            <Toaster  />
           </Providers>
         </NextAuthProvider>
       </body>

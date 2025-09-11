@@ -10,6 +10,10 @@ export const getUsers = async (): Promise<User[]> => {
   });
 };
 
+export const getUserById = async (id: number): Promise<User | null> => {
+  return await prisma.user.findUnique({ where: { id } });
+};
+
 export const createUser = async (
   data: User
 ): Promise<User> => {
@@ -35,4 +39,24 @@ export const deleteUser = async (id: number): Promise<User> => {
   return await prisma.user.delete({
     where: { id },
   });
+};
+
+export const changePassword = async (
+  id: number,
+  oldPassword: string,
+  newPassword: string
+): Promise<{ ok: true } | { ok: false; error: string }> => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { password: true },
+  });
+  if (!user) {
+    return { ok: false, error: "User not found" };
+  }
+  if ((user.password ?? "") !== oldPassword) {
+    return { ok: false, error: "Current password is incorrect" };
+  }
+
+  await prisma.user.update({ where: { id }, data: { password: newPassword } });
+  return { ok: true };
 };

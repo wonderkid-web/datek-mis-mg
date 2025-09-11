@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, FormEvent, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
 import { ExportActions } from "@/components/ExportActions";
 
 export default function RepetitiveServicePage() {
+  const { data: session } = useSession();
   const [records, setRecords] = useState<PrinterRepetitiveMaintenance[]>([]);
   const [notes, setNotes] = useState<
     {
@@ -197,6 +199,7 @@ export default function RepetitiveServicePage() {
 
   return (
     <>
+      {((session?.user as any)?.role === "administrator") && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <Card>
           <CardHeader>
@@ -397,6 +400,7 @@ export default function RepetitiveServicePage() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -443,4 +447,3 @@ export default function RepetitiveServicePage() {
     </>
   );
 }
-

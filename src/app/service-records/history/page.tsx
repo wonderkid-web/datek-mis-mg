@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, FormEvent, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -79,6 +80,7 @@ const parseRupiah = (rupiahString: string): number => {
 };
 
 export default function ServiceHistoryPage() {
+  const { data: session } = useSession();
   const [serviceRecords, setServiceRecords] = useState<
     ServiceRecordWithDetails[]
   >([]);
@@ -207,9 +209,12 @@ export default function ServiceHistoryPage() {
     [assetAssignments]
   );
 
+  const isAdmin = (session?.user as any)?.role === "administrator";
+
   return (
     <>
       {/* INI FORM  dan ini STATIC */}
+      {isAdmin && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <Card>
           <CardHeader>
@@ -504,6 +509,7 @@ export default function ServiceHistoryPage() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* INI Table dan ini Promise */}
       <Card>

@@ -126,10 +126,12 @@ export default function Navbar() {
                 </Link>
               )
             )}
-            <div className="flex items-center space-x-2 border-l border-green-400 pl-4 ml-4">
-                <UserCircle className="h-6 w-6" />
-                <span className="font-semibold">{session.user?.name?.split(" ")[0]}</span>
-            </div>
+            <Link href="/profile" className="group flex items-center space-x-3 border-l border-green-400 pl-4 ml-4 hover:opacity-90">
+              <div className="h-8 w-8 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold">
+                {session.user?.name?.charAt(0)?.toUpperCase()}
+              </div>
+              <span className="font-semibold">{session.user?.name?.split(" ")[0]}</span>
+            </Link>
             <Button
               onClick={handleLogout}
               className="bg-destructive hover:bg-destructive/90"
@@ -158,11 +160,21 @@ export default function Navbar() {
                     Menu
                   </SheetTitle>
                 </SheetHeader>
-                <div className="mt-4 flex items-center space-x-2 p-3 rounded-md bg-green-700">
-                    <UserCircle className="h-6 w-6" />
+                <div className="mt-4 flex items-center space-x-3 p-3 rounded-md bg-green-700">
+                    <div className="h-9 w-9 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold">
+                      {session.user?.name?.charAt(0)?.toUpperCase()}
+                    </div>
                     <span className="font-semibold">{session.user?.name}</span>
                 </div>
                 <div className="mt-4 space-y-2">
+                  <Link
+                    href="/profile"
+                    className="flex items-center space-x-2 py-2 px-3 rounded-md hover:bg-primary-foreground/10"
+                    onClick={closeSheet}
+                  >
+                    <UserCircle className="h-5 w-5" />
+                    <span>Profile</span>
+                  </Link>
                   {navItems.map((item) =>
                     item.children ? (
                       <Collapsible key={item.name}>
