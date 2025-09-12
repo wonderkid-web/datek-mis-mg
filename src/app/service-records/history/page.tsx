@@ -214,6 +214,16 @@ export default function ServiceHistoryPage() {
 
   const isAdmin = (session?.user as any)?.role === "administrator";
 
+  const sortedServiceRecords = useMemo(
+    () =>
+      [...serviceRecords].sort(
+        (a, b) =>
+          new Date((b as any).createdAt).getTime() -
+          new Date((a as any).createdAt).getTime()
+      ),
+    [serviceRecords]
+  );
+
   return (
     <>
       {/* Table and actions */}
@@ -238,11 +248,11 @@ export default function ServiceHistoryPage() {
                 )}
                 <ExportActions
                   columns={exportColumns}
-                  data={serviceRecords}
+                  data={sortedServiceRecords}
                   fileName="Service_Record_History"
                 />
               </div>
-              <DataTable columns={columns} data={serviceRecords} />
+              <DataTable columns={columns} data={sortedServiceRecords} />
             </>
           )}
         </CardContent>

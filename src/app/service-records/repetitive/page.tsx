@@ -130,7 +130,7 @@ export default function RepetitiveServicePage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!assetAssignmentId || !reportDate) {
-      toast.warning("Please select an Asset Number and Report Date.");
+      toast.warning("Please select a Serial Number and Report Date.");
       return;
     }
     setIsSubmitting(true);
@@ -259,11 +259,11 @@ export default function RepetitiveServicePage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="assetAssignmentId">Asset Number (Printer)</Label>
+                  <Label htmlFor="assetAssignmentId">Serial Number</Label>
                   <Select
                     options={assetAssignments.map((a) => ({
                       value: a.id.toString(),
-                      label: `${a.nomorAsset}`,
+                      label: `${a.asset?.nomorSeri}`,
                     }))}
                     onChange={(selectedOption) =>
                       handleAssetSelect(selectedOption?.value || "")
@@ -271,12 +271,12 @@ export default function RepetitiveServicePage() {
                     value={
                       assetAssignmentId
                         ? {
-                          value: assetAssignmentId.toString(),
-                          label: `${selectedAssignment?.nomorAsset} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
-                        }
+                            value: assetAssignmentId.toString(),
+                            label: `${selectedAssignment?.asset?.nomorSeri} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
+                          }
                         : null
                     }
-                    placeholder="Select a Printer Asset Number"
+                    placeholder="Select a Serial Number"
                     className="w-full"
                     classNamePrefix="react-select"
                   />

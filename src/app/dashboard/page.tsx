@@ -304,41 +304,19 @@ function DashboardPage() {
                 })
               }
             >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 11 Pro
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 11 Pro 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
-            </div>
-            <div
-              className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
-              onClick={() =>
-                handleCardClick("Windows 10 Pro", {
-                  osValue: "Windows 10 Pro 64 Bit",
-                })
-              }
-            >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 10 Pro
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 10 Pro 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Windows 11 Pro
+                  </CardTitle>
+                  <Monitor className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {getOsTotal("Windows 11 Pro 64 Bit")}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <div
               className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
@@ -348,20 +326,43 @@ function DashboardPage() {
                 })
               }
             >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 11 Home
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 11 Home SL 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Windows 11 Home
+                  </CardTitle>
+                  <Monitor className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {getOsTotal("Windows 11 Home SL 64 Bit")}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+            <div
+              className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+              onClick={() =>
+                handleCardClick("Windows 10 Pro", {
+                  osValue: "Windows 10 Pro 64 Bit",
+                })
+              }
+            >
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Windows 10 Pro
+                  </CardTitle>
+                  <Monitor className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {getOsTotal("Windows 10 Pro 64 Bit")}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <div
               className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
               onClick={() =>
@@ -370,19 +371,19 @@ function DashboardPage() {
                 })
               }
             >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Windows 10 Home
-                </CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {getOsTotal("Windows 10 Home SL 64 Bit")}
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Windows 10 Home
+                  </CardTitle>
+                  <Monitor className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {getOsTotal("Windows 10 Home SL 64 Bit")}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <div
               className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
@@ -390,15 +391,15 @@ function DashboardPage() {
                 handleCardClick("Idle Assets", { idleOnly: true })
               }
             >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Idle Assets</CardTitle>
-                <UserX className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{idleAssets}</div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Idle Assets</CardTitle>
+                  <UserX className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{idleAssets}</div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
