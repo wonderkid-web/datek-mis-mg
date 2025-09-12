@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { formattedDate } from "@/helper";
 import { LaptopSpecs } from "@/lib/types";
 
 interface ViewAssignmentDialogProps {
@@ -105,7 +106,7 @@ export function ViewAssignmentDialog({
                 <TableCell className="font-medium">Purchase Date</TableCell>
                 <TableCell>
                   {asset.tanggalPembelian
-                    ? new Date(asset.tanggalPembelian).toLocaleDateString()
+                    ? formattedDate(asset.tanggalPembelian)
                     : "-"}
                 </TableCell>
               </TableRow>
@@ -113,7 +114,7 @@ export function ViewAssignmentDialog({
                 <TableCell className="font-medium">Warranty Date</TableCell>
                 <TableCell>
                   {asset.tanggalGaransi
-                    ? new Date(asset.tanggalGaransi).toLocaleDateString()
+                    ? formattedDate(asset.tanggalGaransi)
                     : "-"}
                 </TableCell>
               </TableRow>

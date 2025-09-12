@@ -149,4 +149,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Add safe outer spacing on mobile for pages without a Tailwind `container` wrapper.
+     Use margins so we don't override explicit padding utilities on the page. */
+  @media (max-width: 640px) {
+    main > :not(.container) {
+      margin-left: 1rem;  /* ~16px */
+      margin-right: 1rem;
+    }
+  }
 }

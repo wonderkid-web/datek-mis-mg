@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Select from "react-select";
 import { DataTable } from "@/components/ui/data-table";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -55,6 +56,7 @@ export default function RepetitiveServicePage() {
   const [recordToEdit, setRecordToEdit] =
     useState<PrinterRepetitiveMaintenance | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Form state for PrinterRepetitiveMaintenance
   const [reportDate, setReportDate] = useState<string>("");
@@ -103,8 +105,8 @@ export default function RepetitiveServicePage() {
     if (assignment) {
       setAssetDetails(
         `Asset: ${assignment.asset?.namaAsset || "N/A"} - User: ${
-          // @ts-expect-error its okay
-          assignment.user?.namaLengkap || "N/A"
+        // @ts-expect-error its okay
+        assignment.user?.namaLengkap || "N/A"
         }`
       );
     } else {
@@ -199,13 +201,51 @@ export default function RepetitiveServicePage() {
 
   return (
     <>
-      {((session?.user as any)?.role === "administrator") && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Repetitive Maintenance Record</CardTitle>
-          </CardHeader>
-          <CardContent>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Repetitive Maintenance History</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="container mx-auto py-10">
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold">
+                  Repetitive Maintenance History
+                </h1>
+                <Skeleton className="h-10 w-1/3" />
+              </div>
+              <TableSkeleton />
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between mb-4">
+                {(session?.user as any)?.role === "administrator" && (
+                  <Button onClick={() => setIsCreateDialogOpen(true)}>
+                    Create Repetitive
+                  </Button>
+                )}
+                <ExportActions
+                  columns={exportColumns}
+                  data={records}
+                  fileName="Repetitive_Maintenance_Records"
+                />
+              </div>
+              <DataTable columns={columns} data={records} />
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Repetitive Dialog */}
+      {(session?.user as any)?.role === "administrator" && (
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Repetitive Maintenance Record</DialogTitle>
+            </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -219,13 +259,11 @@ export default function RepetitiveServicePage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="assetAssignmentId">
-                    Asset Number (Printer)
-                  </Label>
+                  <Label htmlFor="assetAssignmentId">Asset Number (Printer)</Label>
                   <Select
                     options={assetAssignments.map((a) => ({
                       value: a.id.toString(),
-                      label: `${a.asset?.nomorSeri}`,
+                      label: `${a.nomorAsset}`,
                     }))}
                     onChange={(selectedOption) =>
                       handleAssetSelect(selectedOption?.value || "")
@@ -233,9 +271,9 @@ export default function RepetitiveServicePage() {
                     value={
                       assetAssignmentId
                         ? {
-                            value: assetAssignmentId.toString(),
-                            label: `${selectedAssignment?.nomorAsset} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
-                          }
+                          value: assetAssignmentId.toString(),
+                          label: `${selectedAssignment?.nomorAsset} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
+                        }
                         : null
                     }
                     placeholder="Select a Printer Asset Number"
@@ -254,50 +292,38 @@ export default function RepetitiveServicePage() {
                     <Table>
                       <TableBody>
                         <TableRow>
-                          <TableCell className="font-semibold">
-                            Brand:
-                          </TableCell>
+                          <TableCell className="font-semibold">Brand:</TableCell>
                           <TableCell>
-                            {selectedAssignment.asset?.printerSpecs?.brandOption
-                              ?.value || "N/A"}
+                            {selectedAssignment.asset?.printerSpecs?.brandOption?.value ||
+                              "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">
-                            Brand:
-                          </TableCell>
+                          <TableCell className="font-semibold">Brand:</TableCell>
                           <TableCell>
                             {selectedAssignment.asset?.namaAsset || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">
-                            Serial Number:
-                          </TableCell>
+                          <TableCell className="font-semibold">Serial Number:</TableCell>
                           <TableCell>
                             {selectedAssignment.asset?.nomorSeri || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">
-                            Assigned User:
-                          </TableCell>
+                          <TableCell className="font-semibold">Assigned User:</TableCell>
                           <TableCell>
                             {selectedAssignment.user?.namaLengkap || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">
-                            Department:
-                          </TableCell>
+                          <TableCell className="font-semibold">Department:</TableCell>
                           <TableCell>
                             {selectedAssignment.user?.departemen || "N/A"}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-semibold">
-                            Company:
-                          </TableCell>
+                          <TableCell className="font-semibold">Company:</TableCell>
                           <TableCell>
                             {selectedAssignment.user?.lokasiKantor || "N/A"}
                           </TableCell>
@@ -397,40 +423,9 @@ export default function RepetitiveServicePage() {
                 {isSubmitting ? "Saving..." : "Save Record"}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-      </div>
+          </DialogContent>
+        </Dialog>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Repetitive Maintenance History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="container mx-auto py-10">
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">
-                  Repetitive Maintenance History
-                </h1>
-                <Skeleton className="h-10 w-1/3" />
-              </div>
-              <TableSkeleton />
-            </div>
-          ) : (
-            <>
-              <div className="flex justify-end mb-4">
-                <ExportActions
-                  columns={exportColumns}
-                  data={records}
-                  fileName="Repetitive_Maintenance_Records"
-                />
-              </div>
-              <DataTable columns={columns} data={records} />
-            </>
-          )}
-        </CardContent>
-      </Card>
 
       <DeleteRecordDialog
         open={isDeleteDialogOpen}

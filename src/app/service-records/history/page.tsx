@@ -11,13 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Select,
+  Select as UiSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ReactSelect from "react-select";
 import { DataTable } from "@/components/ui/data-table";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
@@ -98,6 +100,7 @@ export default function ServiceHistoryPage() {
   const [recordToEdit, setRecordToEdit] =
     useState<ServiceRecordWithDetails | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Form state
   const [ticketHelpdesk, setTicketHelpdesk] = useState("");
@@ -213,308 +216,12 @@ export default function ServiceHistoryPage() {
 
   return (
     <>
-      {/* INI FORM  dan ini STATIC */}
-      {isAdmin && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Service Record</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="assetAssignmentId">Asset Number</Label>
-                <Select
-                  onValueChange={handleAssetSelect}
-                  value={assetAssignmentId?.toString() ?? ""}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an Asset Number" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assetAssignments.map((a) => (
-                      <SelectItem key={a.id} value={a.id.toString()}>
-                        {a.nomorAsset}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="ticketHelpdesk">Ticket Helpdesk</Label>
-                <Input
-                  id="ticketHelpdesk"
-                  value={ticketHelpdesk}
-                  onChange={(e) =>
-                    setTicketHelpdesk(e.target.value.toUpperCase())
-                  }
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="repairType">Repair Type</Label>
-                <Select
-                  onValueChange={(value: "SUPPLIER" | "INTERNAL") =>
-                    setRepairType(value)
-                  }
-                  value={repairType}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SUPPLIER">SUPPLIER</SelectItem>
-                    <SelectItem value="INTERNAL">INTERNAL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="cost">Cost</Label>
-                <Input
-                  id="cost"
-                  value={cost}
-                  onChange={handleCostChange}
-                  placeholder="Rp 0"
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="remarks">Remarks</Label>
-                <Textarea
-                  id="remarks"
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value.toUpperCase())}
-                  className="w-full"
-                />
-              </div>
-
-              <Button type="submit" disabled={isSubmitting} className="w-full">
-                {isSubmitting ? "Saving..." : "Save Record"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Asset Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {selectedAssignment ? (
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-semibold">User:</TableCell>
-                    <TableCell>{selectedAssignment.user.namaLengkap}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Department:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.user.departemen ?? "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Company:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.user.lokasiKantor ?? "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Brand:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.brandOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.brandOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Model:</TableCell>
-                    <TableCell>{selectedAssignment.asset.namaAsset}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Serial Number:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.nomorSeri || "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Processor:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.processorOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.processorOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">RAM:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.ramOption?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.ramOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Storage Type:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.storageTypeOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs
-                          ?.storageTypeOption?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Graphic:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.graphicOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.graphicOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Power Adaptor:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.powerOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.powerOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">Color:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.colorOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.colorOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">MAC WLAN:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.macWlan ||
-                        selectedAssignment.asset.intelNucSpecs?.macWlan ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">MAC LAN:</TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.macLan ||
-                        selectedAssignment.asset.intelNucSpecs?.macLan ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Operating System:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.osOption?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.osOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      License Type:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.licenseOption
-                        ?.value ||
-                        selectedAssignment.asset.intelNucSpecs?.licenseOption
-                          ?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      License Key:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs?.licenseKey ||
-                        selectedAssignment.asset.intelNucSpecs?.licenseKey ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Microsoft Office:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.laptopSpecs
-                        ?.microsoftOfficeOption?.value ||
-                        selectedAssignment.asset.intelNucSpecs
-                          ?.microsoftOfficeOption?.value ||
-                        "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Purchase Date:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.tanggalPembelian
-                        ? new Date(
-                            selectedAssignment.asset.tanggalPembelian
-                          ).toLocaleDateString()
-                        : "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Warranty End:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.tanggalGaransi
-                        ? new Date(
-                            selectedAssignment.asset.tanggalGaransi
-                          ).toLocaleDateString()
-                        : "N/A"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-semibold">
-                      Asset Status:
-                    </TableCell>
-                    <TableCell>
-                      {selectedAssignment.asset.statusAsset || "N/A"}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            ) : (
-              <p>Select an asset number to see details.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      )}
-
-      {/* INI Table dan ini Promise */}
+      {/* Table and actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Service Record History</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Service Record History</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -523,7 +230,12 @@ export default function ServiceHistoryPage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-between mb-4">
+                {isAdmin && (
+                  <Button onClick={() => setIsCreateDialogOpen(true)}>
+                    Create Service
+                  </Button>
+                )}
                 <ExportActions
                   columns={exportColumns}
                   data={serviceRecords}
@@ -535,6 +247,160 @@ export default function ServiceHistoryPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Service Dialog */}
+      {isAdmin && (
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Service Record</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 gap-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="assetAssignmentId">Asset Number</Label>
+                  <ReactSelect
+                    instanceId="service-asset-select"
+                    options={assetAssignments.map((a) => ({
+                      value: a.id.toString(),
+                      label: `${a.nomorAsset}`,
+                    }))}
+                    onChange={(opt) => handleAssetSelect(opt?.value || "")}
+                    value={
+                      assetAssignmentId
+                        ? {
+                            value: assetAssignmentId.toString(),
+                            label: `${selectedAssignment?.nomorAsset} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
+                          }
+                        : null
+                    }
+                    placeholder="Select an Asset Number"
+                    className="w-full"
+                    classNamePrefix="react-select"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="ticketHelpdesk">Ticket Helpdesk</Label>
+                  <Input
+                    id="ticketHelpdesk"
+                    value={ticketHelpdesk}
+                    onChange={(e) =>
+                      setTicketHelpdesk(e.target.value.toUpperCase())
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="repairType">Repair Type</Label>
+                  <UiSelect
+                    onValueChange={(value: "SUPPLIER" | "INTERNAL") =>
+                      setRepairType(value)
+                    }
+                    value={repairType}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SUPPLIER">SUPPLIER</SelectItem>
+                      <SelectItem value="INTERNAL">INTERNAL</SelectItem>
+                    </SelectContent>
+                  </UiSelect>
+                </div>
+
+                <div>
+                  <Label htmlFor="cost">Cost</Label>
+                  <Input
+                    id="cost"
+                    value={cost}
+                    onChange={handleCostChange}
+                    placeholder="Rp 0"
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="remarks">Remarks</Label>
+                  <Textarea
+                    id="remarks"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value.toUpperCase())}
+                    className="w-full"
+                  />
+                </div>
+
+                <Button type="submit" disabled={isSubmitting} className="w-full">
+                  {isSubmitting ? "Saving..." : "Save Record"}
+                </Button>
+              </form>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-medium mb-2">Asset Details</h3>
+                {selectedAssignment ? (
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-semibold">User:</TableCell>
+                        <TableCell>{selectedAssignment.user.namaLengkap}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-semibold">Department:</TableCell>
+                        <TableCell>
+                          {selectedAssignment.user.departemen ?? "N/A"}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-semibold">Company:</TableCell>
+                        <TableCell>
+                          {selectedAssignment.user.lokasiKantor ?? "N/A"}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-semibold">Brand:</TableCell>
+                        <TableCell>
+                          {selectedAssignment.asset.laptopSpecs?.brandOption?.value ||
+                            selectedAssignment.asset.intelNucSpecs?.brandOption?.value ||
+                            "N/A"}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-semibold">Model:</TableCell>
+                        <TableCell>{selectedAssignment.asset.namaAsset}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-semibold">Serial Number:</TableCell>
+                        <TableCell>
+                          {selectedAssignment.asset.nomorSeri || "N/A"}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-semibold">Processor:</TableCell>
+                        <TableCell>
+                          {selectedAssignment.asset.laptopSpecs?.processorOption?.value ||
+                            selectedAssignment.asset.intelNucSpecs?.processorOption?.value ||
+                            "N/A"}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-semibold">RAM:</TableCell>
+                        <TableCell>
+                          {selectedAssignment.asset.laptopSpecs?.ramOption?.value ||
+                            selectedAssignment.asset.intelNucSpecs?.ramOption?.value ||
+                            "N/A"}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Select an asset number to see details.</p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <DeleteRecordDialog
         open={isDeleteDialogOpen}

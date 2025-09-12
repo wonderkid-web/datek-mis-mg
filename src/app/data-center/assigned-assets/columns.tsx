@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Inspect from "@/components/Inspect";
+import { formattedDate } from "@/helper";
 
 interface ColumnsProps {
   handleEdit: (assignment: AssetAssignment) => void;
@@ -122,7 +123,7 @@ export const columns = ({
       const purchaseDate = row.original.asset.tanggalPembelian;
       return (
         <p className="text-center">
-          {purchaseDate ? new Date(purchaseDate).toLocaleDateString() : "-"}
+          {purchaseDate ? formattedDate(purchaseDate) : "-"}
         </p>
       );
     },
@@ -143,7 +144,7 @@ export const columns = ({
       if (!warrantyDate) return "-";
 
       const isExpired = new Date(warrantyDate) < new Date();
-      const dateString = new Date(warrantyDate).toLocaleDateString();
+      const dateString = formattedDate(warrantyDate);
 
       return (
         <Badge

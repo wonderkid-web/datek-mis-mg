@@ -6,6 +6,7 @@ import {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
+  PaginationState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -197,22 +198,37 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    autoResetPageIndex: false,
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility: { actions: isAdmin },
+      pagination,
     },
   });
+
+  // Clamp page index when data/pageCount changes (e.g., after filtering or data refresh)
+  React.useEffect(() => {
+    const pageCount = table.getPageCount();
+    if (pagination.pageIndex > 0 && pagination.pageIndex >= pageCount && pageCount > 0) {
+      setPagination((prev) => ({ ...prev, pageIndex: pageCount - 1 }));
+    }
+  }, [pagination.pageIndex, pagination.pageSize, data, table]);
 
   return (
     <div>

@@ -1,12 +1,7 @@
-"use client";
-
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import { Toaster } from "sonner";
-import { Providers } from "./providers";
-import NextAuthProvider from "./providers/next-auth-provider";
-import { usePathname } from "next/navigation";
+import AppShell from "@/components/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,25 +13,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const metadata: Metadata = {
+  title: "Datek | Date Teknis Management System Information",
+  description: "Datek MIS — Internal asset and service record management.",
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = usePathname();
-  const isAuthRoute = pathname === "/login" || pathname?.startsWith("/auth");
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
-      >
-        <NextAuthProvider>
-          <Providers>
-            {!isAuthRoute && <Navbar />}
-            <main className="flex-1 overflow-y-auto">{children}</main>
-            <Toaster  />
-          </Providers>
-        </NextAuthProvider>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
