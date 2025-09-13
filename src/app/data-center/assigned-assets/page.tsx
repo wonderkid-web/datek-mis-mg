@@ -16,7 +16,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExportActions } from "@/components/ExportActions";
 
+
 export default function AssignedAssetsPage() {
+  const [activeTabs, setActiveTabs] = useState<"all-assigned-assets" | "printer-assigned-assets">("all-assigned-assets")
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -202,6 +204,10 @@ export default function AssignedAssetsPage() {
     { header: "Notes", accessorKey: "catatan" },
   ];
 
+  const onValueChange = (val: "all-assigned-assets" | "printer-assigned-assets") => {
+    setActiveTabs(val)
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10">
@@ -230,36 +236,45 @@ export default function AssignedAssetsPage() {
           className="max-w-sm"
         />
       </div>
-      <Tabs defaultValue="all-assigned-assets">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all-assigned-assets">
-            Laptop & Intel NUC Assignments
-          </TabsTrigger>
-          <TabsTrigger value="printer-assigned-assets">
-            Printer Assignments
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="all-assigned-assets">
-          <div className="flex justify-end mb-4">
-            <ExportActions
-              columns={exportColumns}
-              data={filteredAllAssignments}
-              fileName="Laptop_IntelNUC_Assignments"
-            />
+      {/* @ts-expect-error its okay */}
+      <Tabs defaultValue="all-assigned-assets" onValueChange={onValueChange}>
+        <div className="flex justify-between">
+          <TabsList className="mb-4">
+            <TabsTrigger value="all-assigned-assets">
+              Laptop & Intel NUC Assignments
+            </TabsTrigger>
+            <TabsTrigger value="printer-assigned-assets">
+              Printer Assignments
+            </TabsTrigger>
+          </TabsList>
+          <div>
+            {
+              activeTabs == "all-assigned-assets" ?
+                <div className="flex justify-end mb-4">
+                  <ExportActions
+                    columns={exportColumns}
+                    data={filteredAllAssignments}
+                    fileName="Laptop_IntelNUC_Assignments"
+                  />
+                </div>
+                :
+                <div className="flex justify-end mb-4">
+                  <ExportActions
+                    columns={exportColumns}
+                    data={filteredPrinterAssignments}
+                    fileName="Printer_Assignments"
+                  />
+                </div>
+            }
           </div>
+        </div>
+        <TabsContent value="all-assigned-assets">
           <DataTable
             columns={columns({ handleEdit, handleView, handleDelete })}
             data={filteredAllAssignments}
           />
         </TabsContent>
         <TabsContent value="printer-assigned-assets">
-          <div className="flex justify-end mb-4">
-            <ExportActions
-              columns={exportColumns}
-              data={filteredPrinterAssignments}
-              fileName="Printer_Assignments"
-            />
-          </div>
           <DataTable
             columns={columns({ handleEdit, handleView, handleDelete })}
             data={filteredPrinterAssignments}
