@@ -51,6 +51,35 @@ const isValidIPv4 = (ip: string) => {
   return regex.test(ip);
 };
 
+const formatIPv4Input = (raw: string) => {
+  const digits = raw.replace(/\D/g, "").slice(0, 12);
+  const parts: string[] = [];
+  let idx = 0;
+  for (let octetIdx = 0; octetIdx < 4 && idx < digits.length; octetIdx++) {
+    const remainingOctets = 4 - octetIdx;
+    const remainingDigits = digits.length - idx;
+
+    let take = 1;
+    if (remainingOctets === 1) {
+      take = Math.min(3, remainingDigits);
+    } else if (remainingOctets === 2) {
+      const L = Math.max(1, remainingDigits - 3);
+      const U = Math.min(3, remainingDigits - 1);
+      const prefer = (targetLast: number) => {
+        const k = remainingDigits - targetLast;
+        return k >= L && k <= U ? k : null;
+      };
+      take = prefer(2) ?? prefer(3) ?? prefer(1) ?? Math.max(L, Math.min(U, 1));
+    } else {
+      take = Math.min(3, Math.max(1, remainingDigits - (remainingOctets - 1)));
+    }
+
+    parts.push(digits.slice(idx, idx + take));
+    idx += take;
+  }
+  return parts.join(".");
+};
+
 export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [assignments, setAssignments] = useState<AssetAssignment[]>([]);
@@ -146,8 +175,9 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
             <Input
               className="col-span-3 font-mono"
               placeholder="e.g. 192.168.0.10"
+              inputMode="numeric"
               value={ip}
-              onChange={(e) => setIp(e.target.value.trim())}
+              onChange={(e) => setIp(formatIPv4Input(e.target.value))}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -205,4 +235,3 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
     </Dialog>
   );
 }
-
