@@ -34,6 +34,117 @@ export async function getIpAddresses() {
   });
 }
 
+export async function getIpAddressTotal(): Promise<number> {
+  return prisma.ipAddress.count();
+}
+
+export async function getIpAddressBreakdownByLocation() {
+  // Follow the same ISA (Group) merging convention as assets
+  const { ALL_LOCATIONS } = await import("@/lib/constants");
+  const mergedIsaName = "PT Intan Sejati Andalan (Group)";
+  const finalLocations = [
+    ...ALL_LOCATIONS.filter((l) => !l.startsWith("PT Intan Sejati Andalan")),
+    mergedIsaName,
+  ];
+
+  const counts: Record<string, number> = {};
+  finalLocations.forEach((loc) => (counts[loc] = 0));
+
+  const rows = await prisma.ipAddress.findMany({
+    select: { company: true },
+  });
+
+  rows.forEach((r) => {
+    let location = r.company || "Unassigned";
+    if (location.startsWith("PT Intan Sejati Andalan")) {
+      location = mergedIsaName;
+    }
+    if (counts[location] !== undefined) {
+      counts[location] += 1;
+    }
+  });
+
+  return Object.entries(counts).map(([location, total]) => ({ location, total }));
+}
+
+export async function getPaginatedIpAddresses({
+  page = 1,
+  pageSize = 10,
+  q,
+  company,
+  connection,
+  status,
+  role,
+}: {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  company?: string;
+  connection?: "WIFI" | "ETHERNET";
+  status?: "EMPLOYEE" | "GUEST_LAPTOP" | "GUEST_PHONE";
+  role?: "LIST" | "FULL_ACCESS";
+}) {
+  const mergedIsaName = "PT Intan Sejati Andalan (Group)";
+
+  const where: Prisma.IpAddressWhereInput = {};
+
+  if (q && q.trim() !== "") {
+    const keyword = q.trim();
+    where.OR = [
+      { ip: { contains: keyword } },
+      { user: { is: { namaLengkap: { contains: keyword } } } },
+      { company: { contains: keyword } },
+      { assetAssignment: { is: { nomorAsset: { contains: keyword } } } },
+      { assetAssignment: { is: { asset: { is: { namaAsset: { contains: keyword } } } } } },
+      { assetAssignment: { is: { asset: { is: { nomorSeri: { contains: keyword } } } } } },
+    ];
+  }
+
+  if (company) {
+    if (company === mergedIsaName) {
+      // Any of the ISA variants
+      where.company = { startsWith: "PT Intan Sejati Andalan" } as any;
+    } else {
+      where.company = { equals: company } as any;
+    }
+  }
+
+  if (connection) where.connection = connection as any;
+  if (status) where.status = status as any;
+  if (role) where.role = role as any;
+
+  const total = await prisma.ipAddress.count({ where });
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
+  const data = await prisma.ipAddress.findMany({
+    where,
+    include: {
+      user: { select: { id: true, namaLengkap: true, lokasiKantor: true } },
+      assetAssignment: {
+        select: {
+          id: true,
+          nomorAsset: true,
+          asset: {
+            select: {
+              id: true,
+              namaAsset: true,
+              nomorSeri: true,
+              laptopSpecs: { select: { brandOption: { select: { value: true } } } },
+              intelNucSpecs: { select: { brandOption: { select: { value: true } } } },
+              printerSpecs: { select: { brandOption: { select: { value: true } } } },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  });
+
+  return { data, page, pageSize, total, pageCount };
+}
+
 export async function createIpAddress(data: {
   userId: number;
   ip: string;
@@ -129,4 +240,3 @@ export async function updateIpAddress(
 export async function deleteIpAddress(id: number) {
   await prisma.ipAddress.delete({ where: { id } });
 }
-

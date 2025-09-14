@@ -9,16 +9,21 @@ import {
   getOperatingSystemBreakdown,
   getTotalIdleAssets,
 } from "@/lib/assetService";
-import { Package, Laptop, Cpu, Printer, UserX, Monitor } from "lucide-react";
+import { Package, Laptop, Cpu, Printer, UserX, Monitor, Wifi } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AssetsDetailDialog } from "@/components/dialogs/AssetDetailDialog";
+import { IpAddressesDetailDialog } from "@/components/dialogs/IpAddressDetailDialog";
 
 import { getAssetCategories } from "@/lib/assetCategoryService";
+import { getIpAddressTotal, getIpAddressBreakdownByLocation } from "@/lib/ipAddressService";
 
 function DashboardPage() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
   const [dialogFilters, setDialogFilters] = useState({});
+  const [isIpDialogOpen, setIpDialogOpen] = useState(false);
+  const [ipDialogTitle, setIpDialogTitle] = useState("");
+  const [ipDialogFilters, setIpDialogFilters] = useState<Record<string, any>>({});
 
   const { data: assetTotal, isLoading: isLoadingTotal } = useQuery({
     queryKey: ["assetTotal"],
@@ -28,6 +33,16 @@ function DashboardPage() {
   const { data: assetBreakdown, isLoading: isLoadingBreakdown } = useQuery({
     queryKey: ["assetBreakdown"],
     queryFn: getAssetBreakdownByLocation,
+  });
+
+  const { data: ipTotal, isLoading: isLoadingIpTotal } = useQuery({
+    queryKey: ["ipTotal"],
+    queryFn: getIpAddressTotal,
+  });
+
+  const { data: ipBreakdown, isLoading: isLoadingIpBreakdown } = useQuery({
+    queryKey: ["ipBreakdown"],
+    queryFn: getIpAddressBreakdownByLocation,
   });
 
   const { data: osBreakdown, isLoading: isLoadingOs } = useQuery({
@@ -59,6 +74,12 @@ function DashboardPage() {
       .reduce((sum, item) => sum + item.total, 0);
   };
 
+  const handleIpCardClick = (title: string, filters: Record<string, any>) => {
+    setIpDialogTitle(title);
+    setIpDialogFilters(filters);
+    setIpDialogOpen(true);
+  };
+
   const getLocationCategoryTotal = (
     locationData: { name: string; total: number }[],
     categoryName: string
@@ -77,13 +98,20 @@ function DashboardPage() {
     return categories?.find((c) => c.nama === name)?.id;
   };
 
-  const isLoading = isLoadingTotal || isLoadingBreakdown || isLoadingOs || isLoadingIdle || isLoadingCategories;
+  const isLoading = isLoadingTotal || isLoadingBreakdown || isLoadingOs || isLoadingIdle || isLoadingCategories || isLoadingIpTotal || isLoadingIpBreakdown;
+
+  const getIpCountForLocation = (location: string) => {
+    if (!ipBreakdown) return 0;
+    const row = ipBreakdown.find((r) => r.location === location);
+    return row ? row.total : 0;
+  };
 
   if (isLoading) {
     return (
       <div className="container mx-auto py-10">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <Skeleton className="h-24" />
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
@@ -101,7 +129,7 @@ function DashboardPage() {
     <>
       <div className="container mx-auto py-10">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div
             className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
             onClick={() => handleCardClick("All Assets", {})}
@@ -180,6 +208,20 @@ function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+          <div
+            className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+            onClick={() => handleIpCardClick("IP Addresses", {})}
+          >
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total IP Address</CardTitle>
+                <Wifi className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{ipTotal || 0}</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div className="space-y-8">
@@ -188,7 +230,7 @@ function DashboardPage() {
               <h2 className="text-xl font-bold mb-4">
                 {locationData.location}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div
                   className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
                   onClick={() =>
@@ -283,6 +325,20 @@ function DashboardPage() {
                       <div className="text-2xl font-bold">
                         {getLocationCategoryTotal(locationData.data, "Printer")}
                       </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div
+                  className="cursor-pointer hover:ring-2 hover:ring-primary rounded-lg transition-all"
+                  onClick={() => handleIpCardClick(`IP Addresses in ${locationData.location}`, { company: locationData.location })}
+                >
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">IP Addresses</CardTitle>
+                      <Wifi className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{getIpCountForLocation(locationData.location)}</div>
                     </CardContent>
                   </Card>
                 </div>
@@ -409,6 +465,12 @@ function DashboardPage() {
         onOpenChange={setDialogOpen}
         title={dialogTitle}
         filters={dialogFilters}
+      />
+      <IpAddressesDetailDialog
+        isOpen={isIpDialogOpen}
+        onOpenChange={setIpDialogOpen}
+        title={ipDialogTitle}
+        filters={ipDialogFilters}
       />
     </>
   );
