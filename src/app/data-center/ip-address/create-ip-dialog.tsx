@@ -61,13 +61,11 @@ const formatIPv4Input = (raw: string) => {
     if (remainingOctets === 1) {
       take = Math.min(3, remainingDigits);
     } else if (remainingOctets === 2) {
-      const L = Math.max(1, remainingDigits - 3); // leave <=3 for last
-      const U = Math.min(3, remainingDigits - 1); // leave >=1 for last
-      const prefer = (targetLast: number) => {
-        const k = remainingDigits - targetLast;
-        return k >= L && k <= U ? k : null;
-      };
-      take = prefer(2) ?? prefer(3) ?? prefer(1) ?? Math.max(L, Math.min(U, 1));
+      // Prefer stable human-readable splits for last two octets
+      // RD>=6 -> 3+3, RD in [3..5] -> 2+(RD-2), RD<=2 -> 1+(RD-1)
+      if (remainingDigits >= 6) take = 3;
+      else if (remainingDigits >= 3) take = 2;
+      else take = 1;
     } else {
       // 3 or 4 octets left: take as much as possible but leave at least 1 for each remaining
       take = Math.min(3, Math.max(1, remainingDigits - (remainingOctets - 1)));
