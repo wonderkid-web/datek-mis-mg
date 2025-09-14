@@ -153,9 +153,14 @@ export default function AssignedAssetsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this assignment?")) {
-      deleteAssignmentMutation.mutate(id);
-    }
+    toast("Delete this assignment?", {
+      description: "This action cannot be undone.",
+      action: {
+        label: "Delete",
+        onClick: () => deleteAssignmentMutation.mutate(id),
+      },
+      cancel: { label: "Cancel", onClick: () => {return} },
+    });
   };
 
   const isLoading =

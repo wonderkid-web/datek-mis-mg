@@ -7,6 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums for IP Address management
+enum IPConnectionType {
+  WIFI
+  ETHERNET
+}
+
+enum IPStatus {
+  EMPLOYEE
+  GUEST_LAPTOP
+  GUEST_PHONE
+}
+
+enum IPRole {
+  LIST
+  FULL_ACCESS
+}
+
 model User {
   id               Int               @id @default(autoincrement())
   namaLengkap      String            @map("nama_lengkap") @db.VarChar(255)
@@ -22,6 +39,7 @@ model User {
   assetAssignments AssetAssignment[] @relation("UserAssetAssignments")
 
   @@map("users")
+  IpAddress IpAddress[]
 }
 
 model AssetCategory {
@@ -69,6 +87,7 @@ model AssetAssignment {
   @@index([assetId], map: "asset_assignments_assetId_fkey")
   @@index([userId], map: "asset_assignments_userId_fkey")
   @@map("asset_assignments")
+  IpAddress IpAddress[]
 }
 
 model ServiceRecord {
@@ -354,4 +373,25 @@ model PrinterRepetitiveMaintenance {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   catatan      String?
+}
+
+// New model for IP Address management
+model IpAddress {
+  id                 Int               @id @default(autoincrement())
+  userId             Int
+  ip                 String            @unique @map("ip_address") @db.VarChar(15)
+  connection         IPConnectionType
+  status             IPStatus
+  role               IPRole
+  company            String            @db.VarChar(255)
+  assetAssignmentId  Int?
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  user               User              @relation(fields: [userId], references: [id])
+  assetAssignment    AssetAssignment?  @relation(fields: [assetAssignmentId], references: [id])
+
+  @@index([userId], map: "ip_addresses_userId_fkey")
+  @@index([assetAssignmentId], map: "ip_addresses_assetAssignmentId_fkey")
+  @@map("ip_addresses")
 }

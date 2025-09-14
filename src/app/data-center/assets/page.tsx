@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAssetCategories } from "@/lib/assetCategoryService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExportActions } from "@/components/ExportActions";
+import { toast } from "sonner";
 
 export default function AssetsPage() {
   const { data: session } = useSession();
@@ -142,9 +143,17 @@ export default function AssetsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this asset?")) {
-      deleteAssetMutation.mutate(id);
-    }
+    toast("Delete this asset?", {
+      description: "This action cannot be undone.",
+      action: {
+        label: "Delete",
+        onClick: () => deleteAssetMutation.mutate(id),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {return}
+       },
+    });
   };
 
   const isLoading =
