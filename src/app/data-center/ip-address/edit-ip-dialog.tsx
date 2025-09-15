@@ -52,33 +52,36 @@ const isValidIPv4 = (ip: string) => {
 };
 
 const formatIPv4Input = (raw: string) => {
-  const digits = raw.replace(/\D/g, "").slice(0, 12);
-  const parts: string[] = [];
-  let idx = 0;
-  for (let octetIdx = 0; octetIdx < 4 && idx < digits.length; octetIdx++) {
-    const remainingOctets = 4 - octetIdx;
-    const remainingDigits = digits.length - idx;
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  const len = digits.length;
+  if (len <= 3) return digits;
 
-    let take = 1;
-    if (remainingOctets === 1) {
-      take = Math.min(3, remainingDigits);
-    } else if (remainingOctets === 2) {
-      if (remainingDigits >= 6) take = 3;
-      else if (remainingDigits >= 3) take = 2;
-      else take = 1;
-    } else {
-      take = Math.min(3, Math.max(1, remainingDigits - (remainingOctets - 1)));
-    }
+  const A = digits.slice(0, 3);
+  let rest = digits.slice(3);
 
-    parts.push(digits.slice(idx, idx + take));
-    idx += take;
-  }
-  return parts.join(".");
+  let bLen: number;
+  if (rest.length <= 2) bLen = rest.length;
+  else if (rest.length >= 6) bLen = 3;
+  else bLen = 2;
+
+  const B = rest.slice(0, bLen);
+  rest = rest.slice(bLen);
+  if (rest.length === 0) return `${A}.${B}`;
+
+  const cLen = Math.min(2, rest.length);
+  const C = rest.slice(0, cLen);
+  rest = rest.slice(cLen);
+  if (rest.length === 0) return `${A}.${B}.${C}`;
+
+  const D = rest.slice(0, 3);
+  return `${A}.${B}.${C}.${D}`;
 };
 
 export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [assignments, setAssignments] = useState<AssetAssignment[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
 
   const [userId, setUserId] = useState<string | null>(String(item.user?.id));
   const [ip, setIp] = useState(item.ip);
@@ -91,8 +94,13 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
 
   useEffect(() => {
     (async () => {
-      const u = await getUsers();
-      setUsers(u);
+      setLoadingUsers(true);
+      try {
+        const u = await getUsers();
+        setUsers(u);
+      } finally {
+        setLoadingUsers(false);
+      }
     })();
   }, []);
 
@@ -100,10 +108,16 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
     (async () => {
       if (!userId) {
         setAssignments([]);
+        setLoadingAssignments(false);
         return;
       }
-      const all = await getAssignments();
-      setAssignments(all.filter((a) => a.userId.toString() === userId));
+      setLoadingAssignments(true);
+      try {
+        const all = await getAssignments();
+        setAssignments(all.filter((a) => a.userId.toString() === userId));
+      } finally {
+        setLoadingAssignments(false);
+      }
     })();
   }, [userId]);
 
@@ -162,6 +176,8 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
               value={userOptions.find((o) => o.value === userId) || null}
               onChange={(opt) => setUserId(opt ? String(opt.value) : null)}
               placeholder="Select user"
+              isLoading={loadingUsers}
+              loadingMessage={() => "Loading users..."}
               isClearable
               isSearchable
             />
@@ -201,15 +217,19 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
           {showAsset && (
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Asset</Label>
-              <Select
-                className="col-span-3"
-                options={assignmentOptions}
-                value={assignmentOptions.find((o) => o.value === assetAssignmentId) || null}
-                onChange={(opt) => setAssetAssignmentId(opt ? String(opt.value) : null)}
-                placeholder="Select user's asset"
-                isClearable
-                isSearchable
-              />
+            <Select
+              className="col-span-3"
+              options={assignmentOptions}
+              value={assignmentOptions.find((o) => o.value === assetAssignmentId) || null}
+              onChange={(opt) => setAssetAssignmentId(opt ? String(opt.value) : null)}
+              placeholder="Select user's asset"
+              isLoading={loadingAssignments}
+              loadingMessage={() => "Loading assets..."}
+              isClearable
+              isSearchable
+              isDisabled={!userId}
+              noOptionsMessage={() => (loadingAssignments ? " " : "No assets found")}
+            />
             </div>
           )}
           <div className="grid grid-cols-4 items-center gap-4">

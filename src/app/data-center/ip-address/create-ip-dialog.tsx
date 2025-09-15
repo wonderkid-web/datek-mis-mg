@@ -50,36 +50,40 @@ const isValidIPv4 = (ip: string) => {
 };
 
 const formatIPv4Input = (raw: string) => {
-  const digits = raw.replace(/\D/g, "").slice(0, 12);
-  const parts: string[] = [];
-  let idx = 0;
-  for (let octetIdx = 0; octetIdx < 4 && idx < digits.length; octetIdx++) {
-    const remainingOctets = 4 - octetIdx;
-    const remainingDigits = digits.length - idx;
+  // Enforce pattern: AAA.BB/BBB.CC.D/D D D
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  const len = digits.length;
+  if (len <= 3) return digits;
 
-    let take = 1;
-    if (remainingOctets === 1) {
-      take = Math.min(3, remainingDigits);
-    } else if (remainingOctets === 2) {
-      // Prefer stable human-readable splits for last two octets
-      // RD>=6 -> 3+3, RD in [3..5] -> 2+(RD-2), RD<=2 -> 1+(RD-1)
-      if (remainingDigits >= 6) take = 3;
-      else if (remainingDigits >= 3) take = 2;
-      else take = 1;
-    } else {
-      // 3 or 4 octets left: take as much as possible but leave at least 1 for each remaining
-      take = Math.min(3, Math.max(1, remainingDigits - (remainingOctets - 1)));
-    }
+  const A = digits.slice(0, 3);
+  let rest = digits.slice(3);
 
-    parts.push(digits.slice(idx, idx + take));
-    idx += take;
-  }
-  return parts.join(".");
+  // Decide B length: 2 or 3 depending on remaining to allow CC (2) and D (1-3)
+  let bLen: number;
+  if (rest.length <= 2) bLen = rest.length; // partial B
+  else if (rest.length >= 6) bLen = 3; // enough left for CC + D(3)
+  else bLen = 2; // keep room for CC (2) and some for D
+
+  const B = rest.slice(0, bLen);
+  rest = rest.slice(bLen);
+  if (rest.length === 0) return `${A}.${B}`;
+
+  // C must be up to 2 (exactly 2 when enough digits)
+  const cLen = Math.min(2, rest.length);
+  const C = rest.slice(0, cLen);
+  rest = rest.slice(cLen);
+  if (rest.length === 0) return `${A}.${B}.${C}`;
+
+  // D up to 3
+  const D = rest.slice(0, 3);
+  return `${A}.${B}.${C}.${D}`;
 };
 
 export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [assignments, setAssignments] = useState<AssetAssignment[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [ip, setIp] = useState("");
@@ -90,8 +94,13 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
 
   useEffect(() => {
     (async () => {
-      const u = await getUsers();
-      setUsers(u);
+      setLoadingUsers(true);
+      try {
+        const u = await getUsers();
+        setUsers(u);
+      } finally {
+        setLoadingUsers(false);
+      }
     })();
   }, []);
 
@@ -99,10 +108,16 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
     (async () => {
       if (!userId) {
         setAssignments([]);
+        setLoadingAssignments(false);
         return;
       }
-      const all = await getAssignments();
-      setAssignments(all.filter((a) => a.userId.toString() === userId));
+      setLoadingAssignments(true);
+      try {
+        const all = await getAssignments();
+        setAssignments(all.filter((a) => a.userId.toString() === userId));
+      } finally {
+        setLoadingAssignments(false);
+      }
     })();
   }, [userId]);
 
@@ -171,6 +186,8 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
               value={userOptions.find((o) => o.value === userId) || null}
               onChange={(opt) => setUserId(opt ? String(opt.value) : null)}
               placeholder="Select user"
+              isLoading={loadingUsers}
+              loadingMessage={() => "Loading users..."}
               isClearable
               isSearchable
             />
@@ -216,8 +233,12 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
                 value={assignmentOptions.find((o) => o.value === assetAssignmentId) || null}
                 onChange={(opt) => setAssetAssignmentId(opt ? String(opt.value) : null)}
                 placeholder="Select user's asset"
+                isLoading={loadingAssignments}
+                loadingMessage={() => "Loading assets..."}
                 isClearable
                 isSearchable
+                isDisabled={!userId}
+                noOptionsMessage={() => (loadingAssignments ? " " : "No assets found")}
               />
             </div>
           )}

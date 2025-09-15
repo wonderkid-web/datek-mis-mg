@@ -47,27 +47,37 @@ export function AssignAssetDialog({
   const [catatan, setCatatan] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingAssets, setLoadingAssets] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      setUsers(await getUsers());
+      setLoadingUsers(true);
+      setLoadingAssets(true);
+      try {
+        setUsers(await getUsers());
 
-      let fetchedAssets: Asset[] = [];
-      if (currentTab === "all-assets") {
-        const allCategoryIds : number[] = [];
-        if (laptopCategoryId) allCategoryIds.push(laptopCategoryId);
-        if (intelNucCategoryId) allCategoryIds.push(intelNucCategoryId);
-        
-        // Fetch all assets and then filter by categoryId for laptop/intel-nuc
-        const allFetchedAssets = await getAssets();
-        fetchedAssets = allFetchedAssets.filter(asset => allCategoryIds.includes(asset.categoryId));
+        let fetchedAssets: Asset[] = [];
+        if (currentTab === "all-assets") {
+          const allCategoryIds: number[] = [];
+          if (laptopCategoryId) allCategoryIds.push(laptopCategoryId);
+          if (intelNucCategoryId) allCategoryIds.push(intelNucCategoryId);
 
-      } else if (currentTab === "printer-assets") {
-        if (printerCategoryId) {
-          fetchedAssets = await getAssets(printerCategoryId);
+          // Fetch all assets and then filter by categoryId for laptop/intel-nuc
+          const allFetchedAssets = await getAssets();
+          fetchedAssets = allFetchedAssets.filter((asset) =>
+            allCategoryIds.includes(asset.categoryId)
+          );
+        } else if (currentTab === "printer-assets") {
+          if (printerCategoryId) {
+            fetchedAssets = await getAssets(printerCategoryId);
+          }
         }
+        setAssets(fetchedAssets);
+      } finally {
+        setLoadingUsers(false);
+        setLoadingAssets(false);
       }
-      setAssets(fetchedAssets);
     };
     fetchData();
   }, [currentTab, laptopCategoryId, intelNucCategoryId, printerCategoryId]);
@@ -117,6 +127,8 @@ export function AssignAssetDialog({
                 value: asset.id.toString(),
                 label: `${asset.nomorSeri} - ${asset.namaAsset}`,
               }))}
+              isLoading={loadingAssets}
+              loadingMessage={() => "Loading assets..."}
               value={
                 assetId
                   ? {
@@ -141,6 +153,8 @@ export function AssignAssetDialog({
                 value: user.id.toString(),
                 label: `${user.namaLengkap}`,
               }))}
+              isLoading={loadingUsers}
+              loadingMessage={() => "Loading users..."}
               value={
                 userId
                   ? {

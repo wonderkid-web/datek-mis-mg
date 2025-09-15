@@ -40,7 +40,7 @@ import { exportColumns } from "./exportColumns";
 const columns: ColumnDef<Asset>[] = [
   {
     accessorKey: "id",
-    header: "#",
+    header: "No.",
     cell: ({ row, table }) => {
       const { pageIndex, pageSize } = table.getState().pagination;
       return pageIndex * pageSize + row.index + 1;

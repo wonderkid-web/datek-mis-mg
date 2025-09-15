@@ -35,7 +35,7 @@ type Row = {
 const columns: ColumnDef<Row>[] = [
   {
     accessorKey: "id",
-    header: "#",
+    header: "No.",
     cell: ({ row, table }) => {
       const { pageIndex, pageSize } = table.getState().pagination;
       return pageIndex * pageSize + row.index + 1;
