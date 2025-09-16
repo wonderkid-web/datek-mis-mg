@@ -52,6 +52,7 @@ export interface AssetAssignment {
   // Menambahkan relasi yang mungkin di-include
   asset?: Asset;
   user?: User;
+  computerMaintenances?: ComputerMaintenance[];
 }
 
 
@@ -193,4 +194,24 @@ export interface PrinterRepetitiveMaintenance {
   remarks: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ComputerMaintenance {
+  id: number;
+  periode: Date;
+  assetAssignmentId: number;
+  connection: "WIFI" | "ETHERNET";
+  storageSystemC: string | null;
+  storageDataD: string | null;
+  health: string | null;
+  cpuFan: string | null;
+  temperature: number | null;
+  windowsUpdate: Date | null;
+  remarks: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ComputerMaintenanceWithDetails extends ComputerMaintenance {
+  assetAssignment: AssetAssignmentWithDetails;
 }

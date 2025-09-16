@@ -83,6 +83,7 @@ model AssetAssignment {
   asset          Asset           @relation(fields: [assetId], references: [id])
   user           User            @relation("UserAssetAssignments", fields: [userId], references: [id])
   serviceRecords ServiceRecord[]
+  computerMaintenances ComputerMaintenance[]
 
   @@index([assetId], map: "asset_assignments_assetId_fkey")
   @@index([userId], map: "asset_assignments_userId_fkey")
@@ -373,6 +374,27 @@ model PrinterRepetitiveMaintenance {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   catatan      String?
+}
+
+model ComputerMaintenance {
+  id                 Int              @id @default(autoincrement())
+  periode            DateTime
+  assetAssignmentId  Int
+  connection         IPConnectionType
+  storageSystemC     String?
+  storageDataD       String?
+  health             String?
+  cpuFan             String?
+  temperature        Float?
+  windowsUpdate      DateTime?
+  remarks            String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  assetAssignment    AssetAssignment  @relation(fields: [assetAssignmentId], references: [id])
+
+  @@index([assetAssignmentId], map: "computer_maintenances_assetAssignmentId_fkey")
+  @@map("computer_maintenances")
 }
 
 // New model for IP Address management

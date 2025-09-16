@@ -14,6 +14,7 @@ export default function ServiceRecordsLayout({
   const navLinks = [
     { href: '/service-records/history', label: 'Service History' },
     { href: '/service-records/repetitive', label: 'Repetitive Maintenance' },
+    { href: '/service-records/computer-maintenance', label: 'Computer Maintenance' },
     // { href: '/service-records/repetitive-andi', label: 'Repetitive Maintenance Andi' },
   ];
 
