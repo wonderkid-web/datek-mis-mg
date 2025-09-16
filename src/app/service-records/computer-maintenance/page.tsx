@@ -239,17 +239,17 @@ export default function ComputerMaintenancePage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-between mb-4">
-                {isAdmin && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    Create Maintenance
-                  </Button>
-                )}
+              <div className="flex justify-end gap-2 mb-4">
                 <ExportActions
                   columns={exportColumns}
                   data={records}
                   fileName="Computer_Maintenance"
-                />
+                  />
+                  {isAdmin && (
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                      Create Maintenance
+                    </Button>
+                  )}
               </div>
               <DataTable columns={columns} data={records} />
             </>

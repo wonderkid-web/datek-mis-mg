@@ -137,7 +137,7 @@ export default function RepetitiveServicePage() {
     try {
       await createPrinterRepetitiveMaintenance({
         reportDate: new Date(reportDate),
-        catatan: assetAssignments[0].catatan,
+        catatan: selectedAssignment?.catatan || "-",
         assetDetails: assetDetails,
         totalPages: totalPages,
         blackCount: blackCount,
@@ -149,6 +149,7 @@ export default function RepetitiveServicePage() {
       toast.success("Repetitive maintenance record created successfully!");
       resetForm();
       fetchData();
+      setIsCreateDialogOpen(false)
     } catch (error) {
       console.error("Failed to create record:", error);
       toast.error("Failed to save the record.");
@@ -201,7 +202,6 @@ export default function RepetitiveServicePage() {
 
   return (
     <>
-
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -221,17 +221,17 @@ export default function RepetitiveServicePage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-between mb-4">
-                {(session?.user as any)?.role === "administrator" && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    Create Repetitive
-                  </Button>
-                )}
+              <div className="flex justify-end gap-2  mb-4">
                 <ExportActions
                   columns={exportColumns}
                   data={records}
                   fileName="Repetitive_Maintenance_Records"
                 />
+                {(session?.user as any)?.role === "administrator" && (
+                  <Button onClick={() => setIsCreateDialogOpen(true)}>
+                    Create Repetitive
+                  </Button>
+                )}
               </div>
               <DataTable columns={columns} data={records} />
             </>
@@ -271,9 +271,9 @@ export default function RepetitiveServicePage() {
                     value={
                       assetAssignmentId
                         ? {
-                            value: assetAssignmentId.toString(),
-                            label: `${selectedAssignment?.asset?.nomorSeri} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
-                          }
+                          value: assetAssignmentId.toString(),
+                          label: `${selectedAssignment?.asset?.nomorSeri} - ${selectedAssignment?.asset?.namaAsset} (${selectedAssignment?.user?.namaLengkap})`,
+                        }
                         : null
                     }
                     placeholder="Select a Serial Number"

@@ -240,17 +240,17 @@ export default function ServiceHistoryPage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-between mb-4">
-                {isAdmin && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    Create Service
-                  </Button>
-                )}
+              <div className="flex justify-end gap-2 mb-4">
                 <ExportActions
                   columns={exportColumns}
                   data={sortedServiceRecords}
                   fileName="Service_Record_History"
-                />
+                  />
+                  {isAdmin && (
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                      Create Service
+                    </Button>
+                  )}
               </div>
               <DataTable columns={columns} data={sortedServiceRecords} />
             </>

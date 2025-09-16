@@ -3,7 +3,6 @@ import { PrinterRepetitiveMaintenance } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Edit, Trash2 } from "lucide-react";
 import { getNotesPrinter } from "@/lib/printerRepetitiveMaintenanceService";
-import Inspect from "@/components/Inspect";
 import React from "react";
 
 interface ColumnsProps {
