@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useEffect, FormEvent, useMemo } from "react";
+import { useState, useEffect, FormEvent, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -63,6 +63,22 @@ import { ExportActions } from "@/components/ExportActions";
 
 // ... (keep all existing type definitions)
 
+const MONTH_OPTIONS = [
+  { value: "all", label: "All Months" },
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
 const formatRupiah = (amount: number | string): string => {
   if (typeof amount === "string") {
     amount = parseFloat(amount.replace(/[^0-9,-]+/g, "").replace(",", "."));
@@ -101,6 +117,9 @@ export default function ServiceHistoryPage() {
     useState<ServiceRecordWithDetails | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   // Form state
   const [ticketHelpdesk, setTicketHelpdesk] = useState("");
@@ -182,15 +201,15 @@ export default function ServiceHistoryPage() {
     }
   };
 
-  const handleEditClick = (record: ServiceRecordWithDetails) => {
+  const handleEditClick = useCallback((record: ServiceRecordWithDetails) => {
     setRecordToEdit(record);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteClick = (record: ServiceRecordWithDetails) => {
+  const handleDeleteClick = useCallback((record: ServiceRecordWithDetails) => {
     setRecordToDelete(record);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
 
   const handleConfirmDelete = async () => {
     if (!recordToDelete) return;
@@ -209,10 +228,22 @@ export default function ServiceHistoryPage() {
 
   const columns = useMemo(
     () => getColumns({ handleEditClick, handleDeleteClick }),
-    [assetAssignments]
+    [handleEditClick, handleDeleteClick]
   );
 
   const isAdmin = (session?.user as any)?.role === "administrator";
+
+  const availableYears = useMemo(() => {
+    const years = serviceRecords
+      .map((record) => {
+        const date = new Date(record.createdAt);
+        return Number.isNaN(date.getTime()) ? null : date.getFullYear().toString();
+      })
+      .filter((year): year is string => Boolean(year));
+    const unique = Array.from(new Set(years));
+    unique.sort((a, b) => Number(b) - Number(a));
+    return unique;
+  }, [serviceRecords]);
 
   const sortedServiceRecords = useMemo(
     () =>
@@ -223,6 +254,42 @@ export default function ServiceHistoryPage() {
       ),
     [serviceRecords]
   );
+
+  const filteredRecords = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return sortedServiceRecords.filter((record) => {
+      const createdAt = new Date(record.createdAt);
+      if (!Number.isNaN(createdAt.getTime())) {
+        if (selectedYear !== "all" && createdAt.getFullYear().toString() !== selectedYear) {
+          return false;
+        }
+        if (
+          selectedMonth !== "all" &&
+          (createdAt.getMonth() + 1).toString() !== selectedMonth
+        ) {
+          return false;
+        }
+      }
+
+      if (!query) return true;
+
+      const corpus = [
+        record.ticketHelpdesk ?? "",
+        record.repairType ?? "",
+        record.remarks ?? "",
+        record.cost != null ? record.cost.toString() : "",
+        record.assetAssignment?.nomorAsset ?? "",
+        record.assetAssignment?.asset?.namaAsset ?? "",
+        record.assetAssignment?.user?.namaLengkap ?? "",
+        record.assetAssignment?.user?.departemen ?? "",
+        record.assetAssignment?.user?.lokasiKantor ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return corpus.includes(query);
+    });
+  }, [sortedServiceRecords, searchTerm, selectedYear, selectedMonth]);
 
   return (
     <>
@@ -240,19 +307,52 @@ export default function ServiceHistoryPage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-end gap-2 mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <ExportActions
                   columns={exportColumns}
-                  data={sortedServiceRecords}
+                  data={filteredRecords}
                   fileName="Service_Record_History"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    className="w-full sm:w-48"
                   />
+                  <UiSelect value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Years</SelectItem>
+                      {availableYears.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </UiSelect>
+                  <UiSelect value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTH_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </UiSelect>
                   {isAdmin && (
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
                       Create Service
                     </Button>
                   )}
+                </div>
               </div>
-              <DataTable columns={columns} data={sortedServiceRecords} />
+              <DataTable columns={columns} data={filteredRecords} />
             </>
           )}
         </CardContent>

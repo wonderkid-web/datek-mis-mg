@@ -42,6 +42,18 @@ export const getColumns = ({
       },
     },
     {
+      id: "serial number",
+      header: () => <div className="text-center">Serial Number</div>,
+      cell: ({ row }) => {
+        const assetDetails = row.getValue("assetDetails") as string;
+        // Extract NamaAsset from the assetDetails string
+        const re = /S\/N\s*[:：]\s*([A-Za-z0-9-]+)/i;
+        const serialNumber = assetDetails.match(re)?.[1] || null;
+
+        return <div className="text-center">{serialNumber || "-"}</div>;
+      },
+    },
+    {
       accessorKey: "assetDetails",
       header: () => <div className="text-center">Asset Details</div>,
       cell: ({ row }) => {
@@ -49,7 +61,7 @@ export const getColumns = ({
         // Extract NamaAsset from the assetDetails string
         const match = assetDetails.match(/Asset: ([^\-]+)/);
         const namaAsset = match ? match[1].trim() : "N/A";
-        return <div className="text-center">{namaAsset}</div>;
+        return <div className="text-center">{namaAsset || "-"}</div>;
       },
     },
     {

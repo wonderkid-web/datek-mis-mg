@@ -20,6 +20,7 @@ import type { User } from "@prisma/client";
 import type { AssetAssignment } from "@prisma/client";
 import { toast } from "sonner";
 import type { IpAddressRow } from "./columns";
+import { formatMacAddress, isValidMacAddress } from "@/lib/utils";
 
 interface EditIpDialogProps {
   isOpen: boolean;
@@ -91,6 +92,11 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
   const [assetAssignmentId, setAssetAssignmentId] = useState<string | null>(
     item.assetAssignment ? String(item.assetAssignment.id) : null
   );
+  const [macWlan, setMacWlan] = useState<string>(item.macWlan || "");
+
+  useEffect(() => {
+    setMacWlan(item.macWlan || "");
+  }, [item.macWlan]);
 
   useEffect(() => {
     (async () => {
@@ -140,6 +146,15 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
     if (!connection) return toast.error("Connection is required");
     if (!status) return toast.error("Status is required");
     if (!role) return toast.error("Role is required");
+    let formattedMac: string | undefined;
+    if (status !== "EMPLOYEE") {
+      if (!macWlan) return toast.error("MAC WLAN is required for non-employee status");
+      const mac = formatMacAddress(macWlan);
+      if (!isValidMacAddress(mac)) {
+        return toast.error("MAC WLAN must follow the format XX:XX:XX:XX:XX:XX");
+      }
+      formattedMac = mac;
+    }
     try {
       await updateIpAddress(item.id, {
         userId: parseInt(userId),
@@ -148,6 +163,7 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
         status,
         role,
         assetAssignmentId: status === "EMPLOYEE" ? (assetAssignmentId ? parseInt(assetAssignmentId) : null) : null,
+        macWlan: formattedMac,
       });
       toast.success("IP Address updated");
       onSaved();
@@ -159,6 +175,7 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
   };
 
   const showAsset = status === "EMPLOYEE";
+  const showMacInput = status !== null && status !== "EMPLOYEE";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -209,7 +226,14 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
               className="col-span-3"
               options={statusOptions}
               value={status ? statusOptions.find((o) => o.value === status) || null : null}
-              onChange={(opt) => setStatus((opt?.value as Status) || null)}
+              onChange={(opt) => {
+                const nextStatus = (opt?.value as Status) || null;
+                setStatus(nextStatus);
+                if (nextStatus !== "EMPLOYEE") {
+                  setAssetAssignmentId(null);
+                }
+                setMacWlan(nextStatus === "EMPLOYEE" ? "" : item.macWlan || "");
+              }}
               placeholder="Select status"
               isClearable
             />
@@ -230,6 +254,18 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
               isDisabled={!userId}
               noOptionsMessage={() => (loadingAssignments ? " " : "No assets found")}
             />
+            </div>
+          )}
+          {showMacInput && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">MAC WLAN</Label>
+              <Input
+                className="col-span-3 font-mono"
+                placeholder="XX:XX:XX:XX:XX:XX"
+                value={macWlan}
+                onChange={(e) => setMacWlan(formatMacAddress(e.target.value))}
+                maxLength={17}
+              />
             </div>
           )}
           <div className="grid grid-cols-4 items-center gap-4">

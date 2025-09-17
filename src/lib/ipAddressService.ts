@@ -2,6 +2,7 @@
 
 import { prisma } from "./prisma";
 import { Prisma } from "@prisma/client";
+import { formatMacAddress, isValidMacAddress } from "@/lib/utils";
 
 // Types for UI projections
 export type IpAddressWithRelations = Awaited<ReturnType<typeof getIpAddresses>>[number];
@@ -22,8 +23,8 @@ export async function getIpAddresses() {
               namaAsset: true,
               nomorSeri: true,
               categoryId: true,
-              laptopSpecs: { select: { brandOption: { select: { value: true } } } },
-              intelNucSpecs: { select: { brandOption: { select: { value: true } } } },
+              laptopSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
+              intelNucSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
               printerSpecs: { select: { brandOption: { select: { value: true } } } },
             },
           },
@@ -129,8 +130,8 @@ export async function getPaginatedIpAddresses({
               id: true,
               namaAsset: true,
               nomorSeri: true,
-              laptopSpecs: { select: { brandOption: { select: { value: true } } } },
-              intelNucSpecs: { select: { brandOption: { select: { value: true } } } },
+              laptopSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
+              intelNucSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
               printerSpecs: { select: { brandOption: { select: { value: true } } } },
             },
           },
@@ -152,6 +153,7 @@ export async function createIpAddress(data: {
   status: "EMPLOYEE" | "GUEST_LAPTOP" | "GUEST_PHONE";
   role: "LIST" | "FULL_ACCESS";
   assetAssignmentId?: number | null;
+  macWlan?: string | null;
 }) {
   const user = await prisma.user.findUnique({
     where: { id: data.userId },
@@ -161,16 +163,42 @@ export async function createIpAddress(data: {
 
   // Ensure asset assignment belongs to the same user (when provided)
   let assignmentConnect: Prisma.AssetAssignmentWhereUniqueInput | undefined;
+  let macWlanValue: string | null = null;
   if (data.status === "EMPLOYEE" && data.assetAssignmentId) {
     const assignment = await prisma.assetAssignment.findUnique({
       where: { id: data.assetAssignmentId },
-      select: { id: true, userId: true },
+      select: {
+        id: true,
+        userId: true,
+        asset: {
+          select: {
+            laptopSpecs: { select: { macWlan: true } },
+            intelNucSpecs: { select: { macWlan: true } },
+          },
+        },
+      },
     });
     if (!assignment) throw new Error("Asset assignment not found");
     if (assignment.userId !== data.userId) {
       throw new Error("Asset assignment does not belong to the selected user");
     }
     assignmentConnect = { id: assignment.id };
+    macWlanValue =
+      assignment.asset?.laptopSpecs?.macWlan ||
+      assignment.asset?.intelNucSpecs?.macWlan ||
+      null;
+  } else if (data.status === "EMPLOYEE") {
+    // Employee without asset assignment: allow but mac remains null
+    assignmentConnect = undefined;
+  } else {
+    if (!data.macWlan) {
+      throw new Error("MAC WLAN is required for the selected status");
+    }
+    const formattedMac = formatMacAddress(data.macWlan);
+    if (!isValidMacAddress(formattedMac)) {
+      throw new Error("Invalid MAC WLAN format");
+    }
+    macWlanValue = formattedMac;
   }
 
   // If not employee, ignore asset assignment
@@ -182,6 +210,7 @@ export async function createIpAddress(data: {
     company: user.lokasiKantor ?? "",
     user: { connect: { id: data.userId } },
     assetAssignment: assignmentConnect ? { connect: assignmentConnect } : undefined,
+    macWlan: macWlanValue,
   };
 
   return prisma.ipAddress.create({ data: payload });
@@ -196,9 +225,24 @@ export async function updateIpAddress(
     status?: "EMPLOYEE" | "GUEST_LAPTOP" | "GUEST_PHONE";
     role?: "LIST" | "FULL_ACCESS";
     assetAssignmentId?: number | null;
+    macWlan?: string | null;
   }
 ) {
+  const current = await prisma.ipAddress.findUnique({
+    where: { id },
+    select: {
+      status: true,
+      assetAssignmentId: true,
+      userId: true,
+      macWlan: true,
+    },
+  });
+  if (!current) throw new Error("IP address not found");
+
   const update: Prisma.IpAddressUpdateInput = {};
+
+  const finalUserId = data.userId ?? current.userId;
+  const finalStatus = data.status ?? current.status;
 
   if (data.userId !== undefined) {
     const user = await prisma.user.findUnique({
@@ -214,24 +258,83 @@ export async function updateIpAddress(
   if (data.status !== undefined) update.status = data.status as any;
   if (data.role !== undefined) update.role = data.role as any;
 
-  if (data.status && data.status !== "EMPLOYEE") {
-    // Clear asset assignment if no longer employee
+  let macWlanValue: string | null | undefined;
+
+  if (finalStatus !== "EMPLOYEE") {
     update.assetAssignment = { disconnect: true };
-  } else if (data.assetAssignmentId !== undefined) {
-    if (data.assetAssignmentId === null) {
-      update.assetAssignment = { disconnect: true };
-    } else {
-      const assignment = await prisma.assetAssignment.findUnique({
-        where: { id: data.assetAssignmentId },
-        select: { id: true, userId: true },
-      });
-      if (!assignment) throw new Error("Asset assignment not found");
-      // If userId also being updated, ensure ownership matches new user; otherwise, keep current owner check simple
-      if (data.userId !== undefined && assignment.userId !== data.userId) {
-        throw new Error("Asset assignment does not belong to the selected user");
+
+    if (data.macWlan !== undefined) {
+      if (data.macWlan === null || data.macWlan === "") {
+        macWlanValue = null;
+      } else {
+        const formattedMac = formatMacAddress(data.macWlan);
+        if (!isValidMacAddress(formattedMac)) {
+          throw new Error("Invalid MAC WLAN format");
+        }
+        macWlanValue = formattedMac;
       }
-      update.assetAssignment = { connect: { id: assignment.id } };
     }
+  } else {
+    // Employee
+    const targetAssignmentId =
+      data.assetAssignmentId !== undefined
+        ? data.assetAssignmentId
+        : current.assetAssignmentId;
+
+    if (targetAssignmentId !== undefined) {
+      if (targetAssignmentId === null) {
+        update.assetAssignment = { disconnect: true };
+        macWlanValue = null;
+      } else {
+        const assignment = await prisma.assetAssignment.findUnique({
+          where: { id: targetAssignmentId },
+          select: {
+            id: true,
+            userId: true,
+            asset: {
+              select: {
+                laptopSpecs: { select: { macWlan: true } },
+                intelNucSpecs: { select: { macWlan: true } },
+              },
+            },
+          },
+        });
+        if (!assignment) throw new Error("Asset assignment not found");
+        if (assignment.userId !== finalUserId) {
+          throw new Error("Asset assignment does not belong to the selected user");
+        }
+        update.assetAssignment = { connect: { id: assignment.id } };
+        macWlanValue =
+          assignment.asset?.laptopSpecs?.macWlan ||
+          assignment.asset?.intelNucSpecs?.macWlan ||
+          null;
+      }
+    } else if (current.assetAssignmentId) {
+      // Keep existing assignment, but refresh mac from it when user changes
+      const assignment = await prisma.assetAssignment.findUnique({
+        where: { id: current.assetAssignmentId },
+        select: {
+          id: true,
+          userId: true,
+          asset: {
+            select: {
+              laptopSpecs: { select: { macWlan: true } },
+              intelNucSpecs: { select: { macWlan: true } },
+            },
+          },
+        },
+      });
+      if (assignment && assignment.userId === finalUserId) {
+        macWlanValue =
+          assignment.asset?.laptopSpecs?.macWlan ||
+          assignment.asset?.intelNucSpecs?.macWlan ||
+          null;
+      }
+    }
+  }
+
+  if (macWlanValue !== undefined) {
+    update.macWlan = macWlanValue;
   }
 
   return prisma.ipAddress.update({ where: { id }, data: update });

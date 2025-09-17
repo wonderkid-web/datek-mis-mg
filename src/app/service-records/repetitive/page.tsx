@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent, useMemo } from "react";
+import { useState, useEffect, FormEvent, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
@@ -32,6 +32,29 @@ import {
   PrinterRepetitiveMaintenance,
 } from "@/lib/types";
 import { ExportActions } from "@/components/ExportActions";
+import {
+  Select as UiSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const MONTH_OPTIONS = [
+  { value: "all", label: "All Months" },
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
 
 export default function RepetitiveServicePage() {
   const { data: session } = useSession();
@@ -57,6 +80,9 @@ export default function RepetitiveServicePage() {
     useState<PrinterRepetitiveMaintenance | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   // Form state for PrinterRepetitiveMaintenance
   const [reportDate, setReportDate] = useState<string>("");
@@ -95,6 +121,53 @@ export default function RepetitiveServicePage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const availableYears = useMemo(() => {
+    const years = records
+      .map((record) => {
+        const date = new Date(record.reportDate);
+        return Number.isNaN(date.getTime()) ? null : date.getFullYear().toString();
+      })
+      .filter((year): year is string => Boolean(year));
+    const unique = Array.from(new Set(years));
+    unique.sort((a, b) => Number(b) - Number(a));
+    return unique;
+  }, [records]);
+
+  const filteredRecords = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return records.filter((record) => {
+      const date = new Date(record.reportDate);
+      if (!Number.isNaN(date.getTime())) {
+        if (selectedYear !== "all" && date.getFullYear().toString() !== selectedYear) {
+          return false;
+        }
+        if (
+          selectedMonth !== "all" &&
+          (date.getMonth() + 1).toString() !== selectedMonth
+        ) {
+          return false;
+        }
+      }
+
+      if (!query) return true;
+
+      const corpus = [
+        record.assetDetails ?? "",
+        record.catatan ?? "",
+        record.remarks ?? "",
+        record.totalPages != null ? record.totalPages.toString() : "",
+        record.blackCount != null ? record.blackCount.toString() : "",
+        record.yellowCount != null ? record.yellowCount.toString() : "",
+        record.magentaCount != null ? record.magentaCount.toString() : "",
+        record.cyanCount != null ? record.cyanCount.toString() : "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return corpus.includes(query);
+    });
+  }, [records, searchTerm, selectedYear, selectedMonth]);
 
   const handleAssetSelect = (assignmentIdStr: string) => {
     const id = parseInt(assignmentIdStr, 10);
@@ -158,15 +231,15 @@ export default function RepetitiveServicePage() {
     }
   };
 
-  const handleEditClick = (record: PrinterRepetitiveMaintenance) => {
+  const handleEditClick = useCallback((record: PrinterRepetitiveMaintenance) => {
     setRecordToEdit(record);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteClick = (record: PrinterRepetitiveMaintenance) => {
+  const handleDeleteClick = useCallback((record: PrinterRepetitiveMaintenance) => {
     setRecordToDelete(record);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
 
   const handleConfirmDelete = async () => {
     if (!recordToDelete) return;
@@ -185,7 +258,7 @@ export default function RepetitiveServicePage() {
 
   const columns = useMemo(
     () => getColumns({ handleEditClick, handleDeleteClick }),
-    [assetAssignments] // Dependency array, re-create columns if assetAssignments change
+    [handleEditClick, handleDeleteClick]
   );
 
   const exportColumns = [
@@ -221,19 +294,52 @@ export default function RepetitiveServicePage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-end gap-2  mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <ExportActions
                   columns={exportColumns}
-                  data={records}
+                  data={filteredRecords}
                   fileName="Repetitive_Maintenance_Records"
                 />
-                {(session?.user as any)?.role === "administrator" && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    Create Repetitive
-                  </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    className="w-full sm:w-48"
+                  />
+                  <UiSelect value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Years</SelectItem>
+                      {availableYears.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </UiSelect>
+                  <UiSelect value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTH_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </UiSelect>
+                  {(session?.user as any)?.role === "administrator" && (
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                      Create Repetitive
+                    </Button>
+                  )}
+                </div>
               </div>
-              <DataTable columns={columns} data={records} />
+              <DataTable columns={columns} data={filteredRecords} />
             </>
           )}
         </CardContent>

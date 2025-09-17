@@ -37,9 +37,9 @@ model User {
   password         String?           @db.VarChar(100)
   role             String?           @db.VarChar(15)
   assetAssignments AssetAssignment[] @relation("UserAssetAssignments")
+  IpAddress        IpAddress[]
 
   @@map("users")
-  IpAddress IpAddress[]
 }
 
 model AssetCategory {
@@ -73,22 +73,22 @@ model Asset {
 }
 
 model AssetAssignment {
-  id             Int             @id @default(autoincrement())
-  assetId        Int
-  userId         Int
-  catatan        String?         @db.Text
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  nomorAsset     String          @unique @map("nomor_asset") @db.VarChar(50)
-  asset          Asset           @relation(fields: [assetId], references: [id])
-  user           User            @relation("UserAssetAssignments", fields: [userId], references: [id])
-  serviceRecords ServiceRecord[]
+  id                   Int                   @id @default(autoincrement())
+  assetId              Int
+  userId               Int
+  catatan              String?               @db.Text
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  nomorAsset           String                @unique @map("nomor_asset") @db.VarChar(50)
+  asset                Asset                 @relation(fields: [assetId], references: [id])
+  user                 User                  @relation("UserAssetAssignments", fields: [userId], references: [id])
+  serviceRecords       ServiceRecord[]
   computerMaintenances ComputerMaintenance[]
+  IpAddress            IpAddress[]
 
   @@index([assetId], map: "asset_assignments_assetId_fkey")
   @@index([userId], map: "asset_assignments_userId_fkey")
   @@map("asset_assignments")
-  IpAddress IpAddress[]
 }
 
 model ServiceRecord {
@@ -377,21 +377,21 @@ model PrinterRepetitiveMaintenance {
 }
 
 model ComputerMaintenance {
-  id                 Int              @id @default(autoincrement())
-  periode            DateTime
-  assetAssignmentId  Int
-  connection         IPConnectionType
-  storageSystemC     String?
-  storageDataD       String?
-  health             String?
-  cpuFan             String?
-  temperature        Float?
-  windowsUpdate      DateTime?
-  remarks            String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  id                Int              @id @default(autoincrement())
+  periode           DateTime
+  assetAssignmentId Int
+  connection        IPConnectionType
+  storageSystemC    String?
+  storageDataD      String?
+  health            String?
+  cpuFan            String?
+  temperature       Float?
+  windowsUpdate     DateTime?
+  remarks           String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  assetAssignment    AssetAssignment  @relation(fields: [assetAssignmentId], references: [id])
+  assetAssignment AssetAssignment @relation(fields: [assetAssignmentId], references: [id])
 
   @@index([assetAssignmentId], map: "computer_maintenances_assetAssignmentId_fkey")
   @@map("computer_maintenances")
@@ -399,19 +399,20 @@ model ComputerMaintenance {
 
 // New model for IP Address management
 model IpAddress {
-  id                 Int               @id @default(autoincrement())
-  userId             Int
-  ip                 String            @unique @map("ip_address") @db.VarChar(15)
-  connection         IPConnectionType
-  status             IPStatus
-  role               IPRole
-  company            String            @db.VarChar(255)
-  assetAssignmentId  Int?
-  createdAt          DateTime          @default(now()) @map("created_at")
-  updatedAt          DateTime          @updatedAt @map("updated_at")
+  id                Int              @id @default(autoincrement())
+  userId            Int
+  ip                String           @unique @map("ip_address") @db.VarChar(15)
+  connection        IPConnectionType
+  status            IPStatus
+  role              IPRole
+  company           String           @db.VarChar(255)
+  assetAssignmentId Int?
+  macWlan           String?          @map("mac_wlan") @db.VarChar(17) @default("0.0.0.0.0.0")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
 
-  user               User              @relation(fields: [userId], references: [id])
-  assetAssignment    AssetAssignment?  @relation(fields: [assetAssignmentId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
+  assetAssignment AssetAssignment? @relation(fields: [assetAssignmentId], references: [id])
 
   @@index([userId], map: "ip_addresses_userId_fkey")
   @@index([assetAssignmentId], map: "ip_addresses_assetAssignmentId_fkey")

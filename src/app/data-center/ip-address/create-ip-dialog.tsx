@@ -19,6 +19,7 @@ import { createIpAddress } from "@/lib/ipAddressService";
 import type { User } from "@prisma/client";
 import type { AssetAssignment } from "@prisma/client";
 import { toast } from "sonner";
+import { formatMacAddress, isValidMacAddress } from "@/lib/utils";
 
 interface CreateIpDialogProps {
   isOpen: boolean;
@@ -91,6 +92,7 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
   const [status, setStatus] = useState<Status | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [assetAssignmentId, setAssetAssignmentId] = useState<string | null>(null);
+  const [macWlan, setMacWlan] = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -141,6 +143,7 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
     setStatus(null);
     setRole(null);
     setAssetAssignmentId(null);
+    setMacWlan("");
   };
 
   const handleSave = async () => {
@@ -149,6 +152,14 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
     if (!connection) return toast.error("Connection is required");
     if (!status) return toast.error("Status is required");
     if (!role) return toast.error("Role is required");
+    let formattedMac: string | null = null;
+    if (status !== "EMPLOYEE") {
+      if (!macWlan) return toast.error("MAC WLAN is required for non-employee status");
+      formattedMac = formatMacAddress(macWlan);
+      if (!isValidMacAddress(formattedMac)) {
+        return toast.error("MAC WLAN must follow the format XX:XX:XX:XX:XX:XX");
+      }
+    }
     try {
       await createIpAddress({
         userId: parseInt(userId),
@@ -157,6 +168,7 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
         status,
         role,
         assetAssignmentId: status === "EMPLOYEE" ? (assetAssignmentId ? parseInt(assetAssignmentId) : null) : null,
+        macWlan: formattedMac,
       });
       toast.success("IP Address created");
       reset();
@@ -169,6 +181,7 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
   };
 
   const showAsset = status === "EMPLOYEE";
+  const showMacInput = status !== null && status !== "EMPLOYEE";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -219,7 +232,14 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
               className="col-span-3"
               options={statusOptions}
               value={status ? statusOptions.find((o) => o.value === status) || null : null}
-              onChange={(opt) => setStatus((opt?.value as Status) || null)}
+              onChange={(opt) => {
+                const nextStatus = (opt?.value as Status) || null;
+                setStatus(nextStatus);
+                if (nextStatus !== "EMPLOYEE") {
+                  setAssetAssignmentId(null);
+                }
+                setMacWlan("");
+              }}
               placeholder="Select status"
               isClearable
             />
@@ -239,6 +259,18 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
                 isSearchable
                 isDisabled={!userId}
                 noOptionsMessage={() => (loadingAssignments ? " " : "No assets found")}
+              />
+            </div>
+          )}
+          {showMacInput && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">MAC WLAN</Label>
+              <Input
+                className="col-span-3 font-mono"
+                placeholder="XX:XX:XX:XX:XX:XX"
+                value={macWlan}
+                onChange={(e) => setMacWlan(formatMacAddress(e.target.value))}
+                maxLength={17}
               />
             </div>
           )}

@@ -7,6 +7,7 @@ import { ArrowUpDown, Eye, Pencil, Trash } from "lucide-react";
 export interface IpAddressRow {
   id: number;
   ip: string;
+  macWlan: string | null;
   connection: "WIFI" | "ETHERNET";
   status: "EMPLOYEE" | "GUEST_LAPTOP" | "GUEST_PHONE";
   role: "LIST" | "FULL_ACCESS";
@@ -19,8 +20,8 @@ export interface IpAddressRow {
       id: number;
       namaAsset: string;
       nomorSeri: string;
-      laptopSpecs?: { brandOption?: { value: string } | null } | null;
-      intelNucSpecs?: { brandOption?: { value: string } | null } | null;
+      laptopSpecs?: { brandOption?: { value: string } | null; macWlan: string | null } | null;
+      intelNucSpecs?: { brandOption?: { value: string } | null; macWlan: string | null } | null;
       printerSpecs?: { brandOption?: { value: string } | null } | null;
     } | null;
   } | null;
@@ -72,6 +73,31 @@ export const columns = ({ onView, onEdit, onDelete }: ColumnsProps): ColumnDef<I
       </Button>
     ),
     cell: ({ row }) => <p className="text-center font-mono">{row.original.ip}</p>,
+  },
+  {
+    accessorKey: "macWlan",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="mx-auto"
+      >
+        Mac WLAN
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const { status, macWlan, assetAssignment } = row.original;
+      const assetMac =
+        assetAssignment?.asset?.laptopSpecs?.macWlan ||
+        assetAssignment?.asset?.intelNucSpecs?.macWlan ||
+        null;
+      const value =
+        status === "EMPLOYEE"
+          ? assetMac || macWlan || "-"
+          : macWlan || "-";
+      return <p className="text-center font-mono">{value}</p>;
+    },
   },
   {
     accessorKey: "connection",
@@ -129,4 +155,3 @@ export const columns = ({ onView, onEdit, onDelete }: ColumnsProps): ColumnDef<I
     },
   },
 ];
-

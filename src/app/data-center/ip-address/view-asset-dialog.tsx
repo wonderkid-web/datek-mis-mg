@@ -25,6 +25,12 @@ export function ViewAssetDialog({ isOpen, onClose, item }: ViewAssetDialogProps)
           <DialogTitle>Asset Details</DialogTitle>
           <DialogDescription>Asset terkait IP Address</DialogDescription>
         </DialogHeader>
+        {item?.status !== "EMPLOYEE" && (
+          <div className="grid grid-cols-3 items-center gap-2 mb-4">
+            <Label>MAC WLAN</Label>
+            <div className="col-span-2 font-mono">{item?.macWlan || "-"}</div>
+          </div>
+        )}
         {a ? (
           <div className="grid gap-3 py-2">
             <div className="grid grid-cols-3 items-center gap-2">
@@ -51,4 +57,3 @@ export function ViewAssetDialog({ isOpen, onClose, item }: ViewAssetDialogProps)
     </Dialog>
   );
 }
-

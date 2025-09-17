@@ -32,9 +32,32 @@ import {
   ComputerMaintenanceWithDetails,
 } from "@/lib/types";
 import { ExportActions } from "@/components/ExportActions";
+import {
+  Select as UiSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getColumns } from "./columns";
 import { DeleteRecordDialog } from "./delete-record-dialog";
 import { EditRecordDialog } from "./edit-record-dialog";
+
+const MONTH_OPTIONS = [
+  { value: "all", label: "All Months" },
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
 
 const connectionOptions = [
   { value: "WIFI", label: "WIFI" },
@@ -77,6 +100,9 @@ export default function ComputerMaintenancePage() {
   const [recordToDelete, setRecordToDelete] =
     useState<ComputerMaintenanceWithDetails | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   // Form state
   const [periode, setPeriode] = useState<string>("");
@@ -220,6 +246,55 @@ export default function ComputerMaintenancePage() {
     [handleEditClick, handleDeleteClick]
   );
 
+  const availableYears = useMemo(() => {
+    const years = records
+      .map((record) => {
+        const date = new Date(record.periode);
+        return Number.isNaN(date.getTime()) ? null : date.getFullYear().toString();
+      })
+      .filter((year): year is string => Boolean(year));
+    const unique = Array.from(new Set(years));
+    unique.sort((a, b) => Number(b) - Number(a));
+    return unique;
+  }, [records]);
+
+  const filteredRecords = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return records.filter((record) => {
+      const period = new Date(record.periode);
+      if (!Number.isNaN(period.getTime())) {
+        if (selectedYear !== "all" && period.getFullYear().toString() !== selectedYear) {
+          return false;
+        }
+        if (
+          selectedMonth !== "all" &&
+          (period.getMonth() + 1).toString() !== selectedMonth
+        ) {
+          return false;
+        }
+      }
+
+      if (!query) return true;
+
+      const corpus = [
+        record.assetAssignment?.nomorAsset ?? "",
+        record.assetAssignment?.user?.namaLengkap ?? "",
+        record.assetAssignment?.asset?.namaAsset ?? "",
+        record.connection ?? "",
+        record.storageSystemC ?? "",
+        record.storageDataD ?? "",
+        record.health ?? "",
+        record.cpuFan ?? "",
+        record.temperature != null ? record.temperature.toString() : "",
+        record.remarks ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return corpus.includes(query);
+    });
+  }, [records, searchTerm, selectedYear, selectedMonth]);
+
   return (
     <>
       <Card>
@@ -239,19 +314,52 @@ export default function ComputerMaintenancePage() {
             </div>
           ) : (
             <>
-              <div className="flex justify-end gap-2 mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <ExportActions
                   columns={exportColumns}
-                  data={records}
+                  data={filteredRecords}
                   fileName="Computer_Maintenance"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    className="w-full sm:w-48"
                   />
+                  <UiSelect value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Years</SelectItem>
+                      {availableYears.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </UiSelect>
+                  <UiSelect value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTH_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </UiSelect>
                   {isAdmin && (
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
                       Create Maintenance
                     </Button>
                   )}
+                </div>
               </div>
-              <DataTable columns={columns} data={records} />
+              <DataTable columns={columns} data={filteredRecords} />
             </>
           )}
         </CardContent>

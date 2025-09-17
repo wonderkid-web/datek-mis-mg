@@ -60,6 +60,12 @@ export default function IpAddressPage() {
         return (data || []).filter((row) => {
             const inUser = row.user?.namaLengkap?.toLowerCase().includes(s);
             const inIp = row.ip.toLowerCase().includes(s);
+            const macSource =
+                row.macWlan ||
+                row.assetAssignment?.asset?.laptopSpecs?.macWlan ||
+                row.assetAssignment?.asset?.intelNucSpecs?.macWlan ||
+                "";
+            const inMac = macSource.toLowerCase().includes(s);
             const inConn = row.connection.toLowerCase().includes(s);
             const inRole = row.role.toLowerCase().includes(s);
             const inStatus = row.status.toLowerCase().includes(s);
@@ -73,13 +79,14 @@ export default function IpAddressPage() {
                 .join(" ")
                 .toLowerCase();
             const inAsset = assetLabel.includes(s);
-            return inUser || inIp || inConn || inRole || inStatus || inCompany || inAsset;
+            return inUser || inIp || inMac || inConn || inRole || inStatus || inCompany || inAsset;
         });
     }, [data, search]);
 
     const exportColumns = [
         { header: "User", accessorKey: "user.namaLengkap" },
         { header: "IP Address", accessorKey: "ip" },
+        { header: "MAC WLAN", accessorKey: "macWlan" },
         { header: "Connection", accessorKey: "connection" },
         { header: "Role", accessorKey: "role" },
         { header: "Status", accessorKey: "status" },
@@ -93,7 +100,7 @@ export default function IpAddressPage() {
         return (
             <div className="container mx-auto py-10">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold">IP Address</h1>
+                    <h1 className="text-3xl font-bold">IP Address Users</h1>
                     <Skeleton className="h-10 w-1/3" />
                 </div>
                 <TableSkeleton />
@@ -104,7 +111,7 @@ export default function IpAddressPage() {
     return (
         <div className="container mx-auto py-10">
             <h1 className="text-3xl font-bold mb-6">
-                IP Address {isRefetching && <span className="text-sm text-gray-500">(Updating...)</span>}
+                IP Address Users {isRefetching && <span className="text-sm text-gray-500">(Updating...)</span>}
             </h1>
             <div className="flex items-center justify-between mb-4">
                 <Input
@@ -116,7 +123,7 @@ export default function IpAddressPage() {
                 <div className="flex items-center gap-2">
                     <ExportActions columns={exportColumns} data={filtered} fileName="IP_Addresses" />
                     {isAdmin && (
-                        <Button onClick={() => setOpenCreate(true)}>Create IP Address</Button>
+                        <Button onClick={() => setOpenCreate(true)}>Create IP Address Users</Button>
                     )}
                 </div>
             </div>
