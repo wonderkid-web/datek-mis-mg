@@ -21,6 +21,7 @@ import { navigationItems } from "@/lib/navigation";
 import { Skeleton } from "./ui/skeleton";
 import logo from "../../public/logo.png"
 import Image from "next/image";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -84,6 +85,7 @@ export default function Navbar() {
         {/* Desktop Menu */}
         {status === "authenticated" && (
           <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle className="text-primary-foreground hover:bg-primary/90" />
             {navItems.map((item) =>
               item.children ? (
                 <div
@@ -170,6 +172,10 @@ export default function Navbar() {
                     {session.user?.name?.charAt(0)?.toUpperCase()}
                   </div>
                   <span className="font-semibold">{session.user?.name}</span>
+                </div>
+                <div className="mt-4 flex items-center justify-between rounded-md border border-primary-foreground/20 px-3 py-2">
+                  <span className="text-sm">Tema</span>
+                  <ThemeToggle variant="outline" className="border-white/40 text-white hover:bg-white/10" />
                 </div>
                 <div className="mt-4 space-y-2">
                   <Link

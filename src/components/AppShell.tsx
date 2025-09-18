@@ -9,15 +9,16 @@ import { usePathname } from "next/navigation";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthRoute = pathname === "/login" || pathname?.startsWith("/auth");
+  const isLandingPage = pathname === "/";
+  const hideNavbar = isAuthRoute || isLandingPage;
 
   return (
     <NextAuthProvider>
       <Providers>
-        {!isAuthRoute && <Navbar />}
+        {!hideNavbar && <Navbar />}
         <main className="flex-1 overflow-y-auto">{children}</main>
         <Toaster />
       </Providers>
     </NextAuthProvider>
   );
 }
-
