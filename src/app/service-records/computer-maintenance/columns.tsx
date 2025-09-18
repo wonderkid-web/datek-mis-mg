@@ -70,13 +70,13 @@ export const getColumns = ({
         </div>
       ),
     },
-    {
-      accessorKey: "connection",
-      header: () => <div className="text-center">Connection</div>,
-      cell: ({ row }) => (
-        <div className="text-center">{row.getValue("connection") as string}</div>
-      ),
-    },
+    // {
+    //   accessorKey: "connection",
+    //   header: () => <div className="text-center">Connection</div>,
+    //   cell: ({ row }) => (
+    //     <div className="text-center">{row.getValue("connection") as string}</div>
+    //   ),
+    // },
     {
       accessorKey: "storageSystemC",
       header: () => <div className="text-center">Storage C</div>,
@@ -195,7 +195,10 @@ export const getColumns = ({
     },
     {
       id: "actions",
-      header: () => <div className="text-center">Actions</div>,
+      header: () => <div className="text-center ">Actions</div>,
+      // @ts-expect-error its working actually
+      headerClassName: "sticky right-0 z-20 bg-white border-l border-slate-200",
+      cellClassName: "sticky right-0 bg-white border-l border-slate-200",
       cell: ({ row }) => {
         const record = row.original;
         return (

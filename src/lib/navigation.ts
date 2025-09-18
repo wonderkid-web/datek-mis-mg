@@ -60,7 +60,7 @@ export const navigationItems: NavigationItem[] = [
     children: [
       { name: "Data Assets", href: "/data-center/assets" },
       { name: "Assigned Assets", href: "/data-center/assigned-assets" },
-      { name: "IP Address", href: "/data-center/ip-address" },
+      { name: "IP Address Users", href: "/data-center/ip-address" },
     ],
   },
   {

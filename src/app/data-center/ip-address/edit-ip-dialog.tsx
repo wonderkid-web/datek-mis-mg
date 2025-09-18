@@ -47,35 +47,28 @@ const roleOptions = [
   { value: "FULL_ACCESS", label: "Full Access" },
 ];
 
-const isValidIPv4 = (ip: string) => {
-  const regex = /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
-  return regex.test(ip);
+const DEFAULT_IP_PREFIX = "192.168";
+const sanitizeOctetInput = (value: string) => value.replace(/[^0-9]/g, "").slice(0, 3);
+const parseOctet = (value: string) => {
+  if (value.trim() === "") return null;
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric >= 0 && numeric <= 255 ? numeric : null;
 };
-
-const formatIPv4Input = (raw: string) => {
-  const digits = raw.replace(/\D/g, "").slice(0, 11);
-  const len = digits.length;
-  if (len <= 3) return digits;
-
-  const A = digits.slice(0, 3);
-  let rest = digits.slice(3);
-
-  let bLen: number;
-  if (rest.length <= 2) bLen = rest.length;
-  else if (rest.length >= 6) bLen = 3;
-  else bLen = 2;
-
-  const B = rest.slice(0, bLen);
-  rest = rest.slice(bLen);
-  if (rest.length === 0) return `${A}.${B}`;
-
-  const cLen = Math.min(2, rest.length);
-  const C = rest.slice(0, cLen);
-  rest = rest.slice(cLen);
-  if (rest.length === 0) return `${A}.${B}.${C}`;
-
-  const D = rest.slice(0, 3);
-  return `${A}.${B}.${C}.${D}`;
+const splitIp = (ip?: string | null) => {
+  if (!ip) {
+    return { prefix: DEFAULT_IP_PREFIX, third: "", fourth: "" };
+  }
+  const parts = ip.split(".");
+  if (parts.length < 4) {
+    return { prefix: DEFAULT_IP_PREFIX, third: "", fourth: "" };
+  }
+  const thirdRaw = sanitizeOctetInput(parts[2] ?? "");
+  const fourthRaw = sanitizeOctetInput(parts[3] ?? "");
+  return {
+    prefix: `${parts[0]}.${parts[1]}`,
+    third: thirdRaw === "" ? "" : String(Number(thirdRaw)),
+    fourth: fourthRaw === "" ? "" : String(Number(fourthRaw)),
+  };
 };
 
 export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogProps) {
@@ -84,8 +77,11 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
 
+  const initialIpParts = splitIp(item.ip);
   const [userId, setUserId] = useState<string | null>(String(item.user?.id));
-  const [ip, setIp] = useState(item.ip);
+  const [ipPrefix, setIpPrefix] = useState(initialIpParts.prefix);
+  const [ipPart3, setIpPart3] = useState(initialIpParts.third);
+  const [ipPart4, setIpPart4] = useState(initialIpParts.fourth);
   const [connection, setConnection] = useState<Connection | null>(item.connection);
   const [status, setStatus] = useState<Status | null>(item.status);
   const [role, setRole] = useState<Role | null>(item.role);
@@ -97,6 +93,13 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
   useEffect(() => {
     setMacWlan(item.macWlan || "");
   }, [item.macWlan]);
+
+  useEffect(() => {
+    const { prefix, third, fourth } = splitIp(item.ip);
+    setIpPrefix(prefix);
+    setIpPart3(third);
+    setIpPart4(fourth);
+  }, [item.ip]);
 
   useEffect(() => {
     (async () => {
@@ -142,7 +145,12 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
 
   const handleSave = async () => {
     if (!userId) return toast.error("User is required");
-    if (!ip || !isValidIPv4(ip)) return toast.error("Invalid IPv4 address");
+    const octet3 = parseOctet(ipPart3);
+    const octet4 = parseOctet(ipPart4);
+    if (octet3 === null || octet4 === null) {
+      return toast.error("IP Address must have valid values (0-255) for the last two segments");
+    }
+    const ip = `${ipPrefix}.${octet3}.${octet4}`;
     if (!connection) return toast.error("Connection is required");
     if (!status) return toast.error("Status is required");
     if (!role) return toast.error("Role is required");
@@ -201,13 +209,26 @@ export function EditIpDialog({ isOpen, onClose, onSaved, item }: EditIpDialogPro
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">IP Address</Label>
-            <Input
-              className="col-span-3 font-mono"
-              placeholder="e.g. 192.168.0.10"
-              inputMode="numeric"
-              value={ip}
-              onChange={(e) => setIp(formatIPv4Input(e.target.value))}
-            />
+            <div className="col-span-3 flex items-center gap-1">
+              <span className="font-mono text-sm text-muted-foreground">{ipPrefix}.</span>
+              <Input
+                className="w-20 font-mono"
+                placeholder="0"
+                inputMode="numeric"
+                value={ipPart3}
+                onChange={(e) => setIpPart3(sanitizeOctetInput(e.target.value))}
+                maxLength={3}
+              />
+              <span className="font-mono text-sm text-muted-foreground">.</span>
+              <Input
+                className="w-20 font-mono"
+                placeholder="0"
+                inputMode="numeric"
+                value={ipPart4}
+                onChange={(e) => setIpPart4(sanitizeOctetInput(e.target.value))}
+                maxLength={3}
+              />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Connection</Label>

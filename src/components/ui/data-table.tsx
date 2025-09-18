@@ -238,9 +238,15 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="bg-gray-200">
                 {headerGroup.headers.map((header) => {
-                  const headerClassName = (header.column.columnDef as any).headerClassName;
+                  const columnDef = header.column.columnDef as any;
+                  const headerClassName = columnDef.headerClassName;
+                  const headerStyle = columnDef.headerStyle;
                   return (
-                    <TableHead key={header.id} className={headerClassName}>
+                    <TableHead
+                      key={header.id}
+                      className={headerClassName}
+                      style={headerStyle}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -261,11 +267,20 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                   className="even:bg-emerald-50"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const columnDef = cell.column.columnDef as any;
+                    const cellClassName = columnDef.cellClassName;
+                    const cellStyle = columnDef.cellStyle;
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={cellClassName}
+                        style={cellStyle}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

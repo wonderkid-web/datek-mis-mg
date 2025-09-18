@@ -45,39 +45,12 @@ const roleOptions = [
   { value: "FULL_ACCESS", label: "Full Access" },
 ];
 
-const isValidIPv4 = (ip: string) => {
-  const regex = /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
-  return regex.test(ip);
-};
-
-const formatIPv4Input = (raw: string) => {
-  // Enforce pattern: AAA.BB/BBB.CC.D/D D D
-  const digits = raw.replace(/\D/g, "").slice(0, 11);
-  const len = digits.length;
-  if (len <= 3) return digits;
-
-  const A = digits.slice(0, 3);
-  let rest = digits.slice(3);
-
-  // Decide B length: 2 or 3 depending on remaining to allow CC (2) and D (1-3)
-  let bLen: number;
-  if (rest.length <= 2) bLen = rest.length; // partial B
-  else if (rest.length >= 6) bLen = 3; // enough left for CC + D(3)
-  else bLen = 2; // keep room for CC (2) and some for D
-
-  const B = rest.slice(0, bLen);
-  rest = rest.slice(bLen);
-  if (rest.length === 0) return `${A}.${B}`;
-
-  // C must be up to 2 (exactly 2 when enough digits)
-  const cLen = Math.min(2, rest.length);
-  const C = rest.slice(0, cLen);
-  rest = rest.slice(cLen);
-  if (rest.length === 0) return `${A}.${B}.${C}`;
-
-  // D up to 3
-  const D = rest.slice(0, 3);
-  return `${A}.${B}.${C}.${D}`;
+const DEFAULT_IP_PREFIX = "192.168";
+const sanitizeOctetInput = (value: string) => value.replace(/[^0-9]/g, "").slice(0, 3);
+const parseOctet = (value: string) => {
+  if (value.trim() === "") return null;
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric >= 0 && numeric <= 255 ? numeric : null;
 };
 
 export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps) {
@@ -87,7 +60,8 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
   const [loadingAssignments, setLoadingAssignments] = useState(false);
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [ip, setIp] = useState("");
+  const [ipPart3, setIpPart3] = useState("");
+  const [ipPart4, setIpPart4] = useState("");
   const [connection, setConnection] = useState<Connection | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [role, setRole] = useState<Role | null>(null);
@@ -138,7 +112,8 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
 
   const reset = () => {
     setUserId(null);
-    setIp("");
+    setIpPart3("");
+    setIpPart4("");
     setConnection(null);
     setStatus(null);
     setRole(null);
@@ -148,7 +123,12 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
 
   const handleSave = async () => {
     if (!userId) return toast.error("User is required");
-    if (!ip || !isValidIPv4(ip)) return toast.error("Invalid IPv4 address");
+    const octet3 = parseOctet(ipPart3);
+    const octet4 = parseOctet(ipPart4);
+    if (octet3 === null || octet4 === null) {
+      return toast.error("IP Address must have valid values (0-255) for the last two segments");
+    }
+    const ip = `${DEFAULT_IP_PREFIX}.${octet3}.${octet4}`;
     if (!connection) return toast.error("Connection is required");
     if (!status) return toast.error("Status is required");
     if (!role) return toast.error("Role is required");
@@ -207,13 +187,26 @@ export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">IP Address</Label>
-            <Input
-              className="col-span-3 font-mono"
-              placeholder="e.g. 192.168.0.10"
-              inputMode="numeric"
-              value={ip}
-              onChange={(e) => setIp(formatIPv4Input(e.target.value))}
-            />
+            <div className="col-span-3 flex items-center gap-1">
+              <span className="font-mono text-sm text-muted-foreground">{DEFAULT_IP_PREFIX}.</span>
+              <Input
+                className="w-20 font-mono"
+                placeholder="0"
+                inputMode="numeric"
+                value={ipPart3}
+                onChange={(e) => setIpPart3(sanitizeOctetInput(e.target.value))}
+                maxLength={3}
+              />
+              <span className="font-mono text-sm text-muted-foreground">.</span>
+              <Input
+                className="w-20 font-mono"
+                placeholder="0"
+                inputMode="numeric"
+                value={ipPart4}
+                onChange={(e) => setIpPart4(sanitizeOctetInput(e.target.value))}
+                maxLength={3}
+              />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Connection</Label>
