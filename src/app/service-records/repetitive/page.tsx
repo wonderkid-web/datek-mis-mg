@@ -180,7 +180,7 @@ export default function RepetitiveServicePage() {
         `Asset: ${assignment.asset?.namaAsset || "N/A"} - User: ${
         // @ts-expect-error its okay
         assignment.user?.namaLengkap || "N/A"
-        }`
+        } - S/N: ${assignment?.asset?.nomorSeri}`
       );
     } else {
       setAssetDetails(null);
@@ -202,6 +202,7 @@ export default function RepetitiveServicePage() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+
     if (!assetAssignmentId || !reportDate) {
       toast.warning("Please select a Serial Number and Report Date.");
       return;
