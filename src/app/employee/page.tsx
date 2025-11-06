@@ -52,6 +52,8 @@ export default function UsersPage() {
     staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
   });
 
+  console.log("Data dari useQuery (sebelum ke tabel):", users);
+
   const deleteUserMutation = useMutation({
     mutationFn: deleteUser,
     onMutate: async (idToDelete) => {

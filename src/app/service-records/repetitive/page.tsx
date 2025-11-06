@@ -18,9 +18,7 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 import {
   getPrinterRepetitiveMaintenances,
-  createPrinterRepetitiveMaintenance,
   deletePrinterRepetitiveMaintenance,
-  getNotesPrinter,
 } from "@/lib/printerRepetitiveMaintenanceService";
 import { getAssetAssignmentsPrinter } from "@/lib/assetAssignmentService";
 import { getColumns } from "./columns";
@@ -59,12 +57,6 @@ const MONTH_OPTIONS = [
 export default function RepetitiveServicePage() {
   const { data: session } = useSession();
   const [records, setRecords] = useState<PrinterRepetitiveMaintenance[]>([]);
-  const [notes, setNotes] = useState<
-    {
-      catatan: string | null;
-      nomorAsset: string;
-    }[]
-  >([]);
   const [assetAssignments, setAssetAssignments] = useState<
     AssetAssignmentPrinter[]
   >([]);
@@ -100,14 +92,12 @@ export default function RepetitiveServicePage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [fetchedRecords, assignments, fetchedNotes] = await Promise.all([
+      const [fetchedRecords, assignments] = await Promise.all([
         getPrinterRepetitiveMaintenances(),
         getAssetAssignmentsPrinter(),
-        getNotesPrinter(),
       ]);
+      console.log(fetchedRecords.filter(record=> record.catatan!).map(r =>({catatan: r.catatan,user: r.assetDetails, })))
       setRecords(fetchedRecords);
-      setNotes(fetchedNotes);
-
       // @ts-expect-error its okay
       setAssetAssignments(assignments);
     } catch (error) {
@@ -203,33 +193,34 @@ export default function RepetitiveServicePage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!assetAssignmentId || !reportDate) {
-      toast.warning("Please select a Serial Number and Report Date.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await createPrinterRepetitiveMaintenance({
-        reportDate: new Date(reportDate),
-        catatan: selectedAssignment?.catatan || "-",
-        assetDetails: assetDetails,
-        totalPages: totalPages,
-        blackCount: blackCount,
-        yellowCount: yellowCount,
-        magentaCount: magentaCount,
-        cyanCount: cyanCount,
-        remarks: remarks,
-      });
-      toast.success("Repetitive maintenance record created successfully!");
-      resetForm();
-      fetchData();
-      setIsCreateDialogOpen(false)
-    } catch (error) {
-      console.error("Failed to create record:", error);
-      toast.error("Failed to save the record.");
-    } finally {
-      setIsSubmitting(false);
-    }
+
+    // if (!assetAssignmentId || !reportDate) {
+    //   toast.warning("Please select a Serial Number and Report Date.");
+    //   return;
+    // }
+    // setIsSubmitting(true);
+    // try {
+    //   await createPrinterRepetitiveMaintenance({
+    //     reportDate: new Date(reportDate),
+    //     catatan: selectedAssignment?.catatan || "-",
+    //     assetDetails: assetDetails,
+    //     totalPages: totalPages,
+    //     blackCount: blackCount,
+    //     yellowCount: yellowCount,
+    //     magentaCount: magentaCount,
+    //     cyanCount: cyanCount,
+    //     remarks: remarks,
+    //   });
+    //   toast.success("Repetitive maintenance record created successfully!");
+    //   resetForm();
+    //   fetchData();
+    //   setIsCreateDialogOpen(false)
+    // } catch (error) {
+    //   console.error("Failed to create record:", error);
+    //   toast.error("Failed to save the record.");
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
   };
 
   const handleEditClick = useCallback((record: PrinterRepetitiveMaintenance) => {
@@ -370,10 +361,11 @@ export default function RepetitiveServicePage() {
                   <Select
                     options={assetAssignments.map((a) => ({
                       value: a.id.toString(),
-                      label: `${a.asset?.nomorSeri}`,
+                      // @ts-expect-error done
+                      label: `${a?.asset?.nomorSeri} - ${a?.asset?.namaAsset} (${a?.user?.namaLengkap})`,
                     }))}
                     onChange={(selectedOption) =>
-                      handleAssetSelect(selectedOption?.value || "")
+                      handleAssetSelect(selectedOption?.value || "") 
                     }
                     value={
                       assetAssignmentId

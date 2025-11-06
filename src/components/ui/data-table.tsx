@@ -181,7 +181,6 @@ function DataTablePagination<TData>({
   );
 }
 
-
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];

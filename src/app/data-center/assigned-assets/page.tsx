@@ -200,6 +200,7 @@ export default function AssignedAssetsPage() {
         assignment.catatan?.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
+
   const exportColumns = [
     { header: "Asset Number", accessorKey: "nomorAsset" },
     { header: "User Name", accessorKey: "user.namaLengkap" },

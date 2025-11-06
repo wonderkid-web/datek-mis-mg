@@ -98,7 +98,7 @@ function AssetTable({ filters }: AssetTableProps) {
     ...filters,
   });
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError,  } = useQuery({
     queryKey: ["assets", queryParams.toString()],
     queryFn: async () => {
       const res = await fetch(`/api/assets?${queryParams.toString()}`);
