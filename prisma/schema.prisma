@@ -444,7 +444,7 @@ model CctvDeviceType {
 model CctvChannelCamera {
   id        Int         @id @default(autoincrement())
   lokasi    String      @db.VarChar(255)
-  sbu       Sbu
+  sbu       String      @db.VarChar(255)
   cctvSpecs CctvSpecs[]
 
   @@map("cctv_channel_cameras")

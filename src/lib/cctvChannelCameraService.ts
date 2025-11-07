@@ -1,5 +1,6 @@
 "use server"
 
+import { ALL_LOCATIONS } from './constants';
 import { prisma } from './prisma';
 import { Sbu } from '@prisma/client';
 
@@ -15,7 +16,7 @@ export const getCctvChannelCameraById = async (id: number) => {
 
 interface ChannelCameraData {
   lokasi: string;
-  sbu: Sbu;
+  sbu: typeof ALL_LOCATIONS[number];
 }
 
 export const createCctvChannelCamera = async (data: ChannelCameraData) => {

@@ -17,7 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateCctvChannelCamera } from '@/lib/cctvChannelCameraService';
 import { toast } from 'sonner';
-import { CctvChannelCamera, Sbu } from '@prisma/client';
+import { CctvChannelCamera } from '@prisma/client';
+import { ALL_LOCATIONS } from '@/lib/constants';
 
 interface EditChannelCameraDialogProps {
   channelCamera: CctvChannelCamera | null;
@@ -28,7 +29,7 @@ interface EditChannelCameraDialogProps {
 export function EditChannelCameraDialog({ channelCamera, open, onOpenChange }: EditChannelCameraDialogProps) {
   const queryClient = useQueryClient();
   const [lokasi, setLokasi] = useState('');
-  const [sbu, setSbu] = useState<Sbu | ''>('');
+  const [sbu, setSbu] = useState<typeof ALL_LOCATIONS[number] | ''>('');
 
   useEffect(() => {
     if (channelCamera) {
@@ -38,7 +39,7 @@ export function EditChannelCameraDialog({ channelCamera, open, onOpenChange }: E
   }, [channelCamera]);
 
   const mutation = useMutation({
-    mutationFn: (updatedData: { id: number; lokasi: string; sbu: Sbu }) => updateCctvChannelCamera(updatedData.id, { lokasi: updatedData.lokasi, sbu: updatedData.sbu }),
+    mutationFn: (updatedData: { id: number; lokasi: string; sbu: typeof ALL_LOCATIONS[number] }) => updateCctvChannelCamera(updatedData.id, { lokasi: updatedData.lokasi, sbu: updatedData.sbu }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cctvChannelCameras'] });
       toast.success('Channel camera updated successfully!');
@@ -60,7 +61,7 @@ export function EditChannelCameraDialog({ channelCamera, open, onOpenChange }: E
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+       <DialogContent className="sm:max-w-[425px] md:max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit CCTV Channel Camera</DialogTitle>
           <DialogDescription>
@@ -84,14 +85,14 @@ export function EditChannelCameraDialog({ channelCamera, open, onOpenChange }: E
             <Label htmlFor="sbu" className="text-right">
               SBU
             </Label>
-            <Select onValueChange={(value) => setSbu(value as Sbu)} value={sbu}>
+            <Select onValueChange={(value) => setSbu(value as typeof ALL_LOCATIONS[number])} value={sbu}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select an SBU" />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(Sbu).map((sbuValue) => (
-                  <SelectItem key={sbuValue} value={sbuValue}>
-                    {sbuValue}
+                {ALL_LOCATIONS.map((company) => (
+                  <SelectItem key={company} value={company}>
+                    {company}
                   </SelectItem>
                 ))}
               </SelectContent>
