@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "⁠⁠export NODE_OPTIONS=“--max-old-space-size=1024” && next start -p 3001",
-    "lint": "next lint",
+    "start": "next start -p 3001",
+    "lint": "next lint"
   },
   "prisma": {
     "seed": "bun prisma/seed.ts"
