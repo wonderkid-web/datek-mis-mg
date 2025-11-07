@@ -42,6 +42,7 @@ export const navigationItems: NavigationItem[] = [
     children: [
       { name: "Spesifikasi Laptop/Intel NUC", href: "/master-data/laptop" },
       { name: "Spesifikasi Printer", href: "/master-data/printer" },
+      { name: "Spesifikasi CCTV", href: "/master-data/cctv" },
       { name: "Asset Categories", href: "/master-data/asset-categories" },
     ],
   },

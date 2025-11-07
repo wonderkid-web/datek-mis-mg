@@ -576,21 +576,15 @@ export async function getOperatingSystemBreakdown() {
   const mergedCounts: Record<number, number> = {};
 
   laptopCounts.forEach((item) => {
-    // @ts-expect-error its fine
     if (item.osOptionId) {
-      // @ts-expect-error its fine
       mergedCounts[item.osOptionId] =
-      // @ts-expect-error its fine
       (mergedCounts[item.osOptionId] || 0) + item._count.assetId;
     }
   });
   
   nucCounts.forEach((item) => {
-    // @ts-expect-error its fine
     if (item.osOptionId) {
-      // @ts-expect-error its fine
       mergedCounts[item.osOptionId] =
-      // @ts-expect-error its fine
         (mergedCounts[item.osOptionId] || 0) + item._count.assetId;
     }
   });

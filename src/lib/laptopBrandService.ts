@@ -3,9 +3,10 @@ import { prisma } from './prisma';
 import { LaptopBrandOption } from '@prisma/client';
 
 export const getLaptopBrandOptions = async (): Promise<LaptopBrandOption[]> => {
+  
   return await prisma.laptopBrandOption.findMany({
     orderBy: {
-      value: 'asc'
+      id: 'asc'
     }
   });
 };

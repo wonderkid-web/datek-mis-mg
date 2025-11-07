@@ -67,6 +67,7 @@ model Asset {
   intelNucSpecs    IntelNucSpecs?
   laptopSpecs      LaptopSpecs?
   printerSpecs     PrinterSpecs?
+  cctvSpecs        CctvSpecs?
 
   @@index([categoryId], map: "assets_categoryId_fkey")
   @@map("assets")
@@ -395,6 +396,64 @@ model ComputerMaintenance {
 
   @@index([assetAssignmentId], map: "computer_maintenances_assetAssignmentId_fkey")
   @@map("computer_maintenances")
+}
+
+enum Sbu {
+  PT_DI
+  PT_DEI
+  PT_DTI
+}
+
+model CctvBrand {
+  id        Int         @id @default(autoincrement())
+  value     String      @unique @db.VarChar(100)
+  cctvSpecs CctvSpecs[]
+
+  @@map("cctv_brands")
+}
+
+model CctvModel {
+  id        Int         @id @default(autoincrement())
+  value     String      @unique @db.VarChar(100)
+  cctvSpecs CctvSpecs[]
+
+  @@map("cctv_models")
+}
+
+model CctvDeviceType {
+  id        Int         @id @default(autoincrement())
+  value     String      @unique @db.VarChar(100)
+  cctvSpecs CctvSpecs[]
+
+  @@map("cctv_device_types")
+}
+
+model CctvChannelCamera {
+  id        Int         @id @default(autoincrement())
+  lokasi    String      @db.VarChar(255)
+  sbu       Sbu
+  cctvSpecs CctvSpecs[]
+
+  @@map("cctv_channel_cameras")
+}
+
+model CctvSpecs {
+  assetId         Int                @id
+  brandId         Int?
+  modelId         Int?
+  deviceTypeId    Int?
+  channelCameraId Int?
+  asset           Asset              @relation(fields: [assetId], references: [id])
+  brand           CctvBrand?         @relation(fields: [brandId], references: [id])
+  model           CctvModel?         @relation(fields: [modelId], references: [id])
+  deviceType      CctvDeviceType?    @relation(fields: [deviceTypeId], references: [id])
+  channelCamera   CctvChannelCamera? @relation(fields: [channelCameraId], references: [id])
+
+  @@index([brandId])
+  @@index([modelId])
+  @@index([deviceTypeId])
+  @@index([channelCameraId])
+  @@map("cctv_specs")
 }
 
 // New model for IP Address management
