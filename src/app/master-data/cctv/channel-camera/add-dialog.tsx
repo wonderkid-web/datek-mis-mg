@@ -19,12 +19,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createCctvChannelCamera } from '@/lib/cctvChannelCameraService';
 import { toast } from 'sonner';
 import { Sbu } from '@prisma/client';
+import { ALL_LOCATIONS } from '@/lib/constants';
 
 export function AddChannelCameraDialog() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [lokasi, setLokasi] = useState('');
-  const [sbu, setSbu] = useState<Sbu | ''>('');
+  const [sbu, setSbu] = useState<typeof ALL_LOCATIONS[number]>('');
 
   const mutation = useMutation({
     mutationFn: createCctvChannelCamera,
@@ -53,7 +54,7 @@ export function AddChannelCameraDialog() {
       <DialogTrigger asChild>
         <Button>Add New Channel Camera</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] md:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add New CCTV Channel Camera</DialogTitle>
           <DialogDescription>
@@ -81,10 +82,10 @@ export function AddChannelCameraDialog() {
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select an SBU" />
               </SelectTrigger>
-              <SelectContent>
-                {Object.values(Sbu).map((sbuValue) => (
-                  <SelectItem key={sbuValue} value={sbuValue}>
-                    {sbuValue}
+              <SelectContent className='w-full'>
+                {ALL_LOCATIONS.map((company) => (
+                  <SelectItem key={company} value={company}>
+                    {company}
                   </SelectItem>
                 ))}
               </SelectContent>
