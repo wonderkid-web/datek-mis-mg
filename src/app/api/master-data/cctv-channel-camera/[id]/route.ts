@@ -1,27 +1,27 @@
 
-import { getCctvChannelCameraById, updateCctvChannelCamera, deleteCctvChannelCamera } from '@/lib/cctvChannelCameraService';
+import {  updateCctvChannelCamera, deleteCctvChannelCamera } from '@/lib/cctvChannelCameraService';
 import { NextResponse } from 'next/server';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const id = (await params).id ? Number(await params) : undefined;
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-    const channelCamera = await getCctvChannelCameraById(id);
-    if (!channelCamera) {
-      return NextResponse.json({ error: 'Channel camera not found' }, { status: 404 });
-    }
-    return NextResponse.json(channelCamera);
-  } catch (error) {
-    console.error('Error fetching CCTV channel camera:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
-}
+// export async function GET(
+//   request: Request,
+//   { params }: { params: Promise<{ id: string }> }
+// ) {
+//   try {
+//     const id = (await params).id ? Number(await params) : undefined;
+//     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+//     const channelCamera = await getCctvChannelCameraById(id);
+//     if (!channelCamera) {
+//       return NextResponse.json({ error: 'Channel camera not found' }, { status: 404 });
+//     }
+//     return NextResponse.json(channelCamera);
+//   } catch (error) {
+//     console.error('Error fetching CCTV channel camera:', error);
+//     return NextResponse.json(
+//       { error: 'Internal Server Error' },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 export async function PATCH(
   request: Request,

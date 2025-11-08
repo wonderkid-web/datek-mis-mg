@@ -1,32 +1,34 @@
-
-"use server"
+"use server";
 import { prisma } from './prisma';
+import { CctvDeviceType } from '@prisma/client';
 
-export const getCctvDeviceTypes = async () => {
-  return await prisma.cctvDeviceType.findMany();
-};
-
-export const getCctvDeviceTypeById = async (id: number) => {
-  return await prisma.cctvDeviceType.findUnique({
-    where: { id },
+export const getCctvDeviceTypes = async (): Promise<CctvDeviceType[]> => {
+  return await prisma.cctvDeviceType.findMany({
+    orderBy: {
+      value: 'asc'
+    }
   });
 };
 
-export const createCctvDeviceType = async (data: { value: string }) => {
+export const createCctvDeviceType = async (data: { value: string }): Promise<CctvDeviceType> => {
   return await prisma.cctvDeviceType.create({
-    data,
+    data: {
+      value: data.value,
+    },
   });
 };
 
-export const updateCctvDeviceType = async (id: number, data: { value: string }) => {
+export const updateCctvDeviceType = async (id: number, data: { value: string }): Promise<CctvDeviceType> => {
   return await prisma.cctvDeviceType.update({
     where: { id },
-    data,
+    data: {
+      value: data.value,
+    },
   });
 };
 
-export const deleteCctvDeviceType = async (id: number) => {
-  return await prisma.cctvDeviceType.delete({
+export const deleteCctvDeviceType = async (id: number): Promise<void> => {
+  await prisma.cctvDeviceType.delete({
     where: { id },
   });
 };
