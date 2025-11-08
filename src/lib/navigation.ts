@@ -53,6 +53,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Asset Laptop", href: "/items/laptop" },
       { name: "Asset Intel NUC", href: "/items/intel-nuc" },
       { name: "Asset Printer", href: "/items/printer" },
+      { name: "Asset CCTV", href: "/items/cctv" },
     ],
   },
   {

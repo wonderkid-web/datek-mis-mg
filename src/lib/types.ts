@@ -39,6 +39,7 @@ export interface Asset {
   laptopSpecs?: LaptopSpecs;
   intelNucSpecs?: IntelNucSpecs;
   printerSpecs?: PrinterSpecs;
+  cctvSpecs?: CctvSpecs;
 }
 
 export interface AssetAssignment {
@@ -126,6 +127,16 @@ export type PrinterTypeOption = MasterDataOption;
 export type PrinterBrandOption = MasterDataOption;
 export type PrinterModelOption = MasterDataOption;
 
+// Specific types for CCTV options
+export type CctvBrandOption = MasterDataOption;
+export type CctvModelOption = MasterDataOption;
+export type CctvDeviceTypeOption = MasterDataOption;
+export interface CctvChannelCameraOption {
+  id: number;
+  lokasi: string;
+  sbu: string;
+}
+
 // --- SPECIFICATION TYPES ---
 
 // Base interface for all specification models
@@ -179,6 +190,29 @@ export interface PrinterSpecs {
   typeOption?: PrinterTypeOption;
   brandOption?: PrinterBrandOption;
   modelOption?: PrinterModelOption;
+}
+
+// Spesifikasi untuk CCTV
+export interface CctvSpecs {
+  assetId: number;
+  sbu: string; // Assuming Sbu is an enum/string
+  nameSite: string;
+  viewCamera: string;
+  systemVersion: string | null;
+  power: string | null;
+  ipAddress: string;
+  macAddress: string | null;
+  username: string | null;
+  password: string | null;
+  brandId: number | null;
+  modelId: number | null;
+  deviceTypeId: number | null;
+  channelCameraId: number | null;
+  // Relasi
+  brand?: CctvBrandOption;
+  model?: CctvModelOption;
+  deviceType?: CctvDeviceTypeOption;
+  channelCamera?: CctvChannelCameraOption;
 }
 
 export interface PrinterRepetitiveMaintenance {

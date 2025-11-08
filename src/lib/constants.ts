@@ -152,3 +152,22 @@ export const ALL_LOCATIONS = [
   'PT Berlian Inti Mekar - Rengat',
   'PT Berlian Inti Mekar - Palembang',
 ];
+
+export const SBU_OPTIONS = [
+  'PT_Mahkota_Group_Tbk',
+  'PT_Karya_Pratama_NiagaJaya',
+  'PT_Karya_Mitra_Andalan',
+  'PT_Intan_Sejati_Andalan',
+  'PT_Intan_Sejati_Andalan_Refinery',
+  'PT_Intan_Sejati_Andalan_KCP',
+  'PT_Intan_Sejati_Andalan_BIOGAS',
+  'PT_Intan_Sejati_Andalan_FOF',
+  'PT_Intan_Sejati_Andalan_SOLVENT',
+  'PT_Intan_Sejati_Andalan_TRAINING_CENTER',
+  'PT_Intan_Sejati_Andalan_SSL',
+  'PT_Dumai_Paricipta_Abadi',
+  'PT_Mutiara_Unggul_Lestari',
+  'PT_Berlian_Inti_Mekar_Siak',
+  'PT_Berlian_Inti_Mekar_Rengat',
+  'PT_Berlian_Inti_Mekar_Palembang',
+];

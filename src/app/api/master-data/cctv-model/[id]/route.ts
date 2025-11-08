@@ -1,27 +1,27 @@
 
-import { getCctvModelById, updateCctvModel, deleteCctvModel } from '@/lib/cctvModelService';
+import { updateCctvModel, deleteCctvModel } from '@/lib/cctvModelService';
 import { NextResponse } from 'next/server';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const id = (await params).id ? Number(await params) : undefined;
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-    const model = await getCctvModelById(id);
-    if (!model) {
-      return NextResponse.json({ error: 'Model not found' }, { status: 404 });
-    }
-    return NextResponse.json(model);
-  } catch (error) {
-    console.error('Error fetching CCTV model:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
-}
+// export async function GET(
+//   request: Request,
+//   { params }: { params: Promise<{ id: string }> }
+// ) {
+//   try {
+//     const id = (await params).id ? Number(await params) : undefined;
+//     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+//     const model = await getCctvModelById(id);
+//     if (!model) {
+//       return NextResponse.json({ error: 'Model not found' }, { status: 404 });
+//     }
+//     return NextResponse.json(model);
+//   } catch (error) {
+//     console.error('Error fetching CCTV model:', error);
+//     return NextResponse.json(
+//       { error: 'Internal Server Error' },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 export async function PATCH(
   request: Request,

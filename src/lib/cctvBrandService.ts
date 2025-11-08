@@ -1,35 +1,34 @@
-"use server"
+"use server";
 import { prisma } from './prisma';
+import { CctvBrand } from '@prisma/client';
 
-export const getCctvBrands = async () => {
+export const getCctvBrands = async (): Promise<CctvBrand[]> => {
   return await prisma.cctvBrand.findMany({
     orderBy: {
-      id: 'asc'
+      value: 'asc'
     }
   });
 };
 
-export const getCctvBrandById = async (id: number) => {
-  return await prisma.cctvBrand.findUnique({
-    where: { id },
-  });
-};
-
-export const createCctvBrand = async (data: { value: string }) => {
+export const createCctvBrand = async (data: { value: string }): Promise<CctvBrand> => {
   return await prisma.cctvBrand.create({
-    data,
+    data: {
+      value: data.value,
+    },
   });
 };
 
-export const updateCctvBrand = async (id: number, data: { value: string }) => {
+export const updateCctvBrand = async (id: number, data: { value: string }): Promise<CctvBrand> => {
   return await prisma.cctvBrand.update({
     where: { id },
-    data,
+    data: {
+      value: data.value,
+    },
   });
 };
 
-export const deleteCctvBrand = async (id: number) => {
-  return await prisma.cctvBrand.delete({
+export const deleteCctvBrand = async (id: number): Promise<void> => {
+  await prisma.cctvBrand.delete({
     where: { id },
   });
 };

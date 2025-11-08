@@ -185,11 +185,13 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   totalCount?: number;
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "administrator";
@@ -264,7 +266,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="even:bg-emerald-50"
+                  className="even:bg-emerald-50 cursor-pointer"
+                  onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const columnDef = cell.column.columnDef as any;

@@ -1,39 +1,30 @@
-"use server"
-
-import { ALL_LOCATIONS } from './constants';
+"use server";
 import { prisma } from './prisma';
-import { Sbu } from '@prisma/client';
+import { CctvChannelCamera } from '@prisma/client';
 
-export const getCctvChannelCameras = async () => {
-  return await prisma.cctvChannelCamera.findMany();
-};
-
-export const getCctvChannelCameraById = async (id: number) => {
-  return await prisma.cctvChannelCamera.findUnique({
-    where: { id },
+export const getCctvChannelCameras = async (): Promise<CctvChannelCamera[]> => {
+  return await prisma.cctvChannelCamera.findMany({
+    orderBy: {
+      lokasi: 'asc'
+    }
   });
 };
 
-interface ChannelCameraData {
-  lokasi: string;
-  sbu: typeof ALL_LOCATIONS[number];
-}
-
-export const createCctvChannelCamera = async (data: ChannelCameraData) => {
+export const createCctvChannelCamera = async (data: { lokasi: string, sbu: string }): Promise<CctvChannelCamera> => {
   return await prisma.cctvChannelCamera.create({
     data,
   });
 };
 
-export const updateCctvChannelCamera = async (id: number, data: Partial<ChannelCameraData>) => {
+export const updateCctvChannelCamera = async (id: number, data: { lokasi: string, sbu: string }): Promise<CctvChannelCamera> => {
   return await prisma.cctvChannelCamera.update({
     where: { id },
     data,
   });
 };
 
-export const deleteCctvChannelCamera = async (id: number) => {
-  return await prisma.cctvChannelCamera.delete({
+export const deleteCctvChannelCamera = async (id: number): Promise<void> => {
+  await prisma.cctvChannelCamera.delete({
     where: { id },
   });
 };

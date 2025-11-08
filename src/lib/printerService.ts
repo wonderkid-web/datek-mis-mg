@@ -10,7 +10,7 @@ export const createAssetAndPrinterSpecs = async (
 ) => {
   return await prisma.$transaction(async (tx) => {
     const asset = await tx.asset.create({
-
+      // @ts-expect-error its okay
       data: assetData,
     });
 

@@ -50,9 +50,11 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  size = "md",
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  showCloseButton?: boolean
+  showCloseButton?: boolean;
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl";
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -60,7 +62,18 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200",
+          {
+            "sm:max-w-sm": size === "sm",
+            "sm:max-w-md": size === "md",
+            "sm:max-w-lg": size === "lg",
+            "sm:max-w-xl": size === "xl",
+            "sm:max-w-2xl": size === "2xl",
+            "sm:max-w-3xl": size === "3xl",
+            "sm:max-w-4xl": size === "4xl",
+            "sm:max-w-5xl": size === "5xl",
+            "sm:max-w-6xl": size === "6xl",
+          },
           className
         )}
         {...props}
@@ -77,7 +90,7 @@ function DialogContent({
         )}
       </DialogPrimitive.Content>
     </DialogPortal>
-  )
+  );
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {

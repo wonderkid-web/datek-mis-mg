@@ -452,11 +452,20 @@ model CctvChannelCamera {
 
 model CctvSpecs {
   assetId         Int                @id
+  sbu             Sbu
+  nameSite        String
+  viewCamera      String
+  systemVersion   String?
+  power           String?
+  ipAddress       String             @unique
+  macAddress      String?            @unique
+  username        String?
+  password        String?
   brandId         Int?
   modelId         Int?
   deviceTypeId    Int?
   channelCameraId Int?
-  asset           Asset              @relation(fields: [assetId], references: [id])
+  asset           Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
   brand           CctvBrand?         @relation(fields: [brandId], references: [id])
   model           CctvModel?         @relation(fields: [modelId], references: [id])
   deviceType      CctvDeviceType?    @relation(fields: [deviceTypeId], references: [id])
