@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import ReactSelect from "react-select";
 import { createAssetAndCctvSpecs } from "@/lib/cctvService";
 import { getCctvBrands } from "@/lib/cctvBrandService";
 import { getCctvModels } from "@/lib/cctvModelService";
@@ -23,22 +21,27 @@ import { getCctvChannelCameras } from "@/lib/cctvChannelCameraService";
 import { getAssetCategories } from "@/lib/assetCategoryService";
 import { SBU_OPTIONS } from "@/lib/constants";
 import { CctvBrand, CctvModel, CctvDeviceType, CctvChannelCamera, AssetCategory } from "@prisma/client";
-import { Asset, CctvSpecs } from "@/lib/types";
 
 interface AddCctvDialogProps {
   onSave: () => void;
 }
 
+
+const SBU_GROUP_KEY = "PT_Intan_Sejati_Andalan_(Group)";
+const sbuDropdownOptions = [
+  ...SBU_OPTIONS.map(s => ({ value: s, label: s.replace(/_/g, " ") })),
+  { value: SBU_GROUP_KEY, label: "PT Intan Sejati Andalan (Group)" }
+].sort((a, b) => a.label.localeCompare(b.label));
+
+
 export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
   const [open, setOpen] = useState(false);
-  const [sbu, setSbu] = useState("");
-  const [noAsset, setNoAsset] = useState("");
-  const [channelCameraId, setChannelCameraId] = useState<number | null>(null);
-  const [nameSite, setNameSite] = useState("");
+  const [sbu, setSbu] = useState<string | null>(null);
+  const [channelCameraId, setChannelCameraId] = useState<string | null>(null);
   const [viewCamera, setViewCamera] = useState("");
-  const [brandId, setBrandId] = useState<number | null>(null);
-  const [modelId, setModelId] = useState<number | null>(null);
-  const [deviceTypeId, setDeviceTypeId] = useState<number | null>(null);
+  const [brandId, setBrandId] = useState<string | null>(null);
+  const [modelId, setModelId] = useState<string | null>(null);
+  const [deviceTypeId, setDeviceTypeId] = useState<string | null>(null);
   const [serialNumber, setSerialNumber] = useState("");
   const [systemVersion, setSystemVersion] = useState("");
   const [power, setPower] = useState("");
@@ -54,6 +57,7 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
   const [assetCategories, setAssetCategories] = useState<AssetCategory[]>([]);
 
   useEffect(() => {
+    if (!open) return; // Don't fetch if the dialog is not open
     const fetchOptions = async () => {
       try {
         setBrandOptions(await getCctvBrands());
@@ -67,26 +71,52 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
       }
     };
     fetchOptions();
-  }, []);
+  }, [open]);
+
+  const filteredChannelCameraOptions = useMemo(() => {
+    if (!sbu) return [];
+
+    const normalize = (str: string) => str.replace(/[\s-]/g, "_").toLowerCase();
+
+    if (sbu === SBU_GROUP_KEY) {
+      const isaPrefix = normalize("PT_Intan_Sejati_Andalan");
+      return channelCameraOptions
+        .filter(opt => normalize(opt.sbu).startsWith(isaPrefix))
+        .map(opt => ({ value: String(opt.id), label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}` }));
+    }
+
+    const normalizedSbu = normalize(sbu);
+    return channelCameraOptions
+      .filter(opt => normalize(opt.sbu) === normalizedSbu)
+      .map(opt => ({ value: String(opt.id), label: opt.lokasi }));
+  }, [sbu, channelCameraOptions]);
 
   const handleSubmit = async () => {
     try {
       const cctvCategory = assetCategories.find(cat => cat.slug === 'cctv');
       if (!cctvCategory) {
-        toast.error("CCTV Asset Category not found. Please create it in Master Data -> Asset Categories with slug 'cctv'.");
+        toast.error("CCTV Asset Category not found.");
+        return;
+      }
+      const selectedChannel = channelCameraOptions.find(opt => opt.id === Number(channelCameraId));
+      if (!selectedChannel) {
+        toast.error("Please select a valid Channel Camera.");
+        return;
+      }
+      if (!sbu) {
+        toast.error("Please select a Perusahaan (SBU).");
         return;
       }
 
       const assetData = {
-        namaAsset: `${nameSite} - ${viewCamera}`,
-        categoryId: cctvCategory.id, // Use dynamic ID
+        namaAsset: `${selectedChannel.lokasi} - ${viewCamera}`,
+        categoryId: cctvCategory.id,
         nomorSeri: serialNumber,
-        statusAsset: "GOOD",
+        statusAsset: "NEW",
       };
 
       const cctvSpecsData = {
-        sbu,
-        nameSite,
+        sbu: sbu === SBU_GROUP_KEY ? selectedChannel.sbu : sbu,
         viewCamera,
         systemVersion,
         power,
@@ -94,10 +124,10 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
         macAddress,
         username,
         password,
-        brandId,
-        modelId,
-        deviceTypeId,
-        channelCameraId,
+        brandId: Number(brandId),
+        modelId: Number(modelId),
+        deviceTypeId: Number(deviceTypeId),
+        channelCameraId: Number(channelCameraId),
       };
 
       // @ts-expect-error some fields are intentionally omitted
@@ -120,48 +150,30 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New CCTV Asset</DialogTitle>
-          <DialogDescription>
-            Fill in the details for the new CCTV asset.
-          </DialogDescription>
+          <DialogDescription>Fill in the details for the new CCTV asset.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="sbu" className="text-right">Perusahaan</Label>
-            <Select onValueChange={setSbu} value={sbu}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select SBU" />
-              </SelectTrigger>
-              <SelectContent>
-                {SBU_OPTIONS.map((sbu) => (
-                  <SelectItem key={sbu} value={sbu}>
-                    {sbu.replace(/_/g, " ")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="noAsset" className="text-right">Number Asset</Label>
-            <Input id="noAsset" value={noAsset} onChange={(e) => setNoAsset(e.target.value)} className="col-span-3" />
+            <ReactSelect
+              className="col-span-3"
+              options={sbuDropdownOptions}
+              onChange={(opt) => {
+                setSbu(opt ? opt.value : null);
+                setChannelCameraId(null); // Reset channel camera on SBU change
+              }}
+              placeholder="Select SBU"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="channelCamera" className="text-right">Channel Camera</Label>
-            <Select onValueChange={(value) => setChannelCameraId(Number(value))}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Channel Camera" />
-              </SelectTrigger>
-              <SelectContent>
-                {channelCameraOptions.map((opt) => (
-                  <SelectItem key={opt.id} value={String(opt.id)}>
-                    {opt.sbu} - {opt.lokasi}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="nameSite" className="text-right">Name Site</Label>
-            <Input id="nameSite" value={nameSite} onChange={(e) => setNameSite(e.target.value)} className="col-span-3" />
+            <ReactSelect
+              className="col-span-3"
+              options={channelCameraOptions.map(opt => ({ value: String(opt.id), label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}` }))}
+              onChange={(opt) => setChannelCameraId(opt ? opt.value : null)}
+              placeholder="Select Channel Camera"
+              isDisabled={!sbu}
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="viewCamera" className="text-right">View Camera</Label>
@@ -169,48 +181,30 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="brand" className="text-right">Brand</Label>
-            <Select onValueChange={(value) => setBrandId(Number(value))}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Brand" />
-              </SelectTrigger>
-              <SelectContent>
-                {brandOptions.map((opt) => (
-                  <SelectItem key={opt.id} value={String(opt.id)}>
-                    {opt.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ReactSelect
+              className="col-span-3"
+              options={brandOptions.map(opt => ({ value: String(opt.id), label: opt.value }))}
+              onChange={(opt) => setBrandId(opt ? opt.value : null)}
+              placeholder="Select Brand"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="model" className="text-right">Model</Label>
-            <Select onValueChange={(value) => setModelId(Number(value))}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Model" />
-              </SelectTrigger>
-              <SelectContent>
-                {modelOptions.map((opt) => (
-                  <SelectItem key={opt.id} value={String(opt.id)}>
-                    {opt.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ReactSelect
+              className="col-span-3"
+              options={modelOptions.map(opt => ({ value: String(opt.id), label: opt.value }))}
+              onChange={(opt) => setModelId(opt ? opt.value : null)}
+              placeholder="Select Model"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="deviceType" className="text-right">Device Type</Label>
-            <Select onValueChange={(value) => setDeviceTypeId(Number(value))}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Device Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {deviceTypeOptions.map((opt) => (
-                  <SelectItem key={opt.id} value={String(opt.id)}>
-                    {opt.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ReactSelect
+              className="col-span-3"
+              options={deviceTypeOptions.map(opt => ({ value: String(opt.id), label: opt.value }))}
+              onChange={(opt) => setDeviceTypeId(opt ? opt.value : null)}
+              placeholder="Select Device Type"
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="serialNumber" className="text-right">Serial Number</Label>

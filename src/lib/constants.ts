@@ -171,3 +171,18 @@ export const SBU_OPTIONS = [
   'PT_Berlian_Inti_Mekar_Rengat',
   'PT_Berlian_Inti_Mekar_Palembang',
 ];
+
+
+
+export const customStyles = {
+  menu: (provided: any) => ({
+    ...provided,
+    backgroundColor: 'white', // Set a solid background color for the dropdown menu
+    zIndex: 9999, // Ensure the dropdown appears above other elements
+  }),
+  option: (provided: any, state: any) => ({
+    ...provided,
+    backgroundColor: state.isSelected ? 'lightgray' : 'white', // Style selected and unselected options
+    color: 'black', // Set text color for options
+  }),
+};

@@ -19,6 +19,7 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
   getPrinterRepetitiveMaintenances,
   deletePrinterRepetitiveMaintenance,
+  createPrinterRepetitiveMaintenance,
 } from "@/lib/printerRepetitiveMaintenanceService";
 import { getAssetAssignmentsPrinter } from "@/lib/assetAssignmentService";
 import { getColumns } from "./columns";
@@ -193,34 +194,33 @@ export default function RepetitiveServicePage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-
-    // if (!assetAssignmentId || !reportDate) {
-    //   toast.warning("Please select a Serial Number and Report Date.");
-    //   return;
-    // }
-    // setIsSubmitting(true);
-    // try {
-    //   await createPrinterRepetitiveMaintenance({
-    //     reportDate: new Date(reportDate),
-    //     catatan: selectedAssignment?.catatan || "-",
-    //     assetDetails: assetDetails,
-    //     totalPages: totalPages,
-    //     blackCount: blackCount,
-    //     yellowCount: yellowCount,
-    //     magentaCount: magentaCount,
-    //     cyanCount: cyanCount,
-    //     remarks: remarks,
-    //   });
-    //   toast.success("Repetitive maintenance record created successfully!");
-    //   resetForm();
-    //   fetchData();
-    //   setIsCreateDialogOpen(false)
-    // } catch (error) {
-    //   console.error("Failed to create record:", error);
-    //   toast.error("Failed to save the record.");
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
+    if (!assetAssignmentId || !reportDate) {
+      toast.warning("Please select a Serial Number and Report Date.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await createPrinterRepetitiveMaintenance({
+        reportDate: new Date(reportDate),
+        catatan: selectedAssignment?.catatan || "-",
+        assetDetails: assetDetails,
+        totalPages: totalPages,
+        blackCount: blackCount,
+        yellowCount: yellowCount,
+        magentaCount: magentaCount,
+        cyanCount: cyanCount,
+        remarks: remarks,
+      });
+      toast.success("Repetitive maintenance record created successfully!");
+      resetForm();
+      fetchData();
+      setIsCreateDialogOpen(false)
+    } catch (error) {
+      console.error("Failed to create record:", error);
+      toast.error("Failed to save the record.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEditClick = useCallback((record: PrinterRepetitiveMaintenance) => {

@@ -66,8 +66,13 @@ export const navigationItems: NavigationItem[] = [
     ],
   },
   {
-    name: "Service Record",
-    href: "/service-records/history",
+    name: "Service Records",
     icon: ToolCaseIcon,
+    children: [
+      { name: "History", href: "/service-records/history" },
+      { name: "Computer Maintenance", href: "/service-records/computer-maintenance" },
+      { name: "Printer Maintenance", href: "/service-records/repetitive" },
+      { name: "CCTV Maintenance", href: "/service-records/cctv-maintenance" },
+    ],
   },
 ];
