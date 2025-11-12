@@ -19,6 +19,12 @@ enum IPStatus {
   GUEST_PHONE
 }
 
+enum CCTVStatus {
+  GOOD
+  TROUBLE
+  BROKEN
+}
+
 enum IPRole {
   LIST
   FULL_ACCESS
@@ -442,18 +448,18 @@ model CctvDeviceType {
 }
 
 model CctvChannelCamera {
-  id        Int         @id @default(autoincrement())
-  lokasi    String      @db.VarChar(255)
-  sbu       String      @db.VarChar(255)
-  cctvSpecs CctvSpecs[]
+  id                     Int                         @id @default(autoincrement())
+  lokasi                 String                      @db.VarChar(255)
+  sbu                    String                      @db.VarChar(255)
+  cctvSpecs              CctvSpecs[]
+  repetitiveMaintenances CctvRepetitiveMaintenance[]
 
   @@map("cctv_channel_cameras")
 }
 
 model CctvSpecs {
   assetId         Int                @id
-  sbu             Sbu
-  nameSite        String
+  sbu             String
   viewCamera      String
   systemVersion   String?
   power           String?
@@ -464,7 +470,7 @@ model CctvSpecs {
   brandId         Int?
   modelId         Int?
   deviceTypeId    Int?
-  channelCameraId Int?
+  channelCameraId Int?               @unique
   asset           Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
   brand           CctvBrand?         @relation(fields: [brandId], references: [id])
   model           CctvModel?         @relation(fields: [modelId], references: [id])
@@ -488,7 +494,7 @@ model IpAddress {
   role              IPRole
   company           String           @db.VarChar(255)
   assetAssignmentId Int?
-  macWlan           String?          @map("mac_wlan") @db.VarChar(17) @default("0.0.0.0.0.0")
+  macWlan           String?          @default("0.0.0.0.0.0") @map("mac_wlan") @db.VarChar(17)
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 
@@ -498,4 +504,21 @@ model IpAddress {
   @@index([userId], map: "ip_addresses_userId_fkey")
   @@index([assetAssignmentId], map: "ip_addresses_assetAssignmentId_fkey")
   @@map("ip_addresses")
+}
+
+model CctvRepetitiveMaintenance {
+  id              Int        @id @default(autoincrement())
+  periode         DateTime
+  perusahaan      String     @db.VarChar(255)
+  channelCameraId Int
+  status          CCTVStatus
+
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channelCamera CctvChannelCamera @relation(fields: [channelCameraId], references: [id])
+
+  @@index([channelCameraId])
+  @@map("cctv_repetitive_maintenances")
 }

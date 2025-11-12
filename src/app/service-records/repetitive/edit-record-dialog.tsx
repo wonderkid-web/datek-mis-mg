@@ -73,6 +73,7 @@ export function EditRecordDialog({
   };
 
   const handleSubmit = async (event: FormEvent) => {
+  console.log('clicked')
     event.preventDefault();
     if (!record || typeof record.id !== "number") {
       toast.error("Invalid record for update.");

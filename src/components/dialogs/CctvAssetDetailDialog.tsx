@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import { Badge } from "../ui/badge";
+import CCTVViewLink from "../cctv";
 
 interface CctvAssetDetailDialogProps {
   asset: Asset | null;
@@ -145,7 +146,7 @@ export function CctvAssetDetailDialog({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <DetailRow icon={<Package />} label="Nama Asset" value={namaAsset} />
+            {/* <DetailRow icon={<Package />} label="Nama Asset" value={namaAsset} /> */}
             <DetailRow icon={<Fingerprint />} label="Nomor Seri" value={nomorSeri} />
             <DetailRow
               icon={<Info />}
@@ -202,7 +203,7 @@ export function CctvAssetDetailDialog({
             <DetailRow
               icon={<Eye />}
               label="View Camera"
-              value={spec?.viewCamera ?? "-"}
+              value={<CCTVViewLink link={spec?.viewCamera ?? "#"} />}
             />
              <DetailRow
               icon={<Eye />}

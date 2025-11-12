@@ -1,19 +1,21 @@
 "use server";
 
+
 import { prisma } from "./prisma";
 import { Asset, CctvSpecs } from "./types";
+import { revalidatePath } from "next/cache";
 
 export const createAssetAndCctvSpecs = async (
   assetData: Omit<Asset, 'id' | 'createdAt' | 'updatedAt' | 'categoryId' | 'category' | 'laptopSpecs' | 'intelNucSpecs' | 'printerSpecs' | 'cctvSpecs'> & { categoryId: number },
-  cctvSpecsData: Omit<CctvSpecs, 'id' | 'assetId' | 'brand' | 'model' | 'deviceType' | 'channelCamera'>
+  cctvSpecsData: Omit<CctvSpecs, 'id' | 'assetId' | 'nameSite' | 'brand' | 'model' | 'deviceType' | 'channelCamera'>
 ) => {
-  return await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
+
     const asset = await tx.asset.create({
       data: assetData,
     });
 
     const cctvSpecs = await tx.cctvSpecs.create({
-      // @ts-expect-error its okay
       data: {
         ...cctvSpecsData,
         assetId: asset.id,
@@ -22,9 +24,14 @@ export const createAssetAndCctvSpecs = async (
 
     return { asset, cctvSpecs };
   });
+
+  revalidatePath("/items/cctv");
+  return result;
 };
 
 export const getCctvSpecs = async () => {
+  // const res = await fetch("/api/assets/cctv", { cache: "no-store" });
+  // return res.json();
   return await prisma.asset.findMany({
     where: {
       category: {
@@ -34,6 +41,7 @@ export const getCctvSpecs = async () => {
     select: {
       id: true,
       namaAsset: true,
+      statusAsset: true,
       cctvSpecs: {
         select: {
           ipAddress: true,
@@ -84,21 +92,23 @@ export const getCctvSpecById = async (id: number) => {
 export const updateCctvSpec = async (id: number, data: Partial<CctvSpecs>) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { assetId, ...updateData } = data;
-  return await prisma.cctvSpecs.update({
+  const result = await prisma.cctvSpecs.update({
     where: { assetId: id },
     // @ts-expect-error its okay
     data: updateData,
   });
+  // revalidatePath("/items/cctv");
+  return result;
 };
 
 export const updateAssetAndCctvSpecs = async (
   id: number,
   assetData: Partial<Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>>,
-  cctvSpecsData: Partial<Omit<CctvSpecs, 'id' | 'assetId'>>
+  cctvSpecsData: Partial<Omit<CctvSpecs, 'id' | 'assetId' | 'nameSite'>>
 ) => {
-  return await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // 1. Update the Asset
-     await tx.asset.update({
+    await tx.asset.update({
       where: { id },
       // @ts-expect-error its okay
       data: assetData,
@@ -134,11 +144,29 @@ export const updateAssetAndCctvSpecs = async (
       },
     });
   });
+
+  // revalidatePath("/items/cctv");
+  return result;
 };
 
 
 export const deleteCctvSpec = async (id: number) => {
-  return await prisma.asset.delete({
+  const result = await prisma.asset.delete({
     where: { id },
   });
+  revalidatePath("/items/cctv");
+  return result;
 };
+
+export const getCctvSpecByChannelCameraId = async (channelCameraId: number) => {
+  return await prisma.cctvSpecs.findUnique({
+    where: { channelCameraId },
+    include: {
+      asset: true,
+      brand: true,
+      model: true,
+      deviceType: true,
+    },
+  });
+};
+

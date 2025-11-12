@@ -19,13 +19,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createCctvChannelCamera } from '@/lib/cctvChannelCameraService';
 import { toast } from 'sonner';
 import { Sbu } from '@prisma/client';
-import { ALL_LOCATIONS } from '@/lib/constants';
+import { SBU_OPTIONS } from '@/lib/constants';
 
 export function AddChannelCameraDialog() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [lokasi, setLokasi] = useState('');
-  const [sbu, setSbu] = useState<typeof ALL_LOCATIONS[number]>('');
+  const [sbu, setSbu] = useState<Sbu | ''>('');
 
   const mutation = useMutation({
     mutationFn: createCctvChannelCamera,
@@ -83,9 +83,9 @@ export function AddChannelCameraDialog() {
                 <SelectValue placeholder="Select an SBU" />
               </SelectTrigger>
               <SelectContent className='w-full'>
-                {ALL_LOCATIONS.map((company) => (
+                {SBU_OPTIONS.map((company) => (
                   <SelectItem key={company} value={company}>
-                    {company}
+                    {company.replace(/_/g, " ")}
                   </SelectItem>
                 ))}
               </SelectContent>

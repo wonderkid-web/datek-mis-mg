@@ -91,7 +91,7 @@ export default function CctvPage() {
           }}
         />
       </div>
-            <DataTable
+      <DataTable
         columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
         // @ts-expect-error its okay
         data={cctvAssets || []}
@@ -126,6 +126,7 @@ export default function CctvPage() {
       />
 
       <EditCctvDialog
+        // @ts-expect-error its okay
         asset={assetToEdit}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}

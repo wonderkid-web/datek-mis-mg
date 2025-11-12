@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 export default function ServiceRecordsLayout({
-  children,
+  children, 
 }: {
   children: React.ReactNode;
 }) {
@@ -15,6 +15,7 @@ export default function ServiceRecordsLayout({
     { href: '/service-records/history', label: 'Service History' },
     { href: '/service-records/repetitive', label: 'Repetitive Maintenance' },
     { href: '/service-records/computer-maintenance', label: 'Computer Maintenance' },
+    { href: '/service-records/cctv-maintenance', label: 'Repetitive CCTV Maintenance' },
     // { href: '/service-records/repetitive-andi', label: 'Repetitive Maintenance Andi' },
   ];
 
