@@ -1,4 +1,5 @@
 "use server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "./prisma";
 import { Asset } from "@prisma/client";
 
@@ -31,9 +32,18 @@ interface CreateIntelNucSpecsDataInput {
   licenseKey?: string | null;
 }
 
+// UPDATE: Tambahkan field
+interface OfficeAccountData {
+  email: string;
+  password: string;
+  licenseExpiry?: Date | null;
+  isActive: boolean;
+}
+
 export async function createAssetAndIntelNucSpecs(
   assetData: CreateAssetData,
-  intelNucSpecsDataInput: CreateIntelNucSpecsDataInput
+  intelNucSpecsDataInput: CreateIntelNucSpecsDataInput,
+  officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
   const intelNucSpecsCreateData: any = {
     macWlan: intelNucSpecsDataInput.macWlan,
@@ -112,11 +122,28 @@ export async function createAssetAndIntelNucSpecs(
       intelNucSpecs: {
         create: intelNucSpecsCreateData,
       },
+      // UPDATE Logic
+      officeAccount: officeAccountData
+        ? {
+          create: {
+            email: officeAccountData.email,
+            password: officeAccountData.password,
+            licenseExpiry: officeAccountData.licenseExpiry,
+            isActive: officeAccountData.isActive,
+          },
+        }
+        : undefined,
     },
     include: {
       intelNucSpecs: true,
+      officeAccount: true,
     },
   });
+  // --- TAMBAHKAN BLOCK INI ---
+  revalidatePath("/data-center/assets");
+  revalidatePath("/data-center/assigned-assets");
+  revalidateTag("asset-assignments");
+  // ----------------------------
   return newAsset;
 }
 
@@ -141,7 +168,8 @@ interface UpdateIntelNucSpecsDataInput {
 export async function updateAssetAndIntelNucSpecs(
   id: number,
   assetData: Partial<CreateAssetData>,
-  intelNucSpecsDataInput: UpdateIntelNucSpecsDataInput
+  intelNucSpecsDataInput: UpdateIntelNucSpecsDataInput,
+  officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
   const intelNucSpecsUpdateData: any = {};
 
@@ -151,7 +179,6 @@ export async function updateAssetAndIntelNucSpecs(
   if (intelNucSpecsDataInput.macLan !== undefined) {
     intelNucSpecsUpdateData.macLan = intelNucSpecsDataInput.macLan;
   }
-  // Note: license key is modeled as LicenseKeyOption relation in schema, not free text.
 
   if (intelNucSpecsDataInput.processorOptionId !== undefined) {
     intelNucSpecsUpdateData.processorOption = intelNucSpecsDataInput.processorOptionId === null ? { disconnect: true } : { connect: { id: intelNucSpecsDataInput.processorOptionId } };
@@ -193,6 +220,29 @@ export async function updateAssetAndIntelNucSpecs(
     intelNucSpecsUpdateData.licenseOption = intelNucSpecsDataInput.licenseOptionId === null ? { disconnect: true } : { connect: { id: intelNucSpecsDataInput.licenseOptionId } };
   }
 
+  let officeAccountUpdateLogic: any = undefined;
+
+  if (officeAccountData) {
+    officeAccountUpdateLogic = {
+      upsert: {
+        create: {
+          email: officeAccountData.email,
+          password: officeAccountData.password,
+          licenseExpiry: officeAccountData.licenseExpiry,
+          isActive: officeAccountData.isActive,
+        },
+        update: {
+          email: officeAccountData.email,
+          password: officeAccountData.password,
+          licenseExpiry: officeAccountData.licenseExpiry,
+          isActive: officeAccountData.isActive,
+        },
+      },
+    };
+  } else if (officeAccountData === null) {
+    officeAccountUpdateLogic = { delete: true };
+  }
+
   const updatedAsset = await prisma.asset.update({
     where: { id },
     data: {
@@ -200,11 +250,19 @@ export async function updateAssetAndIntelNucSpecs(
       intelNucSpecs: {
         update: intelNucSpecsUpdateData,
       },
+      officeAccount: officeAccountData ? officeAccountUpdateLogic : (officeAccountData === null ? { delete: true } : undefined),
     },
     include: {
       intelNucSpecs: true,
+      officeAccount: true,
     },
   });
+
+  // --- TAMBAHKAN BLOCK INI ---
+  revalidatePath("/data-center/assets");
+  revalidatePath("/data-center/assigned-assets");
+  revalidateTag("asset-assignments");
+  // ----------------------------
   return updatedAsset;
 }
 
@@ -229,6 +287,7 @@ export async function getIntelNucAssetById(id: number): Promise<Asset | null> {
           licenseOption: true,
         },
       },
+      officeAccount: true,
     },
   });
 

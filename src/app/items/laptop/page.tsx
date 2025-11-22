@@ -5,7 +5,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Select from "react-select"; // Import react-select
+import { Checkbox } from "@/components/ui/checkbox";
+import Select from "react-select"; 
 
 import { getLaptopRamOptions } from "@/lib/laptopRamService";
 import { getLaptopProcessorOptions } from "@/lib/laptopProcessorService";
@@ -21,7 +22,6 @@ import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { createAssetAndLaptopSpecs } from "@/lib/assetService";
 import { toast } from "sonner";
 
-// Define interfaces for dropdown options
 interface Option {
   id: number;
   value: string;
@@ -47,15 +47,20 @@ export default function AddLaptopAssetPage() {
   const [macLan, setMacLan] = useState("");
   const [licenseKey, setLicenseKey] = useState("");
 
+  // --- STATE BARU UNTUK OFFICE ACCOUNT ---
+  const [hasOfficeAccount, setHasOfficeAccount] = useState(false);
+  const [officeEmail, setOfficeEmail] = useState("");
+  const [officePassword, setOfficePassword] = useState("");
+  const [officeLicenseExpiry, setOfficeLicenseExpiry] = useState(""); // Baru
+  const [officeIsActive, setOfficeIsActive] = useState(true);         // Baru
+
   // State for dropdown options
   const [ramOptions, setRamOptions] = useState<Option[]>([]);
   const [processorOptions, setProcessorOptions] = useState<Option[]>([]);
   const [storageOptions, setStorageOptions] = useState<Option[]>([]);
   const [osOptions, setOsOptions] = useState<Option[]>([]);
   const [powerOptions, setPowerOptions] = useState<Option[]>([]);
-  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<
-    Option[]
-  >([]);
+  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<Option[]>([]);
   const [colorOptions, setColorOptions] = useState<Option[]>([]);
   const [brandOptions, setBrandOptions] = useState<Option[]>([]);
   const [graphicOptions, setGraphicOptions] = useState<Option[]>([]);
@@ -64,19 +69,13 @@ export default function AddLaptopAssetPage() {
 
   // State untuk ID dropdown
   const [brandOptionId, setBrandOptionId] = useState<number | null>(null);
-  const [processorOptionId, setProcessorOptionId] = useState<number | null>(
-    null
-  );
+  const [processorOptionId, setProcessorOptionId] = useState<number | null>(null);
   const [ramOptionId, setRamOptionId] = useState<number | null>(null);
-  const [storageTypeOptionId, setStorageTypeOptionId] = useState<number | null>(
-    null
-  );
+  const [storageTypeOptionId, setStorageTypeOptionId] = useState<number | null>(null);
   const [osOptionId, setOsOptionId] = useState<number | null>(null);
   const [licenseOptionId, setLicenseOptionId] = useState<number | null>(null);
   const [powerOptionId, setPowerOptionId] = useState<number | null>(null);
-  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<
-    number | null
-  >(null);
+  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<number | null>(null);
   const [colorOptionId, setColorOptionId] = useState<number | null>(null);
   const [graphicOptionId, setGraphicOptionId] = useState<number | null>(null);
   const [typeOptionId] = useState<number | null>(null);
@@ -102,9 +101,7 @@ export default function AddLaptopAssetPage() {
         setStorageOptions(mapOptions(await getLaptopStorageOptions()));
         setOsOptions(mapOptions(await getLaptopOsOptions()));
         setPowerOptions(mapOptions(await getLaptopPowerOptions()));
-        setMicrosoftOfficeOptions(
-          mapOptions(await getLaptopMicrosoftOffices())
-        );
+        setMicrosoftOfficeOptions(mapOptions(await getLaptopMicrosoftOffices()));
         setColorOptions(mapOptions(await getLaptopColors()));
         setBrandOptions(mapOptions(await getLaptopBrandOptions()));
         setTypeOptions(mapOptions(await getLaptopTypeOptions()));
@@ -122,7 +119,6 @@ export default function AddLaptopAssetPage() {
 
     const assetData = {
       namaAsset: namaAsset || "",
-      // ini satu karna laptop
       categoryId: 1,
       nomorSeri,
       tanggalPembelian: tanggalPembelian ? new Date(tanggalPembelian) : null,
@@ -147,8 +143,18 @@ export default function AddLaptopAssetPage() {
       licenseOptionId,
     };
 
+    // Logic Office Account (UPDATED)
+    const officeAccountData = hasOfficeAccount
+      ? {
+          email: officeEmail,
+          password: officePassword,
+          licenseExpiry: officeLicenseExpiry ? new Date(officeLicenseExpiry) : null,
+          isActive: officeIsActive,
+        }
+      : null;
+
     try {
-      await createAssetAndLaptopSpecs(assetData, laptopSpecsData);
+      await createAssetAndLaptopSpecs(assetData, laptopSpecsData, officeAccountData);
       toast.success("Laptop asset added successfully!");
       router.push("/data-center/assigned-assets");
     } catch (error) {
@@ -187,6 +193,7 @@ export default function AddLaptopAssetPage() {
     setter(formatted.toUpperCase().slice(0, 17));
   };
 
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">
@@ -197,6 +204,7 @@ export default function AddLaptopAssetPage() {
         className="space-y-6 p-4 border rounded-lg md:w-1/2 mx-auto"
       >
         <h2 className="text-xl font-semibold mb-4">Laptop Details</h2>
+        {/* ... (Fields lain biarkan saja) ... */}
         <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
           <Label>Brand</Label>
           <Select
@@ -398,24 +406,89 @@ export default function AddLaptopAssetPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
-          <Label>Microsoft Office</Label>
-          <Select
-            options={microsoftOfficeOptions.map((opt) => ({
-              value: opt.id.toString(),
-              label: opt.value,
-            }))}
-            value={getSelectedOption(
-              microsoftOfficeOptions,
-              microsoftOfficeOptionId
-            )}
-            onChange={(selectedOption) =>
-              setMicrosoftOfficeOptionId(
-                selectedOption ? parseInt(selectedOption.value) : null
-              )
-            }
-          />
+        {/* --- BAGIAN MICROSOFT OFFICE & OFFICE ACCOUNT (UPDATED) --- */}
+        <div className="border p-4 rounded-md space-y-4 bg-slate-50 dark:bg-slate-900">
+          <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+            <Label>Microsoft Office Version</Label>
+            <Select
+              options={microsoftOfficeOptions.map((opt) => ({
+                value: opt.id.toString(),
+                label: opt.value,
+              }))}
+              value={getSelectedOption(
+                microsoftOfficeOptions,
+                microsoftOfficeOptionId
+              )}
+              onChange={(selectedOption) =>
+                setMicrosoftOfficeOptionId(
+                  selectedOption ? parseInt(selectedOption.value) : null
+                )
+              }
+              placeholder="Select Office Version"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2 mt-2">
+            <Checkbox
+              id="officeAccount"
+              checked={hasOfficeAccount}
+              onCheckedChange={(checked) => setHasOfficeAccount(checked as boolean)}
+            />
+            <Label
+              htmlFor="officeAccount"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Include Office Account Credential?
+            </Label>
+          </div>
+
+          {hasOfficeAccount && (
+            <div className="grid grid-cols-1 gap-3 mt-2 pl-6 border-l-2 border-blue-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                <Label htmlFor="officeEmail">Office Email</Label>
+                <Input
+                  id="officeEmail"
+                  type="email"
+                  value={officeEmail}
+                  onChange={(e) => setOfficeEmail(e.target.value)}
+                  placeholder="admin@company.com"
+                  required={hasOfficeAccount}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                <Label htmlFor="officePassword">Office Password</Label>
+                <Input
+                  id="officePassword"
+                  type="text" 
+                  value={officePassword}
+                  onChange={(e) => setOfficePassword(e.target.value)}
+                  placeholder="Password123"
+                  required={hasOfficeAccount}
+                />
+              </div>
+              {/* Tambahan Input License Expiry */}
+              <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                <Label htmlFor="officeLicenseExpiry">Office License Expiry</Label>
+                <Input
+                  id="officeLicenseExpiry"
+                  type="date"
+                  value={officeLicenseExpiry}
+                  onChange={(e) => setOfficeLicenseExpiry(e.target.value)}
+                />
+              </div>
+              {/* Tambahan Input Active Status */}
+              <div className="flex items-center space-x-2">
+                 <Checkbox
+                    id="officeIsActive"
+                    checked={officeIsActive}
+                    onCheckedChange={(checked) => setOfficeIsActive(checked as boolean)}
+                  />
+                  <Label htmlFor="officeIsActive">Account is Active</Label>
+              </div>
+            </div>
+          )}
         </div>
+        {/* --- END MODIFIKASI --- */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
           <Label htmlFor="tanggalPembelian">Purchase Date</Label>
@@ -448,6 +521,7 @@ export default function AddLaptopAssetPage() {
             isSearchable
           />
         </div>
+
         <div className="flex justify-end mt-18">
           <Button type="submit">Add Laptop Asset</Button>
         </div>

@@ -73,23 +73,23 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
     fetchOptions();
   }, [open]);
 
-  const filteredChannelCameraOptions = useMemo(() => {
-    if (!sbu) return [];
+  // const filteredChannelCameraOptions = useMemo(() => {
+  //   if (!sbu) return [];
 
-    const normalize = (str: string) => str.replace(/[\s-]/g, "_").toLowerCase();
+  //   const normalize = (str: string) => str.replace(/[\s-]/g, "_").toLowerCase();
 
-    if (sbu === SBU_GROUP_KEY) {
-      const isaPrefix = normalize("PT_Intan_Sejati_Andalan");
-      return channelCameraOptions
-        .filter(opt => normalize(opt.sbu).startsWith(isaPrefix))
-        .map(opt => ({ value: String(opt.id), label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}` }));
-    }
+  //   if (sbu === SBU_GROUP_KEY) {
+  //     const isaPrefix = normalize("PT_Intan_Sejati_Andalan");
+  //     return channelCameraOptions
+  //       .filter(opt => normalize(opt.sbu).startsWith(isaPrefix))
+  //       .map(opt => ({ value: String(opt.id), label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}` }));
+  //   }
 
-    const normalizedSbu = normalize(sbu);
-    return channelCameraOptions
-      .filter(opt => normalize(opt.sbu) === normalizedSbu)
-      .map(opt => ({ value: String(opt.id), label: opt.lokasi }));
-  }, [sbu, channelCameraOptions]);
+  //   const normalizedSbu = normalize(sbu);
+  //   return channelCameraOptions
+  //     .filter(opt => normalize(opt.sbu) === normalizedSbu)
+  //     .map(opt => ({ value: String(opt.id), label: opt.lokasi }));
+  // }, [sbu, channelCameraOptions]);
 
   const handleSubmit = async () => {
     try {
@@ -169,12 +169,13 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
             <Label htmlFor="channelCamera" className="text-right">Channel Camera</Label>
             <ReactSelect
               className="col-span-3"
-              options={channelCameraOptions.map(opt => ({ value: String(opt.id), label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}` }))}
+              options={channelCameraOptions.filter(opt => opt?.sbu.replaceAll(" - ", " ").replaceAll("_", " ") == sbu?.replaceAll("_", " ")).map(opt => ({ value: String(opt.id), label: `${opt.lokasi}` }))}
               onChange={(opt) => setChannelCameraId(opt ? opt.value : null)}
               placeholder="Select Channel Camera"
               isDisabled={!sbu}
             />
           </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="viewCamera" className="text-right">View Camera</Label>
             <Input id="viewCamera" value={viewCamera} onChange={(e) => setViewCamera(e.target.value)} className="col-span-3" />
@@ -227,12 +228,12 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
             <Input id="macAddress" value={macAddress} onChange={(e) => setMacAddress(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="username" className="text-right">Username</Label>
-            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} className="col-span-3" />
+            <Label htmlFor="usernamee" className="text-right">Username</Label>
+            <Input id="usernamee" value={username} onChange={(e) => setUsername(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="password" className="text-right">Password</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="col-span-3" />
+            <Input id="password" type="text" value={password} onChange={(e) => setPassword(e.target.value)} className="col-span-3" />
           </div>
         </div>
         <DialogFooter>

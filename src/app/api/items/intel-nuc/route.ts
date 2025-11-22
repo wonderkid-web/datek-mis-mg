@@ -4,7 +4,7 @@ import { createAssetAndIntelNucSpecs } from '@/lib/intelNucService';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { assetData, intelNucSpecsData } = body;
+    const { assetData, intelNucSpecsData, officeAccountData } = body;
 
     if (!assetData || !intelNucSpecsData) {
       return new NextResponse(
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const newAsset = await createAssetAndIntelNucSpecs(assetData, intelNucSpecsData);
+    const newAsset = await createAssetAndIntelNucSpecs(assetData, intelNucSpecsData, officeAccountData);
     return NextResponse.json(newAsset, { status: 201 });
   } catch (error) {
     console.error('Error creating asset and Intel NUC specs:', error);

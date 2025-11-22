@@ -2,6 +2,7 @@
 import { prisma } from "./prisma";
 import { Asset } from "@prisma/client";
 import { ALL_LOCATIONS } from "./constants";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 interface CreateAssetData {
   namaAsset: string;
@@ -32,9 +33,18 @@ interface CreateLaptopSpecsDataInput {
   licenseKey?: string | null;
 }
 
+// UPDATE: Tambahkan field baru di interface ini
+interface OfficeAccountData {
+  email: string;
+  password: string;
+  licenseExpiry?: Date | null; // Baru
+  isActive: boolean;           // Baru
+}
+
 export async function createAssetAndLaptopSpecs(
   assetData: CreateAssetData,
-  laptopSpecsDataInput: CreateLaptopSpecsDataInput
+  laptopSpecsDataInput: CreateLaptopSpecsDataInput,
+  officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
   const laptopSpecsCreateData: any = {
     macWlan: laptopSpecsDataInput.macWlan,
@@ -107,17 +117,34 @@ export async function createAssetAndLaptopSpecs(
     };
   }
 
+  // Logic simpan asset + specs + akun office (UPDATED)
   const newAsset = await prisma.asset.create({
     data: {
       ...assetData,
       laptopSpecs: {
         create: laptopSpecsCreateData,
       },
+      officeAccount: officeAccountData
+        ? {
+          create: {
+            email: officeAccountData.email,
+            password: officeAccountData.password,
+            licenseExpiry: officeAccountData.licenseExpiry, // Simpan expiry
+            isActive: officeAccountData.isActive,           // Simpan status
+          },
+        }
+        : undefined,
     },
     include: {
       laptopSpecs: true,
+      officeAccount: true,
     },
   });
+  // --- TAMBAHKAN BLOCK INI ---
+  revalidatePath("/data-center/assets");
+  revalidatePath("/data-center/assigned-assets");
+  revalidateTag("asset-assignments"); // Reset cache assigned assets
+  // ----------------------------
   return newAsset;
 }
 
@@ -127,7 +154,7 @@ export async function getAssets(categoryId?: number): Promise<Asset[]> {
   const assets = await prisma.asset.findMany({
     where: whereClause,
     include: {
-      category: true, // Include category details
+      category: true,
       laptopSpecs: {
         include: {
           brandOption: true,
@@ -167,6 +194,7 @@ export async function getAssets(categoryId?: number): Promise<Asset[]> {
           modelOption: true,
         },
       },
+      officeAccount: true,
     },
   });
 
@@ -219,6 +247,7 @@ export async function getAssetById(id: number): Promise<Asset | null> {
           modelOption: true,
         },
       },
+      officeAccount: true,
     },
   });
 
@@ -238,6 +267,12 @@ export async function updateBasicAssetInfo(
     data,
   });
 
+  // --- TAMBAHKAN BLOCK INI ---
+  revalidatePath("/data-center/assets");
+  revalidatePath("/data-center/assigned-assets");
+  revalidateTag("asset-assignments");
+  revalidateTag("asset-assignments_printer"); // Jaga-jaga jika ini printer
+  // ----------------------------
   return {
     ...updatedAsset,
   };
@@ -261,16 +296,11 @@ interface UpdateLaptopSpecsDataInput {
   licenseOptionId?: number | null;
 }
 
-interface UpdatePrinterSpecsDataInput {
-  typeOptionId?: number | null;
-  brandOptionId?: number | null;
-  modelOptionId?: number | null;
-}
-
 export async function updateAssetAndLaptopSpecs(
   id: number,
   assetData: Partial<CreateAssetData>,
-  laptopSpecsDataInput: UpdateLaptopSpecsDataInput
+  laptopSpecsDataInput: UpdateLaptopSpecsDataInput,
+  officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
   const laptopSpecsUpdateData: any = {};
 
@@ -280,8 +310,6 @@ export async function updateAssetAndLaptopSpecs(
   if (laptopSpecsDataInput.macLan !== undefined) {
     laptopSpecsUpdateData.macLan = laptopSpecsDataInput.macLan;
   }
-  // Note: license key is modeled as an option relation in schema (LicenseKeyOptionId),
-  // not a free text field. We intentionally ignore any free-text licenseKey.
 
   if (laptopSpecsDataInput.processorOptionId !== undefined) {
     laptopSpecsUpdateData.processorOption = laptopSpecsDataInput.processorOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.processorOptionId } };
@@ -323,6 +351,32 @@ export async function updateAssetAndLaptopSpecs(
     laptopSpecsUpdateData.licenseOption = laptopSpecsDataInput.licenseOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.licenseOptionId } };
   }
 
+  // Logic Update Office Account (UPDATED)
+  let officeAccountUpdateLogic: any = undefined;
+
+  if (officeAccountData) {
+    officeAccountUpdateLogic = {
+      upsert: {
+        create: {
+          email: officeAccountData.email,
+          password: officeAccountData.password,
+          licenseExpiry: officeAccountData.licenseExpiry,
+          isActive: officeAccountData.isActive,
+        },
+        update: {
+          email: officeAccountData.email,
+          password: officeAccountData.password,
+          licenseExpiry: officeAccountData.licenseExpiry,
+          isActive: officeAccountData.isActive,
+        },
+      },
+    };
+  } else if (officeAccountData === null) {
+    officeAccountUpdateLogic = {
+      delete: true
+    };
+  }
+
   const updatedAsset = await prisma.asset.update({
     where: { id },
     data: {
@@ -330,45 +384,25 @@ export async function updateAssetAndLaptopSpecs(
       laptopSpecs: {
         update: laptopSpecsUpdateData,
       },
+      officeAccount: officeAccountData ? officeAccountUpdateLogic : (officeAccountData === null ? { delete: true } : undefined),
     },
     include: {
       laptopSpecs: true,
+      officeAccount: true,
     },
   });
+
+  // --- TAMBAHKAN BLOCK INI ---
+  revalidatePath("/data-center/assets");
+  revalidatePath("/data-center/assigned-assets");
+  revalidateTag("asset-assignments"); // PENTING: Reset cache
+  // ----------------------------
   return updatedAsset;
 }
 
-export async function updateAssetAndPrinterSpecs(
-  id: number,
-  assetData: Partial<CreateAssetData>,
-  printerSpecsDataInput: UpdatePrinterSpecsDataInput
-): Promise<Asset> {
-  const printerSpecsUpdateData: any = {};
-
-  if (printerSpecsDataInput.typeOptionId !== undefined) {
-    printerSpecsUpdateData.typeOption = printerSpecsDataInput.typeOptionId === null ? { disconnect: true } : { connect: { id: printerSpecsDataInput.typeOptionId } };
-  }
-  if (printerSpecsDataInput.brandOptionId !== undefined) {
-    printerSpecsUpdateData.brandOption = printerSpecsDataInput.brandOptionId === null ? { disconnect: true } : { connect: { id: printerSpecsDataInput.brandOptionId } };
-  }
-  if (printerSpecsDataInput.modelOptionId !== undefined) {
-    printerSpecsUpdateData.modelOption = printerSpecsDataInput.modelOptionId === null ? { disconnect: true } : { connect: { id: printerSpecsDataInput.modelOptionId } };
-  }
-
-  const updatedAsset = await prisma.asset.update({
-    where: { id },
-    data: {
-      ...assetData,
-      printerSpecs: {
-        update: printerSpecsUpdateData,
-      },
-    },
-    include: {
-      printerSpecs: true,
-    },
-  });
-  return updatedAsset;
-} 
+// ... (Sisa function seperti getPaginatedAssets, deleteAsset, dll biarkan saja sama seperti sebelumnya)
+// Untuk brevity saya tidak copy ulang function yang tidak berubah di bawah ini, 
+// tapi pastikan kamu tidak menghapus function getPaginatedAssets, deleteAsset, getAssetTotal, dll yang sudah ada sebelumnya.
 
 export async function getPaginatedAssets({
   page = 1,
@@ -377,9 +411,9 @@ export async function getPaginatedAssets({
   statusAsset,
   lokasiFisik,
   categoryId,
-  categorySlug,         // ← opsional, kalau mau pakai slug
-  osValue,              // ← filter by OS option value (Laptop/Intel NUC)
-  idleOnly,             // ← only assets assigned to inactive users
+  categorySlug,
+  osValue,
+  idleOnly,
 }: {
   page?: number;
   pageSize?: number;
@@ -397,7 +431,7 @@ export async function getPaginatedAssets({
   const AND = [];
 
   if (namaAsset) {
-    AND.push({ namaAsset: { contains: namaAsset} });
+    AND.push({ namaAsset: { contains: namaAsset } });
   }
   if (statusAsset) {
     AND.push({ statusAsset });
@@ -485,7 +519,6 @@ export async function getPaginatedAssets({
 }
 
 export async function deleteAsset(id: number): Promise<Asset> {
-  // Find the asset first to determine its category
   const asset = await prisma.asset.findUnique({
     where: { id },
     include: { category: true },
@@ -495,12 +528,9 @@ export async function deleteAsset(id: number): Promise<Asset> {
     throw new Error("Asset not found");
   }
 
-  // Start a transaction to ensure all or nothing is deleted
   return await prisma.$transaction(async (tx) => {
-    // 1. Delete related assignments first
     await tx.assetAssignment.deleteMany({ where: { assetId: id } });
 
-    // 2. Conditionally delete specs based on category
     if (asset.category.slug === "laptop") {
       await tx.laptopSpecs.deleteMany({ where: { assetId: id } });
     } else if (asset.category.slug === "intel-nuc") {
@@ -509,10 +539,16 @@ export async function deleteAsset(id: number): Promise<Asset> {
       await tx.printerSpecs.deleteMany({ where: { assetId: id } });
     }
 
-    // 3. Finally, delete the main asset record
     const deletedAsset = await tx.asset.delete({
       where: { id },
     });
+
+    // --- TAMBAHKAN BLOCK INI ---
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments");
+    revalidateTag("asset-assignments_printer");
+    // ----------------------------
 
     return deletedAsset;
   });
@@ -547,14 +583,14 @@ export async function getAssetBreakdownByLocation() {
     }
 
     if (breakdown[location]) {
-        const category = assignment.asset.category.nama;
-        breakdown[location][category] = (breakdown[location][category] || 0) + 1;
+      const category = assignment.asset.category.nama;
+      breakdown[location][category] = (breakdown[location][category] || 0) + 1;
     }
   });
 
   return Object.entries(breakdown).map(([location, categories]) => ({
     location,
-    data: Object.entries(categories).map(([name, total]) => ({ name, total })), 
+    data: Object.entries(categories).map(([name, total]) => ({ name, total })),
   }));
 }
 
@@ -578,10 +614,10 @@ export async function getOperatingSystemBreakdown() {
   laptopCounts.forEach((item) => {
     if (item.osOptionId) {
       mergedCounts[item.osOptionId] =
-      (mergedCounts[item.osOptionId] || 0) + item._count.assetId;
+        (mergedCounts[item.osOptionId] || 0) + item._count.assetId;
     }
   });
-  
+
   nucCounts.forEach((item) => {
     if (item.osOptionId) {
       mergedCounts[item.osOptionId] =

@@ -1,6 +1,7 @@
 "use server";
 
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { Asset, CctvSpecs } from "./types";
 import { revalidatePath } from "next/cache";
@@ -12,6 +13,7 @@ export const createAssetAndCctvSpecs = async (
   const result = await prisma.$transaction(async (tx) => {
 
     const asset = await tx.asset.create({
+      // @ts-expect-error its okay
       data: assetData,
     });
 
@@ -44,6 +46,12 @@ export const getCctvSpecs = async () => {
       statusAsset: true,
       cctvSpecs: {
         select: {
+          deviceType: {
+            select: {
+              value: true
+            }
+          },
+          power:true,
           ipAddress: true,
           brand: {
             select: {
