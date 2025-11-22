@@ -46,7 +46,7 @@ export const columns = ({
     // },
     {
       accessorKey: "cctvSpecs.channelCamera.lokasi",
-      cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.channelCamera?.sbu ?? "-"} - {row.original.cctvSpecs?.channelCamera?.lokasi ?? "-"}  </p>,
+      cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.channelCamera?.sbu.replaceAll("_"," ") ?? "-"}</p>,
       header: ({ column }) => {
         return (
           <div className="text-center">
@@ -92,11 +92,11 @@ export const columns = ({
       header: "IP Address",
       accessorFn: (row) => row.cctvSpecs?.ipAddress ?? "-",
     },
-    {
-      accessorKey: "statusAsset",
-      header: "Status",
-      cell: ({ row }) => <StatusBadge status={row.original.statusAsset} />,
-    },
+    // {
+    //   accessorKey: "statusAsset",
+    //   header: "Status",
+    //   cell: ({ row }) => <StatusBadge status={row.original.statusAsset} />,
+    // },
     {
       id: "actions",
       header: () => <div className="text-center">Actions</div>,
