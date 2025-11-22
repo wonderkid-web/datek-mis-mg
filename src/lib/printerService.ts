@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "./prisma";
 import { Asset, PrinterSpecs } from "./types";
 
@@ -21,6 +22,12 @@ export const createAssetAndPrinterSpecs = async (
         assetId: asset.id,
       },
     });
+
+    // --- TAMBAHKAN BLOCK INI DI LUAR TRANSACTION ---
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments_printer"); // Tag khusus printer
+    // -----------------------------------------------
 
     return { asset, printerSpecs };
   });

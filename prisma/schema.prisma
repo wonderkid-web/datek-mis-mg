@@ -75,6 +75,8 @@ model Asset {
   printerSpecs     PrinterSpecs?
   cctvSpecs        CctvSpecs?
 
+  officeAccount OfficeAccount? // Relasi ke akun Office
+
   @@index([categoryId], map: "assets_categoryId_fkey")
   @@map("assets")
 }
@@ -277,6 +279,22 @@ model LaptopSpecs {
   @@index([LicenseKeyOptionId], map: "laptop_specs_LicenseKeyOptionId_fkey")
   @@index([licenseOptionId], map: "laptop_specs_licenseOptionId_fkey")
   @@map("laptop_specs")
+}
+
+model OfficeAccount {
+  id            Int       @id @default(autoincrement())
+  assetId       Int       @unique // Unique memastikan 1 Asset cuma punya 1 Akun
+  email         String    @db.VarChar(255)
+  password      String    @db.VarChar(255)
+  licenseExpiry DateTime? @map("license_expiry") @db.Date
+  isActive      Boolean   @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("office_accounts")
 }
 
 model IntelNucSpecs {

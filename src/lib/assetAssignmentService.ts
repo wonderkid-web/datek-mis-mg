@@ -10,6 +10,7 @@ export const getAssetAssignments = unstable_cache(
           asset: {
             include: {
               category: true,
+              officeAccount: true, // <-- TAMBAHKAN INI
               laptopSpecs: {
                 include: {
                   brandOption: true,

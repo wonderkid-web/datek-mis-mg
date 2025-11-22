@@ -10,8 +10,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge"; // <-- IMPORT BADGE
 import { formattedDate } from "@/helper";
-import { LaptopSpecs } from "@/lib/types";
+import { LaptopSpecs, OfficeAccount } from "@/lib/types"; // <-- IMPORT OfficeAccount (optional if typed inline)
 
 interface ViewAssignmentDialogProps {
   isOpen: boolean;
@@ -26,6 +27,13 @@ interface ViewAssignmentDialogProps {
       updatedAt: Date;
       nomorAsset: string;
       laptopSpecs: LaptopSpecs;
+      // Tambahkan definisi tipe officeAccount di props (atau gunakan interface AssetAssignment lengkap)
+      officeAccount?: {
+        email: string;
+        password: string;
+        licenseExpiry: Date | null;
+        isActive: boolean;
+      } | null;
     };
     user: {
       namaLengkap: string;
@@ -45,6 +53,29 @@ export function ViewAssignmentDialog({
   const laptopSpecs = asset?.laptopSpecs;
   const printerSpecs = asset?.printerSpecs;
   const intelNucSpecs = asset?.intelNucSpecs;
+  const officeAccount = asset?.officeAccount; // <-- Variable for easier access
+
+  const calculateDaysRemaining = (dateVal: Date | string) => {
+    const today = new Date();
+    const expiryDate = new Date(dateVal);
+
+    // Reset jam ke 00:00:00 agar hitungan hari akurat
+    today.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
+
+    const diffTime = expiryDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return <span className="text-red-500 font-bold text-xs ml-1">(Expired {Math.abs(diffDays)} hari lalu)</span>;
+    } else if (diffDays === 0) {
+      return <span className="text-orange-500 font-bold text-xs ml-1">(Expired hari ini)</span>;
+    } else {
+      // Jika kurang dari 30 hari, beri warna kuning/orange sebagai warning
+      const colorClass = diffDays <= 30 ? "text-orange-500" : "text-green-600";
+      return <span className={`${colorClass} font-semibold text-xs ml-1`}>({diffDays} hari lagi)</span>;
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -182,6 +213,46 @@ export function ViewAssignmentDialog({
                   </TableRow>
                 </>
               )}
+              {/* Office Account Credential Section */}
+              {officeAccount && (
+                <>
+                  <TableRow>
+                    <TableCell colSpan={2} className="bg-muted/50 text-center font-semibold pt-4">
+                      Office Account Credential
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Office Email</TableCell>
+                    <TableCell>{officeAccount.email}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Office Password</TableCell>
+                    <TableCell>{officeAccount.password}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">License Expiry</TableCell>
+                    <TableCell>
+                      {officeAccount.licenseExpiry ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                          <span>{formattedDate(officeAccount.licenseExpiry)}</span>
+                          {calculateDaysRemaining(officeAccount.licenseExpiry)}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Account Status</TableCell>
+                    <TableCell>
+                      <Badge variant={officeAccount.isActive ? "default" : "destructive"}>
+                        {officeAccount.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                </>
+              )}
+
             </TableBody>
           </Table>
         </div>

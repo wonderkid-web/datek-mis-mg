@@ -24,6 +24,16 @@ export interface AssetCategory {
   slug: string;
 }
 
+// --- NEW INTERFACE FOR OFFICE ACCOUNT ---
+export interface OfficeAccount {
+  id: number;
+  email: string;
+  password: string;
+  licenseExpiry: Date | null;
+  isActive: boolean;
+  assetId: number;
+}
+
 export interface Asset {
   id: number;
   namaAsset: string;
@@ -40,6 +50,7 @@ export interface Asset {
   intelNucSpecs?: IntelNucSpecs;
   printerSpecs?: PrinterSpecs;
   cctvSpecs?: CctvSpecs;
+  officeAccount?: OfficeAccount; // <-- TAMBAHKAN INI
 }
 
 export interface AssetAssignment {

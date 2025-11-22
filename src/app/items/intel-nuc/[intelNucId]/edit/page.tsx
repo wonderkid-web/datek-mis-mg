@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -7,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Select from "react-select"; // Import react-select
+import { Checkbox } from "@/components/ui/checkbox";
+import Select from "react-select";
 
 import { getLaptopRamOptions } from "@/lib/laptopRamService";
 import { getLaptopProcessorOptions } from "@/lib/laptopProcessorService";
@@ -24,7 +24,6 @@ import { getAssetById } from "@/lib/assetService";
 import { updateAssetAndIntelNucSpecs } from "@/lib/intelNucService";
 import { toast } from "sonner";
 
-// Define interfaces for dropdown options
 interface Option {
   id: number; 
   value: string;
@@ -40,8 +39,6 @@ export default function EditIntelNucAssetPage() {
   const params = useParams();
   const intelNucId = params.intelNucId as string;
 
-  // State for loading
-
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
   const [nomorSeri, setNomorSeri] = useState("");
@@ -53,6 +50,13 @@ export default function EditIntelNucAssetPage() {
   const [macWlan, setMacWlan] = useState("");
   const [macLan, setMacLan] = useState("");
   const [licenseKey, setLicenseKey] = useState("");
+
+  // --- STATE BARU UNTUK OFFICE ACCOUNT ---
+  const [hasOfficeAccount, setHasOfficeAccount] = useState(false);
+  const [officeEmail, setOfficeEmail] = useState("");
+  const [officePassword, setOfficePassword] = useState("");
+  const [officeLicenseExpiry, setOfficeLicenseExpiry] = useState(""); // Baru
+  const [officeIsActive, setOfficeIsActive] = useState(true);         // Baru
 
   // State for dropdown options
   const [ramOptions, setRamOptions] = useState<Option[]>([]);
@@ -117,7 +121,7 @@ export default function EditIntelNucAssetPage() {
   useEffect(() => {
     const loadAssetData = async () => {
       if (intelNucId) {
-        const asset = await getAssetById(parseInt(intelNucId));
+        const asset: any = await getAssetById(parseInt(intelNucId));
         if (asset) {
           setNamaAsset(asset.namaAsset);
           setNomorSeri(asset.nomorSeri);
@@ -141,6 +145,21 @@ export default function EditIntelNucAssetPage() {
             setColorOptionId(asset.intelNucSpecs.colorOptionId);
             setGraphicOptionId(asset.intelNucSpecs.graphicOptionId);
             setTypeOptionId(asset.intelNucSpecs.typeOptionId);
+          }
+
+           // Populate Office Account Data (UPDATED)
+           if (asset.officeAccount) {
+            setHasOfficeAccount(true);
+            setOfficeEmail(asset.officeAccount.email);
+            setOfficePassword(asset.officeAccount.password);
+            setOfficeLicenseExpiry(asset.officeAccount.licenseExpiry ? new Date(asset.officeAccount.licenseExpiry).toISOString().split("T")[0] : "");
+            setOfficeIsActive(asset.officeAccount.isActive);
+          } else {
+            setHasOfficeAccount(false);
+            setOfficeEmail("");
+            setOfficePassword("");
+            setOfficeLicenseExpiry("");
+            setOfficeIsActive(true);
           }
         }
       }
@@ -177,8 +196,18 @@ export default function EditIntelNucAssetPage() {
       licenseOptionId,
     };
 
+     // Logic Office Account (UPDATED)
+     const officeAccountData = hasOfficeAccount
+     ? {
+         email: officeEmail,
+         password: officePassword,
+         licenseExpiry: officeLicenseExpiry ? new Date(officeLicenseExpiry) : null,
+         isActive: officeIsActive,
+       }
+     : null;
+
     try {
-      await updateAssetAndIntelNucSpecs(parseInt(intelNucId), assetData, intelNucSpecsData);
+      await updateAssetAndIntelNucSpecs(parseInt(intelNucId), assetData, intelNucSpecsData, officeAccountData);
       toast.success("Intel NUC asset updated successfully!");
       router.push("/data-center/assigned-assets");
     } catch (error) {
@@ -223,7 +252,8 @@ export default function EditIntelNucAssetPage() {
             <CardTitle>Common Asset Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
+            {/* Fields common: Brand, SN, Date... */}
+             <div>
               <Label htmlFor="namaAsset">Model Intel NUC</Label>
               <Select
                 options={typeOptions.map((opt) => ({ value: opt.value, label: opt.value }))}
@@ -265,6 +295,7 @@ export default function EditIntelNucAssetPage() {
             <CardTitle>Intel NUC Specific Details</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fields NUC specific */}
             <div>
               <Label>Brand</Label>
               <Select
@@ -340,14 +371,80 @@ export default function EditIntelNucAssetPage() {
                 onChange={(selectedOption) => setPowerOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
               />
             </div>
-            <div>
-              <Label>Microsoft Office</Label>
-              <Select
-                options={microsoftOfficeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-                value={getSelectedOption(microsoftOfficeOptions, microsoftOfficeOptionId)}
-                onChange={(selectedOption) => setMicrosoftOfficeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-              />
+
+             {/* --- BAGIAN MICROSOFT OFFICE (UPDATED) --- */}
+             <div className="md:col-span-2 border p-4 rounded-md space-y-4 bg-slate-50 dark:bg-slate-900">
+                <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                    <Label>Microsoft Office</Label>
+                    <Select
+                        options={microsoftOfficeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
+                        value={getSelectedOption(microsoftOfficeOptions, microsoftOfficeOptionId)}
+                        onChange={(selectedOption) => setMicrosoftOfficeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+                    />
+                </div>
+
+                 <div className="flex items-center space-x-2 mt-2">
+                    <Checkbox
+                        id="officeAccount"
+                        checked={hasOfficeAccount}
+                        onCheckedChange={(checked) => setHasOfficeAccount(checked as boolean)}
+                    />
+                    <Label
+                        htmlFor="officeAccount"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                        Update Office Account Credential?
+                    </Label>
+                </div>
+
+                {hasOfficeAccount && (
+                    <div className="grid grid-cols-1 gap-3 mt-2 pl-6 border-l-2 border-blue-500">
+                        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                            <Label htmlFor="officeEmail">Office Email</Label>
+                            <Input
+                                id="officeEmail"
+                                type="email"
+                                value={officeEmail}
+                                onChange={(e) => setOfficeEmail(e.target.value)}
+                                placeholder="admin@company.com"
+                                required={hasOfficeAccount}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                            <Label htmlFor="officePassword">Office Password</Label>
+                            <Input
+                                id="officePassword"
+                                type="text"
+                                value={officePassword}
+                                onChange={(e) => setOfficePassword(e.target.value)}
+                                placeholder="Password123"
+                                required={hasOfficeAccount}
+                            />
+                        </div>
+                        {/* Tambahan Input License Expiry */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                            <Label htmlFor="officeLicenseExpiry">Office License Expiry</Label>
+                            <Input
+                                id="officeLicenseExpiry"
+                                type="date"
+                                value={officeLicenseExpiry}
+                                onChange={(e) => setOfficeLicenseExpiry(e.target.value)}
+                            />
+                        </div>
+                        {/* Tambahan Input Active Status */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="officeIsActive"
+                                checked={officeIsActive}
+                                onCheckedChange={(checked) => setOfficeIsActive(checked as boolean)}
+                            />
+                            <Label htmlFor="officeIsActive">Account is Active</Label>
+                        </div>
+                    </div>
+                )}
             </div>
+             {/* --- END --- */}
+
             <div>
               <Label>Color</Label>
               <Select

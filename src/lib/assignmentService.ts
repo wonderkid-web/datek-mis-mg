@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use server";
 import { prisma } from "./prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { AssetAssignment, Prisma } from "@prisma/client";
 
 export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
@@ -10,6 +10,7 @@ export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
       user: true,
       asset: {
         include: {
+          officeAccount: true,
           laptopSpecs: {
             include: {
               brandOption: true,
@@ -42,8 +43,8 @@ export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
               licenseOption: true,
             },
           },
-          printerSpecs:{
-            include:{
+          printerSpecs: {
+            include: {
               brandOption: true
             }
           }
@@ -113,6 +114,10 @@ export const createAssignment = async (data: {
   nomorAsset?: string | null;
 }): Promise<AssetAssignment> => {
   const { assetId, userId, catatan, nomorAsset } = data;
+  // HAPUS CACHE LAMA
+  revalidateTag("asset-assignments");          // <--- Reset cache query unstable_cache
+  revalidatePath("/data-center/assigned-assets"); // <--- Reset halaman assigned-assets
+  revalidatePath("/data-center/assets");          // <--- Reset halaman assets (karena status asset berubah jadi 'Used')
   return await prisma.assetAssignment.create({
     data: {
       catatan,
@@ -125,7 +130,7 @@ export const createAssignment = async (data: {
       },
     },
   });
-  revalidatePath("/data-center/assets");
+
 };
 
 export const updateAssignment = async (
@@ -148,14 +153,24 @@ export const updateAssignment = async (
     updateData.user = { connect: { id: userId } };
   }
 
-  return await prisma.assetAssignment.update({
+
+  await prisma.assetAssignment.update({
     where: { id },
     data: updateData,
   });
+  // HAPUS CACHE LAMA
+  revalidateTag("asset-assignments");          // <--- Reset cache query unstable_cache
+  revalidatePath("/data-center/assigned-assets"); // <--- Reset halaman assigned-assets
+  revalidatePath("/data-center/assets");          // <--- Reset halaman assets (karena status asset berubah jadi 'Used')
 };
 
 export const deleteAssignment = async (id: number): Promise<void> => {
+
   await prisma.assetAssignment.delete({
     where: { id },
   });
+  // HAPUS CACHE LAMA
+  revalidateTag("asset-assignments");          // <--- Reset cache query unstable_cache
+  revalidatePath("/data-center/assigned-assets"); // <--- Reset halaman assigned-assets
+  revalidatePath("/data-center/assets");          // <--- Reset halaman assets (karena status asset berubah jadi 'Used')
 };

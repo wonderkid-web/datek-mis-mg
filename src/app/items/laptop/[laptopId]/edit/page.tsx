@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -7,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Select from "react-select"; // Import react-select
+import { Checkbox } from "@/components/ui/checkbox";
+import Select from "react-select";
 
 import { getLaptopRamOptions } from "@/lib/laptopRamService";
 import { getLaptopProcessorOptions } from "@/lib/laptopProcessorService";
@@ -23,7 +23,6 @@ import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { getAssetById, updateAssetAndLaptopSpecs } from "@/lib/assetService";
 import { toast } from "sonner";
 
-// Define interfaces for dropdown options
 interface Option {
   id: number;
   value: string;
@@ -39,7 +38,6 @@ export default function EditLaptopAssetPage() {
   const params = useParams();
   const laptopId = params.laptopId as string;
 
-  // State for loading
   const [isLoading, setIsLoading] = useState(true);
 
   // State for common asset fields
@@ -54,15 +52,20 @@ export default function EditLaptopAssetPage() {
   const [macLan, setMacLan] = useState("");
   const [licenseKey, setLicenseKey] = useState("");
 
+  // --- STATE BARU UNTUK OFFICE ACCOUNT (EDIT) ---
+  const [hasOfficeAccount, setHasOfficeAccount] = useState(false);
+  const [officeEmail, setOfficeEmail] = useState("");
+  const [officePassword, setOfficePassword] = useState("");
+  const [officeLicenseExpiry, setOfficeLicenseExpiry] = useState(""); // Baru
+  const [officeIsActive, setOfficeIsActive] = useState(true);         // Baru
+
   // State for dropdown options
   const [ramOptions, setRamOptions] = useState<Option[]>([]);
   const [processorOptions, setProcessorOptions] = useState<Option[]>([]);
   const [storageOptions, setStorageOptions] = useState<Option[]>([]);
   const [osOptions, setOsOptions] = useState<Option[]>([]);
   const [powerOptions, setPowerOptions] = useState<Option[]>([]);
-  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<
-    Option[]
-  >([]);
+  const [microsoftOfficeOptions, setMicrosoftOfficeOptions] = useState<Option[]>([]);
   const [colorOptions, setColorOptions] = useState<Option[]>([]);
   const [brandOptions, setBrandOptions] = useState<Option[]>([]);
   const [graphicOptions, setGraphicOptions] = useState<Option[]>([]);
@@ -71,19 +74,13 @@ export default function EditLaptopAssetPage() {
 
   // State untuk ID dropdown
   const [brandOptionId, setBrandOptionId] = useState<number | null>(null);
-  const [processorOptionId, setProcessorOptionId] = useState<number | null>(
-    null
-  );
+  const [processorOptionId, setProcessorOptionId] = useState<number | null>(null);
   const [ramOptionId, setRamOptionId] = useState<number | null>(null);
-  const [storageTypeOptionId, setStorageTypeOptionId] = useState<number | null>(
-    null
-  );
+  const [storageTypeOptionId, setStorageTypeOptionId] = useState<number | null>(null);
   const [osOptionId, setOsOptionId] = useState<number | null>(null);
   const [licenseOptionId, setLicenseOptionId] = useState<number | null>(null);
   const [powerOptionId, setPowerOptionId] = useState<number | null>(null);
-  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<
-    number | null
-  >(null);
+  const [microsoftOfficeOptionId, setMicrosoftOfficeOptionId] = useState<number | null>(null);
   const [colorOptionId, setColorOptionId] = useState<number | null>(null);
   const [graphicOptionId, setGraphicOptionId] = useState<number | null>(null);
   const [typeOptionId, setTypeOptionId] = useState<number | null>(null);
@@ -101,7 +98,6 @@ export default function EditLaptopAssetPage() {
 
     const assetData = {
       namaAsset: namaAsset || "",
-      // ini satu karna laptop
       categoryId: 1,
       nomorSeri,
       tanggalPembelian: tanggalPembelian ? new Date(tanggalPembelian) : null,
@@ -126,11 +122,22 @@ export default function EditLaptopAssetPage() {
       licenseOptionId,
     };
 
+    // Logic Office Account (UPDATED)
+    const officeAccountData = hasOfficeAccount
+      ? {
+          email: officeEmail,
+          password: officePassword,
+          licenseExpiry: officeLicenseExpiry ? new Date(officeLicenseExpiry) : null,
+          isActive: officeIsActive,
+        }
+      : null;
+
     try {
       await updateAssetAndLaptopSpecs(
         parseInt(laptopId),
         assetData,
-        laptopSpecsData
+        laptopSpecsData,
+        officeAccountData
       );
       toast.success("Laptop asset updated successfully!");
       router.push("/data-center/assigned-assets");
@@ -146,10 +153,7 @@ export default function EditLaptopAssetPage() {
     return option ? { value: option.id.toString(), label: option.value } : null;
   };
 
-  const getSelectedOptionByValue = (
-    options: Option[],
-    selectedValue: string | null
-  ) => {
+  const getSelectedOptionByValue = (options: Option[], selectedValue: string | null) => {
     if (!selectedValue) return null;
     const option = options.find((opt) => opt.value === selectedValue);
     return option ? { value: option.id.toString(), label: option.value } : null;
@@ -220,36 +224,47 @@ export default function EditLaptopAssetPage() {
 
         // Load asset data
         if (laptopId) {
-          const asset = await getAssetById(parseInt(laptopId));
+          const asset: any = await getAssetById(parseInt(laptopId));
+          
           if (asset) {
             setNamaAsset(asset.namaAsset);
             setNomorSeri(asset.nomorSeri);
-            setTanggalPembelian(
-              asset.tanggalPembelian?.toISOString().split("T")[0] || ""
-            );
-            setTanggalGaransi(
-              asset.tanggalGaransi?.toISOString().split("T")[0] || ""
-            );
+            setTanggalPembelian(asset.tanggalPembelian?.toISOString().split("T")[0] || "");
+            setTanggalGaransi(asset.tanggalGaransi?.toISOString().split("T")[0] || "");
             setStatusAsset(asset.statusAsset);
-            setLicenseKey(asset.nomorSeri || "");
-
+            
+            // Populate Specs
             if (asset.laptopSpecs) {
-              setMacWlan(asset.laptopSpecs.macWlan || "");
-              setMacLan(asset.laptopSpecs.macLan || "");
+                setMacWlan(asset.laptopSpecs.macWlan || "");
+                setMacLan(asset.laptopSpecs.macLan || "");
+                setLicenseKey(asset.laptopSpecs.licenseKey || "");
 
-              setBrandOptionId(asset.laptopSpecs.brandOptionId);
-              setProcessorOptionId(asset.laptopSpecs.processorOptionId);
-              setRamOptionId(asset.laptopSpecs.ramOptionId);
-              setStorageTypeOptionId(asset.laptopSpecs.storageTypeOptionId);
-              setOsOptionId(asset.laptopSpecs.osOptionId);
-              setLicenseOptionId(asset.laptopSpecs.licenseOptionId);
-              setPowerOptionId(asset.laptopSpecs.powerOptionId);
-              setMicrosoftOfficeOptionId(
-                asset.laptopSpecs.microsoftOfficeOptionId
-              );
-              setColorOptionId(asset.laptopSpecs.colorOptionId);
-              setGraphicOptionId(asset.laptopSpecs.graphicOptionId);
-              setTypeOptionId(asset.laptopSpecs.typeOptionId);
+                setBrandOptionId(asset.laptopSpecs.brandOptionId);
+                setProcessorOptionId(asset.laptopSpecs.processorOptionId);
+                setRamOptionId(asset.laptopSpecs.ramOptionId);
+                setStorageTypeOptionId(asset.laptopSpecs.storageTypeOptionId);
+                setOsOptionId(asset.laptopSpecs.osOptionId);
+                setLicenseOptionId(asset.laptopSpecs.licenseOptionId);
+                setPowerOptionId(asset.laptopSpecs.powerOptionId);
+                setMicrosoftOfficeOptionId(asset.laptopSpecs.microsoftOfficeOptionId);
+                setColorOptionId(asset.laptopSpecs.colorOptionId);
+                setGraphicOptionId(asset.laptopSpecs.graphicOptionId);
+                // setTypeOptionId(asset.laptopSpecs.typeOptionId); 
+            }
+
+            // Populate Office Account Data (UPDATED)
+            if (asset.officeAccount) {
+              setHasOfficeAccount(true);
+              setOfficeEmail(asset.officeAccount.email);
+              setOfficePassword(asset.officeAccount.password);
+              setOfficeLicenseExpiry(asset.officeAccount.licenseExpiry ? new Date(asset.officeAccount.licenseExpiry).toISOString().split("T")[0] : "");
+              setOfficeIsActive(asset.officeAccount.isActive);
+            } else {
+              setHasOfficeAccount(false);
+              setOfficeEmail("");
+              setOfficePassword("");
+              setOfficeLicenseExpiry("");
+              setOfficeIsActive(true);
             }
           }
         }
@@ -313,6 +328,7 @@ export default function EditLaptopAssetPage() {
             <CardTitle>Laptop Specific Details</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
             <div>
               <Label>Brand</Label>
               <Select
@@ -340,156 +356,152 @@ export default function EditLaptopAssetPage() {
             <div>
               <Label>Storage Type</Label>
               <Select
-              options={storageOptions.map((opt) => ({
-                value: opt.id.toString(),
-                label: opt.value,
-              }))}
-              value={getSelectedOption(storageOptions, storageTypeOptionId)}
-              onChange={(selectedOption) =>
-                setStorageTypeOptionId(
-                  selectedOption ? parseInt(selectedOption.value) : null
-                )
-              }
-            />
-          </div>
+                options={storageOptions.map((opt) => ({ value: opt.id.toString(), label: opt.value }))}
+                value={getSelectedOption(storageOptions, storageTypeOptionId)}
+                onChange={(selectedOption) => setStorageTypeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+              />
+            </div>
             <div>
               <Label>Operating System</Label>
               <Select
-              options={osOptions.map((opt) => ({
-                value: opt.id.toString(),
-                label: opt.value,
-              }))}
-              value={getSelectedOption(osOptions, osOptionId)}
-              onChange={(selectedOption) =>
-                setOsOptionId(
-                  selectedOption ? parseInt(selectedOption.value) : null
-                )
-              }
-            />
+                options={osOptions.map((opt) => ({ value: opt.id.toString(), label: opt.value }))}
+                value={getSelectedOption(osOptions, osOptionId)}
+                onChange={(selectedOption) => setOsOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+              />
             </div>
             <div>
               <Label>License Key</Label>
               <Input
-              maxLength={29}
-              value={licenseKey}
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
-                let formattedValue = "";
-                for (let i = 0; i < value.length; i++) {
-                  if (i > 0 && i % 5 === 0) {
-                    formattedValue += "-";
-                  }
-                  formattedValue += value[i];
-                }
-                setLicenseKey(formattedValue.slice(0, 29));
-              }}
-              placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-            />
+                maxLength={29}
+                value={licenseKey}
+                onChange={(e) => {
+                    const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                    let formattedValue = "";
+                    for (let i = 0; i < value.length; i++) {
+                    if (i > 0 && i % 5 === 0) {
+                        formattedValue += "-";
+                    }
+                    formattedValue += value[i];
+                    }
+                    setLicenseKey(formattedValue.slice(0, 29));
+                }}
+                placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+               />
             </div>
             <div>
               <Label>License Type</Label>
               <Select
-              options={licenseOptions.map((opt) => ({
-                value: opt.id.toString(),
-                label: opt.value,
-              }))}
-              value={getSelectedOption(licenseOptions, licenseOptionId)}
-              onChange={(selectedOption) =>
-                setLicenseOptionId(
-                  selectedOption ? parseInt(selectedOption.value) : null
-                )
-              }
-            />
+                options={licenseOptions.map((opt) => ({ value: opt.id.toString(), label: opt.value }))}
+                value={getSelectedOption(licenseOptions, licenseOptionId)}
+                onChange={(selectedOption) => setLicenseOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+              />
             </div>
             <div>
               <Label>Power Adaptor</Label>
               <Select
-              options={powerOptions.map((opt) => ({
-                value: opt.id.toString(),
-                label: opt.value,
-              }))}
-              value={getSelectedOption(powerOptions, powerOptionId)}
-              onChange={(selectedOption) =>
-                setPowerOptionId(
-                  selectedOption ? parseInt(selectedOption.value) : null
-                )
-              }
-            />
+                options={powerOptions.map((opt) => ({ value: opt.id.toString(), label: opt.value }))}
+                value={getSelectedOption(powerOptions, powerOptionId)}
+                onChange={(selectedOption) => setPowerOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+              />
             </div>
-            <div>
-              <Label>Microsoft Office</Label>
-              <Select
-              options={microsoftOfficeOptions.map((opt) => ({
-                value: opt.id.toString(),
-                label: opt.value,
-              }))}
-              value={getSelectedOption(
-                microsoftOfficeOptions,
-                microsoftOfficeOptionId
-              )}
-              onChange={(selectedOption) =>
-                setMicrosoftOfficeOptionId(
-                  selectedOption ? parseInt(selectedOption.value) : null
-                )
-              }
-            />
+
+            {/* --- BAGIAN MICROSOFT OFFICE (UPDATED) --- */}
+            <div className="md:col-span-2 border p-4 rounded-md space-y-4 bg-slate-50 dark:bg-slate-900">
+                <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                    <Label>Microsoft Office Version</Label>
+                    <Select
+                        options={microsoftOfficeOptions.map((opt) => ({ value: opt.id.toString(), label: opt.value }))}
+                        value={getSelectedOption(microsoftOfficeOptions, microsoftOfficeOptionId)}
+                        onChange={(selectedOption) => setMicrosoftOfficeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+                    />
+                </div>
+
+                 <div className="flex items-center space-x-2 mt-2">
+                    <Checkbox
+                        id="officeAccount"
+                        checked={hasOfficeAccount}
+                        onCheckedChange={(checked) => setHasOfficeAccount(checked as boolean)}
+                    />
+                    <Label
+                        htmlFor="officeAccount"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                        Update Office Account Credential?
+                    </Label>
+                </div>
+
+                {hasOfficeAccount && (
+                    <div className="grid grid-cols-1 gap-3 mt-2 pl-6 border-l-2 border-blue-500">
+                        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                            <Label htmlFor="officeEmail">Office Email</Label>
+                            <Input
+                                id="officeEmail"
+                                type="email"
+                                value={officeEmail}
+                                onChange={(e) => setOfficeEmail(e.target.value)}
+                                placeholder="admin@company.com"
+                                required={hasOfficeAccount}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                            <Label htmlFor="officePassword">Office Password</Label>
+                            <Input
+                                id="officePassword"
+                                type="text"
+                                value={officePassword}
+                                onChange={(e) => setOfficePassword(e.target.value)}
+                                placeholder="Password123"
+                                required={hasOfficeAccount}
+                            />
+                        </div>
+                         {/* Tambahan Input License Expiry */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
+                            <Label htmlFor="officeLicenseExpiry">Office License Expiry</Label>
+                            <Input
+                                id="officeLicenseExpiry"
+                                type="date"
+                                value={officeLicenseExpiry}
+                                onChange={(e) => setOfficeLicenseExpiry(e.target.value)}
+                            />
+                        </div>
+                        {/* Tambahan Input Active Status */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="officeIsActive"
+                                checked={officeIsActive}
+                                onCheckedChange={(checked) => setOfficeIsActive(checked as boolean)}
+                            />
+                            <Label htmlFor="officeIsActive">Account is Active</Label>
+                        </div>
+                    </div>
+                )}
             </div>
+            {/* --- END BAGIAN MICROSOFT OFFICE --- */}
+            
             <div>
               <Label>Color</Label>
               <Select
-              options={colorOptions.map((opt) => ({
-                value: opt.id.toString(),
-                label: opt.value,
-              }))}
-              value={getSelectedOption(colorOptions, colorOptionId)}
-              onChange={(selectedOption) =>
-                setColorOptionId(
-                  selectedOption ? parseInt(selectedOption.value) : null
-                )
-              }
-            />
+                options={colorOptions.map((opt) => ({ value: opt.id.toString(), label: opt.value }))}
+                value={getSelectedOption(colorOptions, colorOptionId)}
+                onChange={(selectedOption) => setColorOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+              />
             </div>
-            {/* <div>
-            <Label>Type</Label>
-            <Select
-              options={typeOptions.map(opt => ({ value: opt.id.toString(), label: opt.value }))}
-              value={getSelectedOption(typeOptions, typeOptionId)}
-              onChange={(selectedOption) => setTypeOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
-            />
-          </div> */}
             <div>
               <Label>Graphic</Label>
               <Select
-              options={graphicOptions.map((opt) => ({
-                value: opt.id.toString(),
-                label: opt.value,
-              }))}
-              value={getSelectedOption(graphicOptions, graphicOptionId)}
-              onChange={(selectedOption) =>
-                setGraphicOptionId(
-                  selectedOption ? parseInt(selectedOption.value) : null
-                )
-              }
-            />
+                options={graphicOptions.map((opt) => ({ value: opt.id.toString(), label: opt.value }))}
+                value={getSelectedOption(graphicOptions, graphicOptionId)}
+                onChange={(selectedOption) => setGraphicOptionId(selectedOption ? parseInt(selectedOption.value) : null)}
+              />
             </div>
 
             <div>
               <Label>MAC WLAN</Label>
-              <Input
-              value={macWlan}
-              onChange={(e) => handleMacAddressChange(e, setMacWlan)}
-              placeholder="XX:XX:XX:XX:XX:XX"
-              maxLength={17}
-            />
+              <Input value={macWlan} onChange={(e) => handleMacAddressChange(e, setMacWlan)} placeholder="XX:XX:XX:XX:XX:XX" maxLength={17} />
             </div>
             <div>
               <Label>MAC LAN</Label>
-              <Input
-              value={macLan}
-              onChange={(e) => handleMacAddressChange(e, setMacLan)}
-              placeholder="XX:XX:XX:XX:XX:XX"
-              maxLength={17}
-            />
+              <Input value={macLan} onChange={(e) => handleMacAddressChange(e, setMacLan)} placeholder="XX:XX:XX:XX:XX:XX" maxLength={17} />
             </div>
           </CardContent>
         </Card>
