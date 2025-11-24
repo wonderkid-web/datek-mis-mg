@@ -174,6 +174,7 @@ export const getCctvSpecByChannelCameraId = async (channelCameraId: number) => {
       brand: true,
       model: true,
       deviceType: true,
+     
     },
   });
 };
