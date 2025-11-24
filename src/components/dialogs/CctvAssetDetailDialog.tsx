@@ -81,7 +81,7 @@ export function CctvAssetDetailDialog({
           />
           <DetailRow 
             label="Site Name" 
-            value={spec?.nameSite ?? "-"} 
+            value={spec.channelCamera.lokasi ?? "-"} 
           />
           <DetailRow
             label="View Kamera"

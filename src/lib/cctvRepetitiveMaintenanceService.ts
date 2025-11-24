@@ -79,6 +79,11 @@ export const getCctvRepetitiveMaintenances = async () => {
               model: true,
               deviceType: true,
               asset: true,
+              channelCamera:{
+                select:{
+                  lokasi:true
+                }
+              }
             },
           },
         },

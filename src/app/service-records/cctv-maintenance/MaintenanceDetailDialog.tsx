@@ -64,7 +64,6 @@ const StatusBadge = ({ status }: { status: CCTVStatus }) => {
   return <Badge className={getStatusClass()}>{status}</Badge>;
 };
 
-
 export function MaintenanceDetailDialog({
   maintenance,
   isOpen,
@@ -78,30 +77,63 @@ export function MaintenanceDetailDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent size="6xl">
+      {/* Saya ubah size jadi max-w-2xl agar pas untuk tampilan list vertical */}
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Maintenance Record Details</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4 max-h-[80vh] overflow-y-auto p-2">
+        
+        {/* Container utama diubah jadi flex column (vertical list) */}
+        <div className="flex flex-col gap-4 mt-2 overflow-y-auto pr-2">
+          
+          {/* 1. Record Info */}
           <Card>
-            <CardHeader><CardTitle className="flex items-center"><Info className="mr-2" />Record Info</CardTitle></CardHeader>
-            <CardContent>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
+                <Info className="mr-2 h-5 w-5" />
+                Record Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
               <DetailItem icon={<Calendar />} label="Report Date" value={new Date(maintenance.periode).toLocaleDateString()} />
               <DetailItem icon={<Building />} label="Perusahaan" value={maintenance.perusahaan.replace(/_/g, " ")} />
-              <DetailItem icon={<Info />} label="Status Recorded" value={<StatusBadge status={maintenance.status} />} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle className="flex items-center"><Monitor className="mr-2" />Placement</CardTitle></CardHeader>
-            <CardContent>
-              <DetailItem icon={<Camera />} label="Channel Camera" value={`${maintenance.channelCamera.sbu.replace(/_/g, " ")} - ${maintenance.channelCamera.lokasi}`} />
-              <DetailItem icon={<MapPin />} label="Name Site" value={spec?.nameSite ?? '-'} />
+              <DetailItem icon={<MapPin />} label="Name Site" value={spec.channelCamera.lokasi ?? '-'} />
               <DetailItem icon={<Eye />} label="View Camera" value={<CCTVViewLink link={spec?.viewCamera ?? '#'} />} />
+              <DetailItem icon={<Info />} label="Status" value={<StatusBadge status={maintenance.status} />} />
+              {/* Note: Label sebelumnya 'Status Recorded' dobel, saya sesuaikan label remarks */}
+              <DetailItem icon={<Info />} label="Remarks" value={maintenance.remarks || '-'} />
             </CardContent>
           </Card>
-          <Card className="lg:col-span-2">
-            <CardHeader><CardTitle className="flex items-center"><Package className="mr-2" />Asset & Specifications</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+
+          {/* 2. Placement */}
+          {/* <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
+                <Monitor className="mr-2 h-5 w-5" />
+                Placement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              <DetailItem 
+                icon={<Camera />} 
+                label="Channel Camera" 
+                value={`${maintenance.channelCamera.sbu.replace(/_/g, " ")} - ${maintenance.channelCamera.lokasi}`} 
+              />
+              
+              
+            </CardContent>
+          </Card> */}
+
+          {/* 3. Asset & Specifications */}
+          {/* <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
+                <Package className="mr-2 h-5 w-5" />
+                Asset & Specifications
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="grid gap-3 text-sm">
               <DetailItem icon={<Fingerprint />} label="Serial Number" value={asset?.nomorSeri ?? '-'} />
               <DetailItem icon={<Tags />} label="Brand" value={spec?.brand?.value ?? '-'} />
               <DetailItem icon={<Package />} label="Model" value={spec?.model?.value ?? '-'} />
@@ -109,18 +141,87 @@ export function MaintenanceDetailDialog({
               <DetailItem icon={<GitBranch />} label="System Version" value={spec?.systemVersion ?? '-'} />
               <DetailItem icon={<Power />} label="Power" value={spec?.power ?? '-'} />
             </CardContent>
-          </Card>
-          <Card className="lg:col-span-2">
-            <CardHeader><CardTitle className="flex items-center"><Shield className="mr-2" />Network & Credentials</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+          </Card> */}
+
+          {/* 4. Network & Credentials */}
+          {/* <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
+                <Shield className="mr-2 h-5 w-5" />
+                Network & Credentials
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 text-sm">
               <DetailItem icon={<Network />} label="IP Address" value={spec?.ipAddress ?? '-'} />
               <DetailItem icon={<Fingerprint />} label="MAC Address" value={spec?.macAddress ?? '-'} />
               <DetailItem icon={<Key />} label="Username" value={spec?.username ?? '-'} />
               <DetailItem icon={<Key />} label="Password" value={"********"} />
             </CardContent>
-          </Card>
+          </Card> */}
+
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+// export function MaintenanceDetailDialog({
+//   maintenance,
+//   isOpen,
+//   onOpenChange,
+// }: MaintenanceDetailDialogProps) {
+//   if (!maintenance) return null;
+
+//   const spec = maintenance.channelCamera.cctvSpecs[0];
+//   // @ts-expect-error its about name site that i was deleted
+//   const asset = spec?.asset;
+
+//   return (
+//     <Dialog open={isOpen} onOpenChange={onOpenChange}>
+//       <DialogContent size="6xl">
+//         <DialogHeader>
+//           <DialogTitle>Maintenance Record Details</DialogTitle>
+//         </DialogHeader>
+//         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4 max-h-[80vh] overflow-y-auto p-2">
+//           <Card>
+//             <CardHeader><CardTitle className="flex items-center"><Info className="mr-2" />Record Info</CardTitle></CardHeader>
+//             <CardContent>
+//               <DetailItem icon={<Calendar />} label="Report Date" value={new Date(maintenance.periode).toLocaleDateString()} />
+//               <DetailItem icon={<Building />} label="Perusahaan" value={maintenance.perusahaan.replace(/_/g, " ")} />
+//               <DetailItem icon={<Info />} label="Status Recorded" value={<StatusBadge status={maintenance.status} />} />
+//               <DetailItem icon={<Info />} label="Status Recorded" value={<StatusBadge status={maintenance.remarks} />} />
+//             </CardContent>
+//           </Card>
+//           <Card>
+//             <CardHeader><CardTitle className="flex items-center"><Monitor className="mr-2" />Placement</CardTitle></CardHeader>
+//             <CardContent>
+//               <DetailItem icon={<Camera />} label="Channel Camera" value={`${maintenance.channelCamera.sbu.replace(/_/g, " ")} - ${maintenance.channelCamera.lokasi}`} />
+//               <DetailItem icon={<MapPin />} label="Name Site" value={spec?.nameSite ?? '-'} />
+//               <DetailItem icon={<Eye />} label="View Camera" value={<CCTVViewLink link={spec?.viewCamera ?? '#'} />} />
+//             </CardContent>
+//           </Card>
+//           <Card className="lg:col-span-2">
+//             <CardHeader><CardTitle className="flex items-center"><Package className="mr-2" />Asset & Specifications</CardTitle></CardHeader>
+//             <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+//               <DetailItem icon={<Fingerprint />} label="Serial Number" value={asset?.nomorSeri ?? '-'} />
+//               <DetailItem icon={<Tags />} label="Brand" value={spec?.brand?.value ?? '-'} />
+//               <DetailItem icon={<Package />} label="Model" value={spec?.model?.value ?? '-'} />
+//               <DetailItem icon={<Type />} label="Device Type" value={spec?.deviceType?.value ?? '-'} />
+//               <DetailItem icon={<GitBranch />} label="System Version" value={spec?.systemVersion ?? '-'} />
+//               <DetailItem icon={<Power />} label="Power" value={spec?.power ?? '-'} />
+//             </CardContent>
+//           </Card>
+//           <Card className="lg:col-span-2">
+//             <CardHeader><CardTitle className="flex items-center"><Shield className="mr-2" />Network & Credentials</CardTitle></CardHeader>
+//             <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+//               <DetailItem icon={<Network />} label="IP Address" value={spec?.ipAddress ?? '-'} />
+//               <DetailItem icon={<Fingerprint />} label="MAC Address" value={spec?.macAddress ?? '-'} />
+//               <DetailItem icon={<Key />} label="Username" value={spec?.username ?? '-'} />
+//               <DetailItem icon={<Key />} label="Password" value={"********"} />
+//             </CardContent>
+//           </Card>
+//         </div>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// }
