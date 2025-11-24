@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +33,7 @@ import { CctvChannelCamera, CCTVStatus } from "@prisma/client";
 import { Package, Fingerprint, Info, MapPin, Tags, Type, GitBranch, Power, Eye, Network as NetworkIcon } from "lucide-react";
 import CCTVViewLink from "@/components/cctv";
 import ReactSelect from "react-select";
+import { useSession } from "next-auth/react";
 
 const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
   <div className="flex items-start space-x-3 py-2 border-b">
@@ -53,6 +56,8 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
   const [channelCameraOptions, setChannelCameraOptions] = useState<CctvChannelCamera[]>([]);
   const [selectedSpecDetails, setSelectedSpecDetails] = useState<any | null>(null);
   const [isAssetLoading, setIsAssetLoading] = useState(false);
+
+
 
   const queryClient = useQueryClient();
 
@@ -147,35 +152,35 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
           <div className="space-y-2">
             <Label htmlFor="channelCamera">Channel Camera</Label>
             <ReactSelect
-                options={channelCameraOptions.map(opt => ({
-                    value: String(opt.id),
-                    label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
-                }))}
-                value={channelCameraOptions.map(opt => ({
-                    value: String(opt.id),
-                    label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
-                })).find(opt => opt.value === channelCameraId)}
-                onChange={(selectedOption) => setChannelCameraId(selectedOption ? selectedOption.value : "")}
-                placeholder="Select or search for a Channel Camera..."
-                isClearable
-                styles={{
-                    control: (base) => ({
-                        ...base,
-                        borderColor: 'hsl(var(--input))',
-                        backgroundColor: 'hsl(var(--background))',
-                    }),
-                    menu: (base) => ({
-                        ...base,
-                        zIndex: 50,
-                        backgroundColor: 'hsl(var(--card))',
-                        color: 'hsl(var(--card-foreground))',
-                    }),
-                    option: (base, { isFocused }) => ({
-                        ...base,
-                        backgroundColor: isFocused ? 'hsl(var(--accent))' : 'hsl(var(--card))',
-                        color: 'hsl(var(--card-foreground))',
-                    }),
-                }}
+              options={channelCameraOptions.map(opt => ({
+                value: String(opt.id),
+                label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
+              }))}
+              value={channelCameraOptions.map(opt => ({
+                value: String(opt.id),
+                label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
+              })).find(opt => opt.value === channelCameraId)}
+              onChange={(selectedOption) => setChannelCameraId(selectedOption ? selectedOption.value : "")}
+              placeholder="Select or search for a Channel Camera..."
+              isClearable
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  borderColor: 'hsl(var(--input))',
+                  backgroundColor: 'hsl(var(--background))',
+                }),
+                menu: (base) => ({
+                  ...base,
+                  zIndex: 50,
+                  backgroundColor: 'hsl(var(--card))',
+                  color: 'hsl(var(--card-foreground))',
+                }),
+                option: (base, { isFocused }) => ({
+                  ...base,
+                  backgroundColor: isFocused ? 'hsl(var(--accent))' : 'hsl(var(--card))',
+                  color: 'hsl(var(--card-foreground))',
+                }),
+              }}
             />
           </div>
         </div>
@@ -183,26 +188,26 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
         {isAssetLoading && <div className="p-4 border rounded-md">Loading asset details...</div>}
 
         {selectedSpecDetails && (
-            <Card className="bg-muted/40">
-                <CardHeader>
-                    <CardTitle className="text-lg">Asset Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-                        <DetailItem icon={<Fingerprint />} label="Nomor Seri" value={selectedSpecDetails.asset.nomorSeri} />
-                        <DetailItem icon={<Info />} label="Current Status" value={selectedSpecDetails.asset.statusAsset} />
-                        <DetailItem icon={<MapPin />} label="Name Site" value={selectedSpecDetails.nameSite ?? '-'} />
-                        <DetailItem icon={<Tags />} label="Brand" value={selectedSpecDetails.brand?.value ?? '-'} />
-                        <DetailItem icon={<Package />} label="Model" value={selectedSpecDetails.model?.value ?? '-'} />
-                        <DetailItem icon={<Type />} label="Device Type" value={selectedSpecDetails.deviceType?.value ?? '-'} />
-                        <DetailItem icon={<GitBranch />} label="System Version" value={selectedSpecDetails.systemVersion ?? '-'} />
-                        <DetailItem icon={<Power />} label="Power" value={selectedSpecDetails.power ?? '-'} />
-                        <DetailItem icon={<NetworkIcon />} label="IP Address" value={selectedSpecDetails.ipAddress ?? '-'} />
-                        <DetailItem icon={<Fingerprint />} label="MAC Address" value={selectedSpecDetails.macAddress ?? '-'} />
-                        <DetailItem icon={<Eye />} label="View Camera" value={<CCTVViewLink link={selectedSpecDetails.viewCamera} />} />
-                    </div>
-                </CardContent>
-            </Card>
+          <Card className="bg-muted/40">
+            <CardHeader>
+              <CardTitle className="text-lg">Asset Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                <DetailItem icon={<Fingerprint />} label="Nomor Seri" value={selectedSpecDetails.asset.nomorSeri} />
+                <DetailItem icon={<Info />} label="Current Status" value={selectedSpecDetails.asset.statusAsset} />
+                <DetailItem icon={<MapPin />} label="Name Site" value={selectedSpecDetails.nameSite ?? '-'} />
+                <DetailItem icon={<Tags />} label="Brand" value={selectedSpecDetails.brand?.value ?? '-'} />
+                <DetailItem icon={<Package />} label="Model" value={selectedSpecDetails.model?.value ?? '-'} />
+                <DetailItem icon={<Type />} label="Device Type" value={selectedSpecDetails.deviceType?.value ?? '-'} />
+                <DetailItem icon={<GitBranch />} label="System Version" value={selectedSpecDetails.systemVersion ?? '-'} />
+                <DetailItem icon={<Power />} label="Power" value={selectedSpecDetails.power ?? '-'} />
+                <DetailItem icon={<NetworkIcon />} label="IP Address" value={selectedSpecDetails.ipAddress ?? '-'} />
+                <DetailItem icon={<Fingerprint />} label="MAC Address" value={selectedSpecDetails.macAddress ?? '-'} />
+                <DetailItem icon={<Eye />} label="View Camera" value={<CCTVViewLink link={selectedSpecDetails.viewCamera} />} />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         <div className="space-y-2">
@@ -236,6 +241,10 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
 
 
 export default function CctvMaintenancePage() {
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === "administrator";
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["cctvRepetitiveMaintenances"],
     queryFn: getCctvRepetitiveMaintenances,
@@ -289,8 +298,21 @@ export default function CctvMaintenancePage() {
   }
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
-      <AddMaintenanceForm onSave={() => { }} />
+    <div className="container mx-auto py-10 space-y-8 relative">
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] min-w-[850px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New CCTV Maintenance</DialogTitle>
+          </DialogHeader>
+          <AddMaintenanceForm onSave={() => { }} />
+        </DialogContent>
+      </Dialog>
+
+      {isAdmin && (
+        <Button className="right-0 mt-10 mr-6 absolute" onClick={() => setIsCreateDialogOpen(true)}>
+          Create Service
+        </Button>
+      )}
 
       <Card>
         <CardHeader>
@@ -338,3 +360,6 @@ export default function CctvMaintenancePage() {
     </div>
   );
 }
+
+
+
