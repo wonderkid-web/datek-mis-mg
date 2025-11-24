@@ -24,6 +24,7 @@ export const columns = ({ handleDelete, handleEdit }: ColumnsProps): ColumnDef<C
   {
     accessorKey: 'sbu',
     header: 'SBU',
+    cell: ({ row }) => row.original.sbu.replace(/_/g, " ")
   },
   {
     id: 'actions',

@@ -81,6 +81,8 @@ model Asset {
   @@map("assets")
 }
 
+
+
 model AssetAssignment {
   id                   Int                   @id @default(autoincrement())
   assetId              Int
