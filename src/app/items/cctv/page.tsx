@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { AddCctvDialog } from "./add-cctv-dialog";
@@ -21,6 +21,15 @@ import { toast } from "sonner";
 import { Asset } from "@/lib/types";
 import { CctvAssetDetailDialog } from "@/components/dialogs/CctvAssetDetailDialog";
 import { EditCctvDialog } from "./edit-cctv-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SBU_OPTIONS } from "@/lib/constants";
+
+const SBU_GROUP_KEY = "PT_Intan_Sejati_Andalan_(Group)";
+const sbuDropdownOptions = [
+  ...SBU_OPTIONS.map(s => ({ value: s, label: s.replace(/_/g, " ") })),
+  { value: SBU_GROUP_KEY, label: "PT Intan Sejati Andalan (Group)" }
+].sort((a, b) => a.label.localeCompare(b.label));
+
 
 export default function CctvPage() {
   const queryClient = useQueryClient();
@@ -30,6 +39,7 @@ export default function CctvPage() {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
 
   const { data: cctvAssets, isLoading } = useQuery({
     queryKey: ["cctvSpecs"],
@@ -48,7 +58,6 @@ export default function CctvPage() {
   });
 
   const openDeleteDialog = (assetId: number) => {
-    console.log("openDeleteDialog called with assetId:", assetId);
     setAssetToDelete(assetId);
     setIsDeleteDialogOpen(true);
   };
@@ -67,10 +76,16 @@ export default function CctvPage() {
   };
 
   const handleRowClick = (asset: Asset) => {
-    console.log("handleRowClick called with asset:", asset);
     setSelectedAsset(asset);
     setIsDetailDialogOpen(true);
   };
+
+  const filteredAssets = useMemo(() => {
+    if (!cctvAssets) return [];
+    if (companyFilter === "all") return cctvAssets;
+    // @ts-expect-error its okay for now
+    return cctvAssets.filter(asset => asset.cctvSpecs.channelCamera?.sbu === companyFilter);
+  }, [cctvAssets, companyFilter]);
 
   if (isLoading) {
     return (
@@ -84,7 +99,22 @@ export default function CctvPage() {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-4">Manage CCTV Assets</h1>
-      <div className="flex items-center justify-end mb-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <Select value={companyFilter} onValueChange={setCompanyFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by company" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Companies</SelectItem>
+              {sbuDropdownOptions.map((company) => (
+                <SelectItem key={company.value} value={company.value}>
+                  {company.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <AddCctvDialog
           onSave={() => {
             queryClient.invalidateQueries({ queryKey: ["cctvSpecs"] });
@@ -94,8 +124,8 @@ export default function CctvPage() {
       <DataTable
         columns={columns({ handleDelete: openDeleteDialog, handleEdit })}
         // @ts-expect-error its okay
-        data={cctvAssets || []}
-        totalCount={(cctvAssets || []).length}
+        data={filteredAssets || []}
+        totalCount={(filteredAssets || []).length}
         onRowClick={handleRowClick}
       />
 

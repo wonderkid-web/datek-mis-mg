@@ -169,7 +169,11 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
             <Label htmlFor="channelCamera" className="text-right">Channel Camera</Label>
             <ReactSelect
               className="col-span-3"
-              options={channelCameraOptions.filter(opt => opt?.sbu.replaceAll(" - ", " ").replaceAll("_", " ") == sbu?.replaceAll("_", " ")).map(opt => ({ value: String(opt.id), label: `${opt.lokasi}` }))}
+              options={channelCameraOptions
+                .filter(opt => opt?.sbu.replaceAll(" - ", " ").replaceAll("_", " ") == sbu?.replaceAll("_", " "))
+                // Tambahkan sorting di sini
+                .sort((a, b) => a.lokasi.localeCompare(b.lokasi, undefined, { numeric: true }))
+                .map(opt => ({ value: String(opt.id), label: `${opt.lokasi}` }))}
               onChange={(opt) => setChannelCameraId(opt ? opt.value : null)}
               placeholder="Select Channel Camera"
               isDisabled={!sbu}

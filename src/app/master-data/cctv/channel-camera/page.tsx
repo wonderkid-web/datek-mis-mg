@@ -53,6 +53,7 @@ export default function ChannelCameraPage() {
 
   const handleDeleteConfirm = () => {
     if (channelCameraToDelete) {
+      toast(channelCameraToDelete);
       deleteMutation.mutate(channelCameraToDelete);
     }
   };

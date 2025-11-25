@@ -1,24 +1,24 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { CctvRepetitiveMaintenance, CCTVStatus } from "@prisma/client";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { CctvRepetitiveMaintenance, CCTVStatus, CctvChannelCamera, CctvSpecs, Asset, CctvBrand, CctvModel, CctvDeviceType } from "@prisma/client";
+import { ArrowUpDown, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // Extend the type to include the nested relations we will fetch
 export type MaintenanceWithDetails = CctvRepetitiveMaintenance & {
-  channelCamera: {
-    lokasi: string;
-    sbu: string;
-  };
+  channelCamera: (CctvChannelCamera & {
+    cctvSpecs: (CctvSpecs & {
+      brand: CctvBrand | null;
+      model: CctvModel | null;
+      deviceType: CctvDeviceType | null;
+      asset: Asset;
+      channelCamera: {
+        lokasi: string;
+      } | null;
+    })[];
+  }) | null;
 };
 
 const StatusBadge = ({ status }: { status: CCTVStatus }) => {
@@ -42,14 +42,15 @@ interface ColumnsProps {
   handleEdit: (maintenance: MaintenanceWithDetails) => void;
   handleDelete: (id: number) => void;
 }
-
 export const columns = ({ handleView, handleEdit, handleDelete }: ColumnsProps): ColumnDef<MaintenanceWithDetails>[] => [
   {
     id: "no",
-    header: "No",
-    cell: ({ row, table }) => {
+    // Tengahin Header
+    header: () => <div className="text-center">No</div>,
+    // Tengahin Cell
+    cell: ({ row }) => {
         const rowIndex = row.index + 1;
-        return <div>{rowIndex}</div>;
+        return <div className="text-center">{rowIndex}</div>;
     }
   },
   {
@@ -58,56 +59,82 @@ export const columns = ({ handleView, handleEdit, handleDelete }: ColumnsProps):
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        // Tambahkan w-full dan justify-center agar tombol ke tengah
+        className="w-full justify-center"
       >
         Report Date
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => new Date(row.original.periode).toLocaleDateString(),
+    // Tengahin tanggal
+    cell: ({ row }) => (
+      <div className="text-center">
+        {new Date(row.original.periode).toLocaleDateString()}
+      </div>
+    ),
   },
   {
     accessorKey: "perusahaan",
-    header: "Perusahaan",
-    cell: ({ row }) => row.original.perusahaan.replace(/_/g, " "),
+    // Tengahin Header String
+    header: () => <div className="text-center">Perusahaan</div>,
+    // Tengahin Cell
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.perusahaan.replace(/_/g, " ")}
+      </div>
+    ),
   },
   {
-    accessorKey: "channelCamera.lokasi",
-    header: "Channel Camera",
-    cell: ({ row }) => `${row.original.channelCamera.lokasi}`,
+    accessorKey: "channelCamera.cctvSpecs[0].channelCamera.lokasi",
+    // Tengahin Header String
+    header: () => <div className="text-center">Channel Camera</div>,
+    // Tengahin Cell
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.channelCamera?.cctvSpecs?.[0]?.channelCamera?.lokasi ?? "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    // Tengahin Header String
+    header: () => <div className="text-center">Status</div>,
+    // Gunakan flex justify-center untuk komponen Badge
+    cell: ({ row }) => (
+      <div className="flex justify-center">
+        <StatusBadge status={row.original.status} />
+      </div>
+    ),
   },
   {
     id: "actions",
+    // Actions dibiarkan sesuai request (sudah ada flex justify-center di dalamnya)
     cell: ({ row }) => {
       const maintenance = row.original;
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => handleView(maintenance)}>
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEdit(maintenance)}>
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleDelete(maintenance.id)}
-              className="text-red-600"
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex justify-center space-x-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleView(maintenance)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleEdit(maintenance)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={() => handleDelete(maintenance.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       );
     },
   },

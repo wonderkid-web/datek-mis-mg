@@ -71,7 +71,7 @@ export function MaintenanceDetailDialog({
 }: MaintenanceDetailDialogProps) {
   if (!maintenance) return null;
 
-  const spec = maintenance.channelCamera.cctvSpecs[0];
+  const spec = maintenance.channelCamera?.cctvSpecs[0];
   // @ts-expect-error its about name site that i was deleted
   const asset = spec?.asset;
 
@@ -97,7 +97,7 @@ export function MaintenanceDetailDialog({
             <CardContent className="grid gap-3">
               <DetailItem icon={<Calendar />} label="Report Date" value={new Date(maintenance.periode).toLocaleDateString()} />
               <DetailItem icon={<Building />} label="Perusahaan" value={maintenance.perusahaan.replace(/_/g, " ")} />
-              <DetailItem icon={<MapPin />} label="Name Site" value={spec.channelCamera.lokasi ?? '-'} />
+              <DetailItem icon={<MapPin />} label="Name Site" value={spec?.channelCamera?.lokasi ?? '-'} />
               <DetailItem icon={<Eye />} label="View Camera" value={<CCTVViewLink link={spec?.viewCamera ?? '#'} />} />
               <DetailItem icon={<Info />} label="Status" value={<StatusBadge status={maintenance.status} />} />
               {/* Note: Label sebelumnya 'Status Recorded' dobel, saya sesuaikan label remarks */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -34,6 +34,33 @@ import { Package, Fingerprint, Info, MapPin, Tags, Type, GitBranch, Power, Eye, 
 import CCTVViewLink from "@/components/cctv";
 import ReactSelect from "react-select";
 import { useSession } from "next-auth/react";
+import { ExportActions } from "@/components/ExportActions";
+
+const MONTH_OPTIONS = [
+  { value: "all", label: "All Months" },
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+const exportColumns = [
+    { header: "Period", accessorKey: "periode" },
+    { header: "SBU", accessorKey: "perusahaan" },
+    { header: "Location", accessorKey: "channelCamera.lokasi" },
+    { header: "IP Address", accessorKey: "channelCamera.cctv.ipAddress" },
+    { header: "Status", accessorKey: "status" },
+    { header: "Remarks", accessorKey: "remarks" },
+];
+
 
 const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
   <div className="flex items-start space-x-3 py-2 border-b">
@@ -144,12 +171,12 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
         <CardDescription>Select a channel camera to log a new maintenance record.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-4 gap-6">
           <div className="space-y-2">
             <Label htmlFor="periode">Tanggal Pengecekan</Label>
             <Input id="periode" type="date" value={periode} onChange={(e) => setPeriode(e.target.value)} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 col-span-3">
             <Label htmlFor="channelCamera">Channel Camera</Label>
             <ReactSelect
               options={channelCameraOptions.map(opt => ({
@@ -163,24 +190,24 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
               onChange={(selectedOption) => setChannelCameraId(selectedOption ? selectedOption.value : "")}
               placeholder="Select or search for a Channel Camera..."
               isClearable
-              styles={{
-                control: (base) => ({
-                  ...base,
-                  borderColor: 'hsl(var(--input))',
-                  backgroundColor: 'hsl(var(--background))',
-                }),
-                menu: (base) => ({
-                  ...base,
-                  zIndex: 50,
-                  backgroundColor: 'hsl(var(--card))',
-                  color: 'hsl(var(--card-foreground))',
-                }),
-                option: (base, { isFocused }) => ({
-                  ...base,
-                  backgroundColor: isFocused ? 'hsl(var(--accent))' : 'hsl(var(--card))',
-                  color: 'hsl(var(--card-foreground))',
-                }),
-              }}
+              // styles={{
+              //   control: (base) => ({
+              //     ...base,
+              //     borderColor: 'hsl(var(--input))',
+              //     backgroundColor: 'hsl(var(--background))',
+              //   }),
+              //   menu: (base) => ({
+              //     ...base,
+              //     zIndex: 50,
+              //     backgroundColor: 'hsl(var(--card))',
+              //     color: 'hsl(var(--card-foreground))',
+              //   }),
+              //   option: (base, { isFocused }) => ({
+              //     ...base,
+              //     backgroundColor: isFocused ? 'hsl(var(--accent))' : 'hsl(var(--card))',
+              //     color: 'hsl(var(--card-foreground))',
+              //   }),
+              // }}
             />
           </div>
         </div>
@@ -210,10 +237,10 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
           </Card>
         )}
 
-        <div className="space-y-2">
+        <div className="space-y-2 w-24">
           <Label htmlFor="status">New Status</Label>
           <Select onValueChange={setStatus} value={status}>
-            <SelectTrigger>
+            <SelectTrigger className="w-60">
               <SelectValue placeholder="Select New Status" />
             </SelectTrigger>
             <SelectContent>
@@ -245,7 +272,7 @@ export default function CctvMaintenancePage() {
   const isAdmin = (session?.user as any)?.role === "administrator";
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery<MaintenanceWithDetails[]>({
     queryKey: ["cctvRepetitiveMaintenances"],
     queryFn: getCctvRepetitiveMaintenances,
   });
@@ -256,6 +283,9 @@ export default function CctvMaintenancePage() {
   const [maintenanceToDeleteId, setMaintenanceToDeleteId] = useState<number | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [maintenanceToEdit, setMaintenanceToEdit] = useState<MaintenanceWithDetails | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const queryClient = useQueryClient();
 
@@ -293,6 +323,52 @@ export default function CctvMaintenancePage() {
     }
   };
 
+  const availableYears = useMemo(() => {
+    if (!data) return [];
+    const years = data
+      .map((record) => new Date(record.periode).getFullYear().toString())
+      .filter((year) => !isNaN(parseInt(year)));
+    const unique = Array.from(new Set(years));
+    unique.sort((a, b) => Number(b) - Number(a));
+    return unique;
+  }, [data]);
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    const query = searchTerm.trim().toLowerCase();
+    return data.filter((record) => {
+      const period = new Date(record.periode);
+      if (!Number.isNaN(period.getTime())) {
+        if (selectedYear !== "all" && period.getFullYear().toString() !== selectedYear) {
+          return false;
+        }
+        if (
+          selectedMonth !== "all" &&
+          (period.getMonth() + 1).toString() !== selectedMonth
+        ) {
+          return false;
+        }
+      }
+
+      if (!query) return true;
+
+      const cctvSpec = record.channelCamera?.cctvSpecs?.[0];
+
+      const corpus = [
+        record.perusahaan,
+        record.channelCamera?.lokasi,
+        cctvSpec?.ipAddress,
+        record.status,
+        record.remarks,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return corpus.includes(query);
+    });
+  }, [data, searchTerm, selectedYear, selectedMonth]);
+
+
   if (isError) {
     return <div className="container mx-auto py-10">Error loading maintenance data.</div>;
   }
@@ -300,7 +376,7 @@ export default function CctvMaintenancePage() {
   return (
     <div className="container mx-auto py-10 space-y-8 relative">
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] min-w-[850px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] min-w-[1120px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New CCTV Maintenance</DialogTitle>
           </DialogHeader>
@@ -308,22 +384,67 @@ export default function CctvMaintenancePage() {
         </DialogContent>
       </Dialog>
 
-      {isAdmin && (
-        <Button className="right-0 mt-10 mr-6 absolute" onClick={() => setIsCreateDialogOpen(true)}>
-          Create Service
-        </Button>
-      )}
-
       <Card>
         <CardHeader>
-          <CardTitle>Maintenance History</CardTitle>
-          <CardDescription>History of all repetitive maintenance records for CCTV.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Maintenance History</CardTitle>
+              <CardDescription>History of all repetitive maintenance records for CCTV.</CardDescription>
+            </div>
+            {isAdmin && (
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                Create Service
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <TableSkeleton />
           ) : (
-            <DataTable columns={columns({ handleView, handleEdit, handleDelete })} data={data || []} />
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <ExportActions
+                  columns={exportColumns}
+                  data={filteredData}
+                  fileName="CCTV_Maintenance"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    className="w-full sm:w-48"
+                  />
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Years</SelectItem>
+                      {availableYears.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTH_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DataTable columns={columns({ handleView, handleEdit, handleDelete })} data={filteredData} />
+            </>
           )}
         </CardContent>
       </Card>

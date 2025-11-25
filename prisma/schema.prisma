@@ -530,14 +530,14 @@ model CctvRepetitiveMaintenance {
   id              Int        @id @default(autoincrement())
   periode         DateTime
   perusahaan      String     @db.VarChar(255)
-  channelCameraId Int
+  channelCameraId Int?
   status          CCTVStatus
 
   remarks   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  channelCamera CctvChannelCamera @relation(fields: [channelCameraId], references: [id])
+  channelCamera CctvChannelCamera? @relation(fields: [channelCameraId], references: [id], onDelete: SetNull)
 
   @@index([channelCameraId])
   @@map("cctv_repetitive_maintenances")

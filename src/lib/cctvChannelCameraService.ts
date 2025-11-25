@@ -24,6 +24,7 @@ export const updateCctvChannelCamera = async (id: number, data: { lokasi: string
 };
 
 export const deleteCctvChannelCamera = async (id: number): Promise<void> => {
+  console.log(id);
   await prisma.cctvChannelCamera.delete({
     where: { id },
   });

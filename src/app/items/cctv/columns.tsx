@@ -45,8 +45,8 @@ export const columns = ({
     //   accessorFn: (row) => row.namaAsset ?? "-",
     // },
     {
-      accessorKey: "cctvSpecs.channelCamera.lokasi",
-      cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.channelCamera?.sbu.replaceAll("_"," ") ?? "-"}</p>,
+      accessorKey: "cctvSpecs.id",
+      cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.channelCamera?.sbu.replaceAll("_", " ") ?? "-"}</p>,
       header: ({ column }) => {
         return (
           <div className="text-center">
@@ -63,7 +63,7 @@ export const columns = ({
     },
     {
       accessorKey: "cctvSpecs.channelCamera.lokasi",
-      cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.channelCamera?.lokasi ?? "-"} </p>,
+      cell: ({ row }) => <p className="text-left">{row.original.cctvSpecs?.channelCamera?.lokasi ?? "-"} </p>,
       header: ({ column }) => {
         return (
           <div className="text-center">
@@ -79,14 +79,45 @@ export const columns = ({
       },
     },
     {
-      accessorKey:"deviceType",
-      header: "Device Type",
-      accessorFn: (row) => row.cctvSpecs?.deviceType?.value ?? "-",
+      accessorKey: "deviceType",
+      header: ({ column }) => {
+        return (
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+              Device Type
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+      // accessorFn: (row) => ,
+      cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.deviceType?.value ?? "-"}</p>
+
 
     },
     {
-      header: "Power",
-      accessorFn: (row) => row.cctvSpecs?.power ?? "-",
+      accessorKey: "power",
+      header: ({ column }) => {
+        return (
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+              Power
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+      // accessorFn: (row) => ,
+      cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.power ?? "-"}</p>
+
+
+      // cell: ({ row }) => <p className="text-center">{row.original.cctvSpecs?.power ?? "-"}</p>
     },
     {
       header: "IP Address",
