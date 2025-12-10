@@ -377,6 +377,9 @@ export async function updateAssetAndLaptopSpecs(
     };
   }
 
+
+  console.log('LOG', officeAccountData)
+
   const updatedAsset = await prisma.asset.update({
     where: { id },
     data: {

@@ -35,6 +35,7 @@ import CCTVViewLink from "@/components/cctv";
 import ReactSelect from "react-select";
 import { useSession } from "next-auth/react";
 import { ExportActions } from "@/components/ExportActions";
+import { SBU_OPTIONS } from "@/lib/constants";
 
 const MONTH_OPTIONS = [
   { value: "all", label: "All Months" },
@@ -53,12 +54,12 @@ const MONTH_OPTIONS = [
 ];
 
 const exportColumns = [
-    { header: "Period", accessorKey: "periode" },
-    { header: "SBU", accessorKey: "perusahaan" },
-    { header: "Location", accessorKey: "channelCamera.lokasi" },
-    { header: "IP Address", accessorKey: "channelCamera.cctv.ipAddress" },
-    { header: "Status", accessorKey: "status" },
-    { header: "Remarks", accessorKey: "remarks" },
+  { header: "Period", accessorKey: "periode" },
+  { header: "SBU", accessorKey: "perusahaan" },
+  { header: "Location", accessorKey: "channelCamera.lokasi" },
+  { header: "IP Address", accessorKey: "channelCamera.cctv.ipAddress" },
+  { header: "Status", accessorKey: "status" },
+  { header: "Remarks", accessorKey: "remarks" },
 ];
 
 
@@ -76,9 +77,11 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: stri
 
 function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
   const [periode, setPeriode] = useState<string>("");
-  const [channelCameraId, setChannelCameraId] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("");
+  const [sbu, setSbu] = useState<string | null>(null);
+  const [channelCameraId, setChannelCameraId] = useState<string | null>(null);
+
 
   const [channelCameraOptions, setChannelCameraOptions] = useState<CctvChannelCamera[]>([]);
   const [selectedSpecDetails, setSelectedSpecDetails] = useState<any | null>(null);
@@ -164,6 +167,14 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
     },
   });
 
+
+  const SBU_GROUP_KEY = "PT_Intan_Sejati_Andalan_(Group)";
+  const sbuDropdownOptions = [
+    ...SBU_OPTIONS.map(s => ({ value: s, label: s.replace(/_/g, " ") })),
+    { value: SBU_GROUP_KEY, label: "PT Intan Sejati Andalan (Group)" }
+  ].sort((a, b) => a.label.localeCompare(b.label));
+
+
   return (
     <Card>
       <CardHeader>
@@ -177,37 +188,17 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
             <Input id="periode" type="date" value={periode} onChange={(e) => setPeriode(e.target.value)} />
           </div>
           <div className="space-y-2 col-span-3">
-            <Label htmlFor="channelCamera">Channel Camera</Label>
+            <Label htmlFor="sbu" className="text-right">Perusahaan</Label>
+
             <ReactSelect
-              options={channelCameraOptions.map(opt => ({
-                value: String(opt.id),
-                label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
-              }))}
-              value={channelCameraOptions.map(opt => ({
-                value: String(opt.id),
-                label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
-              })).find(opt => opt.value === channelCameraId)}
-              onChange={(selectedOption) => setChannelCameraId(selectedOption ? selectedOption.value : "")}
-              placeholder="Select or search for a Channel Camera..."
-              isClearable
-              // styles={{
-              //   control: (base) => ({
-              //     ...base,
-              //     borderColor: 'hsl(var(--input))',
-              //     backgroundColor: 'hsl(var(--background))',
-              //   }),
-              //   menu: (base) => ({
-              //     ...base,
-              //     zIndex: 50,
-              //     backgroundColor: 'hsl(var(--card))',
-              //     color: 'hsl(var(--card-foreground))',
-              //   }),
-              //   option: (base, { isFocused }) => ({
-              //     ...base,
-              //     backgroundColor: isFocused ? 'hsl(var(--accent))' : 'hsl(var(--card))',
-              //     color: 'hsl(var(--card-foreground))',
-              //   }),
-              // }}
+              className="col-span-3"
+              options={sbuDropdownOptions}
+              onChange={(opt) => {
+                setSbu(opt ? opt.value : null);
+                setChannelCameraId(null); // Reset channel camera on SBU change
+              }}
+              placeholder="Select SBU"
+              name="sbu"
             />
           </div>
         </div>
@@ -236,20 +227,57 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
             </CardContent>
           </Card>
         )}
-
-        <div className="space-y-2 w-24">
-          <Label htmlFor="status">New Status</Label>
-          <Select onValueChange={setStatus} value={status}>
-            <SelectTrigger className="w-60">
-              <SelectValue placeholder="Select New Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="GOOD">GOOD</SelectItem>
-              <SelectItem value="TROUBLE">TROUBLE</SelectItem>
-              <SelectItem value="BROKEN">BROKEN</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid md:grid-cols-4 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="status">New Status</Label>
+            <Select onValueChange={setStatus} value={status}>
+              <SelectTrigger className="w-60">
+                <SelectValue placeholder="Select New Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="GOOD">GOOD</SelectItem>
+                <SelectItem value="TROUBLE">TROUBLE</SelectItem>
+                <SelectItem value="BROKEN">BROKEN</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 col-span-3">
+            <Label htmlFor="channelCamera">Channel Camera</Label>
+            <ReactSelect
+              options={channelCameraOptions.filter(opt => opt.sbu.replaceAll(" - ", " ").replaceAll("_", " ") == sbu?.replaceAll("_", " "))
+                .map(opt => ({
+                  value: String(opt.id),
+                  label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
+                }))}
+              value={channelCameraOptions.map(opt => ({
+                value: String(opt.id),
+                label: `${opt.sbu.replace(/_/g, " ")} - ${opt.lokasi}`
+              })).find(opt => opt.value === channelCameraId)}
+              onChange={(selectedOption) => setChannelCameraId(selectedOption ? selectedOption.value : "")}
+              placeholder="Select or search for a Channel Camera..."
+              isClearable
+            // styles={{
+            //   control: (base) => ({
+            //     ...base,
+            //     borderColor: 'hsl(var(--input))',
+            //     backgroundColor: 'hsl(var(--background))',
+            //   }),
+            //   menu: (base) => ({
+            //     ...base,
+            //     zIndex: 50,
+            //     backgroundColor: 'hsl(var(--card))',
+            //     color: 'hsl(var(--card-foreground))',
+            //   }),
+            //   option: (base, { isFocused }) => ({
+            //     ...base,
+            //     backgroundColor: isFocused ? 'hsl(var(--accent))' : 'hsl(var(--card))',
+            //     color: 'hsl(var(--card-foreground))',
+            //   }),
+            // }}
+            />
+          </div>
         </div>
+
 
         {status && status !== 'GOOD' && (
           <div className="space-y-2">
