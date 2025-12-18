@@ -248,7 +248,7 @@ model LaptopSpecs {
   vgaOptionId             Int?
   macWlan                 String?                      @unique @map("mac_wlan") @db.VarChar(17)
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
-  licenseKey              String?                      @map("license_key") @db.VarChar(25)
+  licenseKey              String?                      @map("license_key") @db.VarChar(30)
   brandOptionId           Int?
   typeOptionId            Int?
   licenseOptionId         Int?
@@ -315,7 +315,7 @@ model IntelNucSpecs {
   vgaOptionId             Int?
   macWlan                 String?                      @unique @map("mac_wlan") @db.VarChar(17)
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
-  lincenseKey             String?                      @map("license_key") @db.VarChar(25)
+  licenseKey              String?                      @map("license_key") @db.VarChar(30)
   brandOptionId           Int?
   typeOptionId            Int?
   licenseKeyOptionId      Int?
