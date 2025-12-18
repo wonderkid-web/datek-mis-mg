@@ -49,6 +49,7 @@ export async function createAssetAndLaptopSpecs(
   const laptopSpecsCreateData: any = {
     macWlan: laptopSpecsDataInput.macWlan,
     macLan: laptopSpecsDataInput.macLan,
+
   };
 
   if (laptopSpecsDataInput.processorOptionId) {
@@ -117,12 +118,17 @@ export async function createAssetAndLaptopSpecs(
     };
   }
 
+  console.log('KEY', laptopSpecsDataInput.licenseKey)
+
   // Logic simpan asset + specs + akun office (UPDATED)
   const newAsset = await prisma.asset.create({
     data: {
       ...assetData,
       laptopSpecs: {
-        create: laptopSpecsCreateData,
+        create: {
+          ...laptopSpecsCreateData,
+          licenseKey: laptopSpecsDataInput.licenseKey || null,
+        },
       },
       officeAccount: officeAccountData
         ? {
@@ -286,6 +292,7 @@ interface UpdateLaptopSpecsDataInput {
   portOptionId?: number | null;
   powerOptionId?: number | null;
   microsoftOfficeOptionId?: number | null;
+  licenseKey?: string | null;
   colorOptionId?: number | null;
   macWlan?: string | null;
   macLan?: string | null;
@@ -351,10 +358,21 @@ export async function updateAssetAndLaptopSpecs(
     laptopSpecsUpdateData.licenseOption = laptopSpecsDataInput.licenseOptionId === null ? { disconnect: true } : { connect: { id: laptopSpecsDataInput.licenseOptionId } };
   }
 
-  // Logic Update Office Account (UPDATED)
+  // 1. Fetch the existing asset to check for the presence of a nested OfficeAccount
+  const existingAsset = await prisma.asset.findUnique({
+    where: { id },
+    include: { officeAccount: true },
+  });
+
+  if (!existingAsset) {
+    throw new Error("Asset not found");
+  }
+
+  // 2. Define the Logic Update for Office Account
   let officeAccountUpdateLogic: any = undefined;
 
   if (officeAccountData) {
+    // If data exists, we UPSERT (Update if exists, Create if not)
     officeAccountUpdateLogic = {
       upsert: {
         create: {
@@ -371,36 +389,47 @@ export async function updateAssetAndLaptopSpecs(
         },
       },
     };
-  } else if (officeAccountData === null) {
+  } else if (officeAccountData === null && existingAsset.officeAccount) {
+    // ONLY attempt delete if the user sent null AND a record currently exists
     officeAccountUpdateLogic = {
-      delete: true
+      delete: true,
     };
   }
 
-
-  console.log('LOG', officeAccountData)
-
-  const updatedAsset = await prisma.asset.update({
-    where: { id },
-    data: {
-      ...assetData,
-      laptopSpecs: {
-        update: laptopSpecsUpdateData,
+  // 3. Execute the Update
+  try {
+    const updatedAsset = await prisma.asset.update({
+      where: { id },
+      data: {
+        ...assetData,
+        laptopSpecs: {
+          update: {
+            ...laptopSpecsUpdateData,
+            licenseKey: laptopSpecsDataInput.licenseKey || null,
+          },
+        },
+        // Pass the logic we calculated above
+        officeAccount: officeAccountUpdateLogic,
       },
-      officeAccount: officeAccountData ? officeAccountUpdateLogic : (officeAccountData === null ? { delete: true } : undefined),
-    },
-    include: {
-      laptopSpecs: true,
-      officeAccount: true,
-    },
-  });
+      include: {
+        laptopSpecs: true,
+        officeAccount: true,
+      },
+    });
 
-  // --- TAMBAHKAN BLOCK INI ---
-  revalidatePath("/data-center/assets");
-  revalidatePath("/data-center/assigned-assets");
-  revalidateTag("asset-assignments"); // PENTING: Reset cache
+    // --- TAMBAHKAN BLOCK INI ---
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments"); // PENTING: Reset cache
+
+    return updatedAsset;
+
+  } catch (error) {
+    console.error('Failed to update laptop asset:', error);
+    throw error;
+  }
+
   // ----------------------------
-  return updatedAsset;
 }
 
 // ... (Sisa function seperti getPaginatedAssets, deleteAsset, dll biarkan saja sama seperti sebelumnya)

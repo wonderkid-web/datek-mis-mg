@@ -238,7 +238,6 @@ export default function EditLaptopAssetPage() {
                 setMacWlan(asset.laptopSpecs.macWlan || "");
                 setMacLan(asset.laptopSpecs.macLan || "");
                 setLicenseKey(asset.laptopSpecs.licenseKey || "");
-
                 setBrandOptionId(asset.laptopSpecs.brandOptionId);
                 setProcessorOptionId(asset.laptopSpecs.processorOptionId);
                 setRamOptionId(asset.laptopSpecs.ramOptionId);

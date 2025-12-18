@@ -81,8 +81,6 @@ model Asset {
   @@map("assets")
 }
 
-
-
 model AssetAssignment {
   id                   Int                   @id @default(autoincrement())
   assetId              Int
@@ -163,8 +161,9 @@ model LaptopPowerOption {
 }
 
 model LaptopLicenseKeyOption {
-  id            Int             @id @default(autoincrement())
-  value         String          @unique @db.VarChar(100)
+  id    Int    @id @default(autoincrement())
+  value String @unique @db.VarChar(100)
+
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
 
@@ -190,8 +189,9 @@ model LaptopColorOption {
 }
 
 model LaptopBrandOption {
-  id            Int             @id @default(autoincrement())
-  value         String          @unique @db.VarChar(50)
+  id    Int    @id @default(autoincrement())
+  value String @unique @db.VarChar(50)
+
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
 
@@ -248,6 +248,7 @@ model LaptopSpecs {
   vgaOptionId             Int?
   macWlan                 String?                      @unique @map("mac_wlan") @db.VarChar(17)
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
+  licenseKey              String?                      @map("license_key") @db.VarChar(25)
   brandOptionId           Int?
   typeOptionId            Int?
   licenseOptionId         Int?
@@ -314,6 +315,7 @@ model IntelNucSpecs {
   vgaOptionId             Int?
   macWlan                 String?                      @unique @map("mac_wlan") @db.VarChar(17)
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
+  lincenseKey             String?                      @map("license_key") @db.VarChar(25)
   brandOptionId           Int?
   typeOptionId            Int?
   licenseKeyOptionId      Int?
