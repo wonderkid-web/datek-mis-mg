@@ -76,8 +76,7 @@ export function EditMaintenanceDialog({
       periode: new Date(periode),
       status: status as CCTVStatus,
       remarks,
-      // @ts-expect-error its okay
-      assetId: maintenance.channelCamera.cctvSpecs[0]?.asset.id,
+      assetId: maintenance.channelCamera?.cctvSpecs?.[0]?.asset.id,
     });
   };
 

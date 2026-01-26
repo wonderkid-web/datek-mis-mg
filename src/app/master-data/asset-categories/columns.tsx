@@ -73,10 +73,9 @@ export const columns = ({ handleDelete, handleEdit }: ColumnsProps): ColumnDef<A
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleEdit(category)}>Edit</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDelete(category.id)} className="text-red-600">
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleDelete(category.id)} variant="destructive">
+                        Delete
+                      </DropdownMenuItem>          </DropdownMenuContent>
         </DropdownMenu>
       );
     },

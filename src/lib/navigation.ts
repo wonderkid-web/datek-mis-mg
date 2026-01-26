@@ -44,6 +44,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Spesifikasi Printer", href: "/master-data/printer" },
       { name: "Spesifikasi CCTV", href: "/master-data/cctv" },
       { name: "Asset Categories", href: "/master-data/asset-categories" },
+      { name: "ISP", href: "/master-data/isp" },
     ],
   },
   {
@@ -70,9 +71,13 @@ export const navigationItems: NavigationItem[] = [
     icon: ToolCaseIcon,
     children: [
       { name: "History", href: "/service-records/history" },
-      { name: "Computer Maintenance", href: "/service-records/computer-maintenance" },
+      {
+        name: "Computer Maintenance",
+        href: "/service-records/computer-maintenance",
+      },
       { name: "Printer Maintenance", href: "/service-records/repetitive" },
       { name: "CCTV Maintenance", href: "/service-records/cctv-maintenance" },
+      { name: "ISP Speed Test", href: "/service-records/isp" },
     ],
   },
 ];

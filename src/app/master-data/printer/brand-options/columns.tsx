@@ -52,10 +52,9 @@ export const columns = ({ handleEdit, handleDelete }: ColumnsProps): ColumnDef<P
               Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleDelete(brandOption.id.toString())}>
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleDelete(brandOption.id.toString())} variant="destructive">
+                        Delete
+                      </DropdownMenuItem>          </DropdownMenuContent>
         </DropdownMenu>
       );
     },

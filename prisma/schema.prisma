@@ -30,6 +30,11 @@ enum IPRole {
   FULL_ACCESS
 }
 
+enum BandwidthType {
+  BROADBAND
+  DEDICATED
+}
+
 model User {
   id               Int               @id @default(autoincrement())
   namaLengkap      String            @map("nama_lengkap") @db.VarChar(255)
@@ -543,4 +548,47 @@ model CctvRepetitiveMaintenance {
 
   @@index([channelCameraId])
   @@map("cctv_repetitive_maintenances")
+}
+
+model Isp {
+  id             Int         @id @default(autoincrement())
+  // sbu            String      @db.VarChar(255)
+  isp            String      @db.VarChar(255)
+  asNumber       String      @map("as_number") @db.VarChar(255)
+  address        String      @db.VarChar(255)
+  maps           String      @db.VarChar(255)
+  pop            String      @db.VarChar(255)
+  transmisi      String      @db.VarChar(255)
+  productService String      @map("product_service") @db.VarChar(255)
+  bandwidth      String      @db.VarChar(255)
+  ipPublic       String      @map("ip_public") @db.VarChar(255)
+  price          Float
+  sla            String      @db.VarChar(255)
+  picNoc         String      @map("pic_noc") @db.VarChar(255)
+  hpNoc          String      @map("hp_noc") @db.VarChar(255)
+  prtg           String      @db.VarChar(255)
+  username       String      @db.VarChar(255)
+  password       String      @db.VarChar(255)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  ispReports     IspReport[]
+
+  @@map("isps")
+}
+
+model IspReport {
+  id            Int           @id @default(autoincrement())
+  reportDate    DateTime
+  sbu           String        @db.VarChar(255)
+  ispId         Int
+  bandwidth     BandwidthType
+  downloadSpeed Float
+  uploadSpeed   Float
+  link          String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  isp           Isp           @relation(fields: [ispId], references: [id])
+
+  @@index([ispId])
+  @@map("isp_reports")
 }

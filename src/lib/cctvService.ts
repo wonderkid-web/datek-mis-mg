@@ -98,7 +98,6 @@ export const getCctvSpecById = async (id: number) => {
 };
 
 export const updateCctvSpec = async (id: number, data: Partial<CctvSpecs>) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { assetId, ...updateData } = data;
   const result = await prisma.cctvSpecs.update({
     where: { assetId: id },

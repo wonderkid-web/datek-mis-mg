@@ -457,8 +457,7 @@ export default function AddLaptopAssetPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-2">
                 <Label htmlFor="officePassword">Office Password</Label>
-                <Input
-                  id="officePassword"
+                <Input id="officePassword"
                   type="text" 
                   value={officePassword}
                   onChange={(e) => setOfficePassword(e.target.value)}

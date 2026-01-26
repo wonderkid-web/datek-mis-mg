@@ -16,7 +16,8 @@ export default function ServiceRecordsLayout({
     { href: '/service-records/repetitive', label: 'Repetitive Maintenance' },
     { href: '/service-records/computer-maintenance', label: 'Computer Maintenance' },
     { href: '/service-records/cctv-maintenance', label: 'Repetitive CCTV Maintenance' },
-    // { href: '/service-records/repetitive-andi', label: 'Repetitive Maintenance Andi' },
+    { href: '/service-records/isp', label: 'ISP History' },
+
   ];
 
   return (
