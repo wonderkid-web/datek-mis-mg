@@ -9,24 +9,23 @@ export const getIsps = async () => {
       createdAt: "desc",
     },
   });
-  return isps.map(isp => ({...isp, price: isp.price.toString()}));
+  return isps.map(isp => ({...isp}));
 };
 
 export const getIspById = async (id: number) => {
   const isp = await prisma.isp.findUnique({
     where: { id },
   });
-  return isp ? {...isp, price: isp.price.toString()} : null;
+  return isp ? {...isp} : null;
 };
 
 export const createIsp = async (data: Omit<Isp, "id" | "createdAt" | "updatedAt">) => {
   const newIsp = await prisma.isp.create({
     data: {
         ...data,
-        price: Number(data.price)
     }
   });
-  return {...newIsp, price: newIsp.price.toString()};
+  return {...newIsp};
 };
 
 export const updateIsp = async (id: number, data: Partial<Omit<Isp, "id" | "createdAt" | "updatedAt">>) => {
@@ -36,10 +35,9 @@ export const updateIsp = async (id: number, data: Partial<Omit<Isp, "id" | "crea
     where: { id },
     data: {
         ...rest,
-        ...(price !== undefined && { price: Number(price) })
     },
   });
-  return {...updatedIsp, price: updatedIsp.price.toString()};
+  return {...updatedIsp};
 };
 
 export const deleteIsp = async (id: number) => {

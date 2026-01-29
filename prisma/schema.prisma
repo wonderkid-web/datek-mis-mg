@@ -560,9 +560,7 @@ model Isp {
   pop            String      @db.VarChar(255)
   transmisi      String      @db.VarChar(255)
   productService String      @map("product_service") @db.VarChar(255)
-  bandwidth      String      @db.VarChar(255)
   ipPublic       String      @map("ip_public") @db.VarChar(255)
-  price          Float
   sla            String      @db.VarChar(255)
   picNoc         String      @map("pic_noc") @db.VarChar(255)
   hpNoc          String      @map("hp_noc") @db.VarChar(255)

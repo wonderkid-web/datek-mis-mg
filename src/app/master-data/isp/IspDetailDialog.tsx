@@ -66,11 +66,11 @@ export function IspDetailDialog({
                 ISP Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-3">
+            <CardContent className="grid md:grid-cols-1 gap-3">
               <DetailItem icon={<Server />} label="ISP" value={isp.isp} />
               <DetailItem icon={<Fingerprint />} label="AS Number" value={isp.asNumber} />
               <DetailItem icon={<Zap />} label="Product Service" value={isp.productService} />
-              <DetailItem icon={<BarChart />} label="Bandwidth" value={isp.bandwidth} />
+              {/* <DetailItem icon={<BarChart />} label="Bandwidth" value={isp.bandwidth} /> */}
               <DetailItem icon={<Network />} label="IP Public" value={isp.ipPublic} />
             </CardContent>
           </Card>
@@ -82,7 +82,7 @@ export function IspDetailDialog({
                 Location
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-3">
+            <CardContent className="grid md:grid-cols-1 gap-3">
               <DetailItem icon={<FileText />} label="Address" value={isp.address} />
               <DetailItem icon={<Globe />} label="Maps" value={isp.maps} />
               <DetailItem icon={<Server />} label="POP" value={isp.pop} />
@@ -97,8 +97,8 @@ export function IspDetailDialog({
                 Pricing and SLA
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-3">
-                <DetailItem icon={<DollarSign />} label="Price" value={new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(isp.price))} />
+            <CardContent className="grid md:grid-cols-1 gap-3">
+                {/* <DetailItem icon={<DollarSign />} label="Price" value={new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(isp.price))} /> */}
                 <DetailItem icon={<Shield />} label="SLA" value={isp.sla} />
             </CardContent>
           </Card>
@@ -110,7 +110,7 @@ export function IspDetailDialog({
                 Contact
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-3">
+            <CardContent className="grid md:grid-cols-1 gap-3">
                 <DetailItem icon={<User />} label="PIC NOC" value={isp.picNoc} />
                 <DetailItem icon={<Phone />} label="HP NOC" value={isp.hpNoc} />
             </CardContent>
@@ -123,7 +123,7 @@ export function IspDetailDialog({
                 Credentials
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-3">
+            <CardContent className="grid md:grid-cols-1 gap-3">
                 <DetailItem icon={<BarChart />} label="PRTG" value={isp.prtg} />
                 <DetailItem icon={<User />} label="Username" value={isp.username} />
                 <DetailItem icon={<Key />} label="Password" value={"********"} />

@@ -67,7 +67,6 @@ export function EditIspDialog({
       id: isp.id,
       ispData: {
         ...rest,
-        price: formData.price ? Number(formData.price) : undefined
       },
     });
   };
@@ -128,18 +127,18 @@ export function EditIspDialog({
                     <Label htmlFor="productService">Product Service</Label>
                     <Input id="productService" value={formData.productService || ''} onChange={handleChange} />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                     <Label htmlFor="bandwidth">Bandwidth</Label>
                     <Input id="bandwidth" value={formData.bandwidth || ''} onChange={handleChange} />
-                </div>
+                </div> */}
                 <div className="space-y-2">
                     <Label htmlFor="ipPublic">IP Public</Label>
                     <Input id="ipPublic" value={formData.ipPublic || ''} onChange={handleChange} />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                     <Label htmlFor="price">Price</Label>
                     <Input id="price" type="number" value={formData.price || ''} onChange={handleChange} />
-                </div>
+                </div> */}
                 <div className="space-y-2">
                     <Label htmlFor="sla">SLA</Label>
                     <Input id="sla" value={formData.sla || ''} onChange={handleChange} />

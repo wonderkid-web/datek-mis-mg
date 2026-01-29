@@ -144,11 +144,11 @@ export function IspReportForm({ onSave, initialData = {} }: IspReportFormProps) 
                 />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="bandwidth">Bandwidth</Label>
+                <Label htmlFor="bandwidth">Product Service</Label>
                 <ReactSelect
                     options={bandwidthOptions}
                     onChange={(opt) => setFormData(prev => ({...prev, bandwidth: opt?.value as BandwidthType}))}
-                    placeholder="Select Bandwidth Type"
+                    placeholder="Select Service Type"
                     name="bandwidth"
                     value={bandwidthOptions.find(opt => opt.value === formData.bandwidth) || null}
                 />

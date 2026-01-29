@@ -44,11 +44,11 @@ export const columns = ({ handleView, handleEdit, handleDelete }: ColumnsProps):
     header: () => <div className="text-center">Transmisi</div>,
     cell: ({ row }) => <div className="text-center">{row.original.transmisi}</div>,
   },
-  {
-    accessorKey: "bandwidth",
-    header: () => <div className="text-center">Bandwidth</div>,
-    cell: ({ row }) => <div className="text-center">{row.original.bandwidth}</div>,
-  },
+  // {
+  //   accessorKey: "bandwidth",
+  //   header: () => <div className="text-center">Bandwidth</div>,
+  //   cell: ({ row }) => <div className="text-center">{row.original.bandwidth}</div>,
+  // },
   {
     accessorKey: "ipPublic",
     header: () => <div className="text-center">IP Public</div>,
