@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
+import { formattedDateDay } from "@/helper";
 
 // Define a type that includes the related ISP for display
 export type IspReportWithIsp = IspReport & { isp: Isp };
@@ -29,6 +30,8 @@ export const columns = ({ handleView, handleEdit, handleDelete }: ColumnsProps):
     header: "No.",
     cell: ({ row }) => row.index + 1,
   },
+
+
   {
     accessorKey: "reportDate",
     header: ({ column }) => {
@@ -42,26 +45,47 @@ export const columns = ({ handleView, handleEdit, handleDelete }: ColumnsProps):
         </Button>
       );
     },
-    cell: ({ row }) => format(new Date(row.original.reportDate), "PPP"),
+    cell: ({ row }) => {
+      const value = row.getValue("reportDate");
+      const date = value ? new Date(value as string) : null;
+      return (
+        <div className="text-center">
+          {date ? formattedDateDay(date).split("-")[0] : "-"}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "sbu",
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        <div
+          className="text-center"
         >
-          SBU
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+
+          <Button
+
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            SBU
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       );
     },
     cell: ({ row }) => row.original.sbu.replaceAll("_", " "),
   },
   {
     accessorKey: "isp.isp", // Access nested ISP name
-    header: "ISP Name",
+    header: () => (
+      <div className="text-center">
+        ISP Name
+      </div>
+    ),
+    cell: ({ row }) => (<div className="text-center">
+      <p>{row.original.isp.isp}</p>
+    </div>),
   },
   {
     accessorKey: "bandwidth",
@@ -69,18 +93,31 @@ export const columns = ({ handleView, handleEdit, handleDelete }: ColumnsProps):
   },
   {
     accessorKey: "downloadSpeed",
-    header: "Download (Mbps)",
-    cell: ({ row }) => {
-      return <span className="mx-auto">{row.original.downloadSpeed} Mbps</span>;
-    },
+    header: () => (
+      <div className="text-center">
+        Download (Mbps)
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.downloadSpeed} Mbps
+      </div>
+    ),
   },
   {
     accessorKey: "uploadSpeed",
-    header: "Upload (Mbps)",
-     cell: ({ row }) => {
-      return <span className="mx-auto">{row.original.uploadSpeed} Mbps</span>;
-    },
+    header: () => (
+      <div className="text-center">
+        Upload (Mbps)
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.uploadSpeed} Mbps
+      </div>
+    ),
   },
+
   {
     id: "actions",
     enableHiding: false,

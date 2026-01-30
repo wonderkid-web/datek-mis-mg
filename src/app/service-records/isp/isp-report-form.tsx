@@ -62,22 +62,22 @@ export function IspReportForm({ onSave, initialData = {} }: IspReportFormProps) 
       toast.error("Please fill in all required fields.");
       return;
     }
-    
+
     const { id, createdAt, updatedAt, ...restOfFormData } = formData;
 
     mutation.mutate({
-        ...restOfFormData,
-        reportDate: formData.reportDate,
-        downloadSpeed: Number(formData.downloadSpeed),
-        uploadSpeed: Number(formData.uploadSpeed),
-        ispId: Number(formData.ispId),
-        bandwidth: formData.bandwidth as BandwidthType,
+      ...restOfFormData,
+      reportDate: formData.reportDate,
+      downloadSpeed: Number(formData.downloadSpeed),
+      uploadSpeed: Number(formData.uploadSpeed),
+      ispId: Number(formData.ispId),
+      bandwidth: formData.bandwidth as BandwidthType,
     } as Omit<IspReport, "id" | "createdAt" | "updatedAt">);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setFormData(prev => ({...prev, [id]: value}));
+    setFormData(prev => ({ ...prev, [id]: value }));
   }
 
   const sbuDropdownOptions = SBU_OPTIONS.map(s => ({ value: s, label: s.replace(/_/g, " ") }));
@@ -97,74 +97,76 @@ export function IspReportForm({ onSave, initialData = {} }: IspReportFormProps) 
       </CardHeader>
       <CardContent className="space-y-6 relative pb-8">
         <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="reportDate">Report Date</Label>
-                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.reportDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.reportDate ? format(formData.reportDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.reportDate}
-                      onSelect={(date) => setFormData(prev => ({ ...prev, reportDate: date || undefined }))}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="sbu">SBU</Label>
-                <ReactSelect
-                    options={sbuDropdownOptions}
-                    onChange={(opt) => setFormData(prev => ({...prev, sbu: opt?.value}))}
-                    placeholder="Select SBU"
-                    name="sbu"
-                    value={sbuDropdownOptions.find(opt => opt.value === formData.sbu) || null}
+          <div className="space-y-2">
+            <Label htmlFor="reportDate">Report Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.reportDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.reportDate ? format(formData.reportDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.reportDate}
+                  onSelect={(date) =>
+                    setFormData(prev => ({ ...prev, reportDate: date }))
+                  }
+                  initialFocus
                 />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="ispId">ISP</Label>
-                <ReactSelect
-                    options={ispDropdownOptions}
-                    onChange={(opt) => setFormData(prev => ({...prev, ispId: Number(opt?.value)}))}
-                    placeholder="Select ISP"
-                    name="ispId"
-                    isLoading={isLoadingIsps}
-                    value={ispDropdownOptions.find(opt => opt.value === formData.ispId) || null}
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="bandwidth">Product Service</Label>
-                <ReactSelect
-                    options={bandwidthOptions}
-                    onChange={(opt) => setFormData(prev => ({...prev, bandwidth: opt?.value as BandwidthType}))}
-                    placeholder="Select Service Type"
-                    name="bandwidth"
-                    value={bandwidthOptions.find(opt => opt.value === formData.bandwidth) || null}
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="downloadSpeed">Download (Mbps)</Label>
-                <Input id="downloadSpeed" type="number" value={formData.downloadSpeed || ''} onChange={handleChange} />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="uploadSpeed">Upload (Mbps)</Label>
-                <Input id="uploadSpeed" type="number" value={formData.uploadSpeed || ''} onChange={handleChange} />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="link">Link</Label>
-                <Input id="link" value={formData.link || ''} onChange={handleChange} placeholder="Enter link" />
-            </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sbu">SBU</Label>
+            <ReactSelect
+              options={sbuDropdownOptions}
+              onChange={(opt) => setFormData(prev => ({ ...prev, sbu: opt?.value }))}
+              placeholder="Select SBU"
+              name="sbu"
+              value={sbuDropdownOptions.find(opt => opt.value === formData.sbu) || null}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ispId">ISP</Label>
+            <ReactSelect
+              options={ispDropdownOptions}
+              onChange={(opt) => setFormData(prev => ({ ...prev, ispId: Number(opt?.value) }))}
+              placeholder="Select ISP"
+              name="ispId"
+              isLoading={isLoadingIsps}
+              value={ispDropdownOptions.find(opt => opt.value === formData.ispId) || null}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bandwidth">Product Service</Label>
+            <ReactSelect
+              options={bandwidthOptions}
+              onChange={(opt) => setFormData(prev => ({ ...prev, bandwidth: opt?.value as BandwidthType }))}
+              placeholder="Select Service Type"
+              name="bandwidth"
+              value={bandwidthOptions.find(opt => opt.value === formData.bandwidth) || null}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadSpeed">Download (Mbps)</Label>
+            <Input id="downloadSpeed" type="number" value={formData.downloadSpeed || ''} onChange={handleChange} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="uploadSpeed">Upload (Mbps)</Label>
+            <Input id="uploadSpeed" type="number" value={formData.uploadSpeed || ''} onChange={handleChange} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="link">Link</Label>
+            <Input id="link" value={formData.link || ''} onChange={handleChange} placeholder="Enter link" />
+          </div>
         </div>
 
         <Button onClick={handleSubmit} disabled={mutation.isPending} className="absolute right-6">

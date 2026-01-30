@@ -26,6 +26,7 @@ import {
   FileText
 } from "lucide-react";
 import React from "react";
+import Link from "next/link";
 
 interface IspDetailDialogProps {
   isp: IspClient | null;
@@ -84,7 +85,7 @@ export function IspDetailDialog({
             </CardHeader>
             <CardContent className="grid md:grid-cols-1 gap-3">
               <DetailItem icon={<FileText />} label="Address" value={isp.address} />
-              <DetailItem icon={<Globe />} label="Maps" value={isp.maps} />
+              <DetailItem icon={<Globe />} label="Maps" value={<Link className="text-blue-600 italic" href={isp.maps} target="_blank" rel="noopener noreferrer">Link Maps</Link>} />
               <DetailItem icon={<Server />} label="POP" value={isp.pop} />
               <DetailItem icon={<Zap />} label="Transmisi" value={isp.transmisi} />
             </CardContent>
