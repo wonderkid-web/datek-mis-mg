@@ -241,6 +241,30 @@ export interface PrinterRepetitiveMaintenance {
   updatedAt: Date;
 }
 
+export interface ProblemSequence {
+  id: number;
+  ticketNumber: string;
+  sbu: string;
+  ispId: number;
+  pic: string;
+  dateDown: Date;
+  dateDoneUp: Date;
+  issue: string;
+  trouble: string;
+  solved: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProblemSequenceWithIsp extends ProblemSequence {
+  isp: {
+    id: number;
+    isp: string;
+    hpNoc: string;
+    picNoc: string;
+  };
+}
+
 export interface ComputerMaintenance {
   id: number;
   periode: Date;

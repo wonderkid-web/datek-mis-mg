@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 // Enums for IP Address management
@@ -570,6 +569,7 @@ model Isp {
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
   ispReports     IspReport[]
+  problemSequences ProblemSequence[]
 
   @@map("isps")
 }
@@ -589,4 +589,24 @@ model IspReport {
 
   @@index([ispId])
   @@map("isp_reports")
+}
+
+model ProblemSequence {
+  id           Int      @id @default(autoincrement())
+  ticketNumber String   @unique @map("ticket_number") @db.VarChar(30)
+  sbu          String   @db.VarChar(255)
+  ispId        Int
+  pic          String   @db.VarChar(255)
+  dateDown     DateTime @map("date_down")
+  dateDoneUp   DateTime @map("date_done_up")
+  issue        String   @db.Text
+  trouble      String   @db.Text
+  solved       String   @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  isp Isp @relation(fields: [ispId], references: [id])
+
+  @@index([ispId])
+  @@map("problem_sequences")
 }

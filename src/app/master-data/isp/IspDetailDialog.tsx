@@ -6,26 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IspClient } from "./page";
-import {
-  Building,
-  Fingerprint,
-  Globe,
-  MapPin,
-  Server,
-  DollarSign,
-  Shield,
-  User,
-  Key,
-  Network,
-  Info,
-  Zap,
-  Phone,
-  BarChart,
-  FileText
-} from "lucide-react";
-import React from "react";
 import Link from "next/link";
 
 interface IspDetailDialogProps {
@@ -34,16 +15,6 @@ interface IspDetailDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
-  <div className="flex items-start space-x-3 py-2 border-b">
-    <div className="text-muted-foreground mt-1">{icon}</div>
-    <div className="flex-1">
-      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-      <div className="text-md font-semibold">{value}</div>
-    </div>
-  </div>
-);
-
 export function IspDetailDialog({
   isp,
   isOpen,
@@ -51,86 +22,51 @@ export function IspDetailDialog({
 }: IspDetailDialogProps) {
   if (!isp) return null;
 
+  const detailRows = [
+    { label: "ISP Name", value: isp.isp },
+    { label: "AS Number", value: isp.asNumber },
+    { label: "Product / Service", value: isp.productService },
+    { label: "IP Public", value: isp.ipPublic },
+    { label: "Address", value: isp.address },
+    {
+      label: "Maps",
+      value: isp.maps ? (
+        <Link href={isp.maps} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+          Link Maps
+        </Link>
+      ) : (
+        "N/A"
+      ),
+    },
+    { label: "POP", value: isp.pop },
+    { label: "Transmisi", value: isp.transmisi },
+    { label: "SLA", value: isp.sla },
+    { label: "PIC NOC", value: isp.picNoc },
+    { label: "HP NOC", value: isp.hpNoc },
+    { label: "PRTG", value: isp.prtg },
+    { label: "Username", value: isp.username },
+    { label: "Password", value: isp.password ? "********" : "N/A" },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>ISP Details</DialogTitle>
         </DialogHeader>
-        
-        <div className="flex flex-col gap-4 mt-2 overflow-y-auto pr-2">
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-base">
-                <Info className="mr-2 h-5 w-5" />
-                ISP Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid md:grid-cols-1 gap-3">
-              <DetailItem icon={<Server />} label="ISP" value={isp.isp} />
-              <DetailItem icon={<Fingerprint />} label="AS Number" value={isp.asNumber} />
-              <DetailItem icon={<Zap />} label="Product Service" value={isp.productService} />
-              {/* <DetailItem icon={<BarChart />} label="Bandwidth" value={isp.bandwidth} /> */}
-              <DetailItem icon={<Network />} label="IP Public" value={isp.ipPublic} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-base">
-                <MapPin className="mr-2 h-5 w-5" />
-                Location
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid md:grid-cols-1 gap-3">
-              <DetailItem icon={<FileText />} label="Address" value={isp.address} />
-              <DetailItem icon={<Globe />} label="Maps" value={<Link className="text-blue-600 italic" href={isp.maps} target="_blank" rel="noopener noreferrer">Link Maps</Link>} />
-              <DetailItem icon={<Server />} label="POP" value={isp.pop} />
-              <DetailItem icon={<Zap />} label="Transmisi" value={isp.transmisi} />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-base">
-                <DollarSign className="mr-2 h-5 w-5" />
-                Pricing and SLA
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid md:grid-cols-1 gap-3">
-                {/* <DetailItem icon={<DollarSign />} label="Price" value={new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(isp.price))} /> */}
-                <DetailItem icon={<Shield />} label="SLA" value={isp.sla} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-base">
-                <User className="mr-2 h-5 w-5" />
-                Contact
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid md:grid-cols-1 gap-3">
-                <DetailItem icon={<User />} label="PIC NOC" value={isp.picNoc} />
-                <DetailItem icon={<Phone />} label="HP NOC" value={isp.hpNoc} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-base">
-                <Key className="mr-2 h-5 w-5" />
-                Credentials
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid md:grid-cols-1 gap-3">
-                <DetailItem icon={<BarChart />} label="PRTG" value={isp.prtg} />
-                <DetailItem icon={<User />} label="Username" value={isp.username} />
-                <DetailItem icon={<Key />} label="Password" value={"********"} />
-            </CardContent>
-          </Card>
-
+        <div className="border rounded-lg">
+          <table className="w-full text-sm">
+            <tbody>
+              {detailRows.map((row) => (
+                <tr key={row.label} className="border-b last:border-b-0">
+                  <td className="w-1/3 px-4 py-3 font-semibold align-top">{row.label}</td>
+                  <td className="px-4 py-3 whitespace-pre-line">
+                    {row.value || "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </DialogContent>
     </Dialog>

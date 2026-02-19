@@ -14,67 +14,45 @@ interface ViewIspReportDialogProps {
 export function ViewIspReportDialog({ isOpen, onOpenChange, ispReport }: ViewIspReportDialogProps) {
   if (!ispReport) return null;
 
+  const detailRows = [
+    { label: "Report Date", value: ispReport.reportDate ? format(new Date(ispReport.reportDate), "PPP") : "N/A" },
+    { label: "SBU", value: ispReport.sbu.replaceAll("_", " ") },
+    { label: "ISP Name", value: ispReport.isp?.isp || "N/A" },
+    { label: "Bandwidth Type", value: ispReport.bandwidth },
+    { label: "Download Speed", value: `${ispReport.downloadSpeed} Mbps` },
+    { label: "Upload Speed", value: `${ispReport.uploadSpeed} Mbps` },
+    {
+      label: "Link",
+      value: ispReport.link ? (
+        <Link href={ispReport.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+          View Link
+        </Link>
+      ) : (
+        "N/A"
+      ),
+    },
+    { label: "Created At", value: ispReport.createdAt ? format(new Date(ispReport.createdAt), "PPP p") : "N/A" },
+    { label: "Updated At", value: ispReport.updatedAt ? format(new Date(ispReport.updatedAt), "PPP p") : "N/A" },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>ISP Report Details</DialogTitle>
-          <DialogDescription>
-            Detailed information about the ISP speed test report.
-          </DialogDescription>
+          <DialogDescription>Detailed information about the ISP speed test report.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">Report Date:</span>
-            <span className="col-span-2 text-sm">
-              {ispReport.reportDate ? format(new Date(ispReport.reportDate), "PPP") : "N/A"}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">SBU:</span>
-            <span className="col-span-2 text-sm">{ispReport.sbu.replaceAll("_", " ")}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">ISP Name:</span>
-            <span className="col-span-2 text-sm">{ispReport.isp?.isp || "N/A"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">Bandwidth Type:</span>
-            <span className="col-span-2 text-sm">{ispReport.bandwidth}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">Download Speed:</span>
-            <span className="col-span-2 text-sm">{ispReport.downloadSpeed} Mbps</span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">Upload Speed:</span>
-            <span className="col-span-2 text-sm">{ispReport.uploadSpeed} Mbps</span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">Link:</span>
-            <span className="col-span-2 text-sm">
-                {ispReport.link ? (
-                    <Link href={ispReport.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                        {/* {ispReport.link} */}
-                        View Link
-                    </Link>
-                ) : (
-                    "N/A"
-                )}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">Created At:</span>
-            <span className="col-span-2 text-sm">
-              {ispReport.createdAt ? format(new Date(ispReport.createdAt), "PPP p") : "N/A"}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <span className="text-sm font-medium">Updated At:</span>
-            <span className="col-span-2 text-sm">
-              {ispReport.updatedAt ? format(new Date(ispReport.updatedAt), "PPP p") : "N/A"}
-            </span>
-          </div>
+        <div className="border rounded-lg">
+          <table className="w-full text-sm">
+            <tbody>
+              {detailRows.map((row) => (
+                <tr key={row.label} className="border-b last:border-b-0">
+                  <td className="w-1/3 px-4 py-3 font-semibold align-top">{row.label}</td>
+                  <td className="px-4 py-3">{row.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </DialogContent>
     </Dialog>
