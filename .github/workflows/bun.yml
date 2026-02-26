@@ -42,3 +42,6 @@ jobs:
       - name: Reload project
         run: pm2 reload datek
         working-directory: /home/wonderkid/datek-mis-mg
+
+
+        # 
