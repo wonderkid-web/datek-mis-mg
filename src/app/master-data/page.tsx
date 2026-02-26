@@ -12,6 +12,7 @@ import {
 import AssetCategoriesPage from "./asset-categories/page";
 import LaptopMasterDataPage from "./laptop/page";
 import MasterDataPrinterPage from "./printer/page";
+import CallOutgoingCoGroupPage from "./call-outgoing-co-group/page";
 
 export default function MasterDataPage() {
   return (
@@ -24,6 +25,7 @@ export default function MasterDataPage() {
             <TabsTrigger value="asset-categories">Asset Categories</TabsTrigger>
             <TabsTrigger value="laptop">Laptop Options</TabsTrigger>
             <TabsTrigger value="printer">Printer Options</TabsTrigger>
+            <TabsTrigger value="call-outgoing-co-group">Call Outgoing & CO Group</TabsTrigger>
           </TabsList>
           <TabsContent value="asset-categories">
             <AssetCategoriesPage />
@@ -33,6 +35,9 @@ export default function MasterDataPage() {
           </TabsContent>
           <TabsContent value="printer">
             <MasterDataPrinterPage />
+          </TabsContent>
+          <TabsContent value="call-outgoing-co-group">
+            <CallOutgoingCoGroupPage />
           </TabsContent>
         </Tabs>
       </main>

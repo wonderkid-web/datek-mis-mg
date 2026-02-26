@@ -137,6 +137,8 @@ export type LaptopLicenseOption = MasterDataOption;
 export type PrinterTypeOption = MasterDataOption;
 export type PrinterBrandOption = MasterDataOption;
 export type PrinterModelOption = MasterDataOption;
+export type CallOutgoingOption = MasterDataOption;
+export type CoGroupOption = MasterDataOption;
 
 // Specific types for CCTV options
 export type CctvBrandOption = MasterDataOption;
@@ -263,6 +265,43 @@ export interface ProblemSequenceWithIsp extends ProblemSequence {
     hpNoc: string;
     picNoc: string;
   };
+}
+
+export interface BilingRecord {
+  id: number;
+  callDate: Date;
+  userId: number;
+  extension: number;
+  dial: string;
+  duration: string;
+  trunk: number;
+  pstn: number;
+  cost: number | string | { toString: () => string };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BilingRecordWithUser extends BilingRecord {
+  user: User;
+}
+
+export interface PhoneAccount {
+  id: number;
+  userId: number;
+  extension: number;
+  account: number;
+  codeDial: string;
+  deposit: string;
+  callOutgoingId: number;
+  coGroupId: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PhoneAccountWithDetails extends PhoneAccount {
+  user: User;
+  callOutgoingOption: CallOutgoingOption;
+  coGroupOption: CoGroupOption;
 }
 
 export interface ComputerMaintenance {

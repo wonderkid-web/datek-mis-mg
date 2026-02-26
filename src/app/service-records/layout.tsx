@@ -17,6 +17,7 @@ export default function ServiceRecordsLayout({
     { href: '/service-records/computer-maintenance', label: 'Computer Maintenance' },
     { href: '/service-records/cctv-maintenance', label: 'Repetitive CCTV Maintenance' },
     { href: '/service-records/isp', label: 'ISP History' },
+    { href: '/service-records/biling-records', label: 'Biling Records' },
     { href: '/service-records/problem-sequence', label: 'Problem Sequence' },
 
   ];
