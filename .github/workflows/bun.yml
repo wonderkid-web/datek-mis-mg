@@ -1,0 +1,44 @@
+name: Bun CI
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: self-hosted
+  
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull newest update from git
+        run: |
+          cd /home/wonderkid/datek-mis-mg
+          git pull origin main
+
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      # Ganti setup-node dengan setup-bun
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+        # Anda bisa menambahkan 'with: { bun-version: "1.0.0" }'
+        # jika ingin versi spesifik, tapi default-nya (latest) sudah bagus.
+
+      # Ganti 'npm ci' dengan 'bun install'
+      - name: Install dependencies
+        run: bun install
+        working-directory: /home/wonderkid/datek-mis-mg
+
+      - name: Initiate Prisma
+        run: bun prisma generate
+        working-directory: /home/wonderkid/datek-mis-mg
+
+      # Ganti 'npm run build' dengan 'bun run build'
+      - name: Build project
+        run: bun run build
+        working-directory: /home/wonderkid/datek-mis-mg
+
+      - name: Reload project
+        run: pm2 reload datek
+        working-directory: /home/wonderkid/datek-mis-mg
