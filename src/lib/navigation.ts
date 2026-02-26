@@ -45,6 +45,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Spesifikasi CCTV", href: "/master-data/cctv" },
       { name: "Asset Categories", href: "/master-data/asset-categories" },
       { name: "ISP", href: "/master-data/isp" },
+      { name: "Call Outgoing & CO Group", href: "/master-data/call-outgoing-co-group" },
     ],
   },
   {
@@ -55,6 +56,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Asset Intel NUC", href: "/items/intel-nuc" },
       { name: "Asset Printer", href: "/items/printer" },
       { name: "Asset CCTV", href: "/items/cctv" },
+      { name: "Akun Telepon", href: "/items/akun-telepon" },
     ],
   },
   {
@@ -78,6 +80,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Printer Maintenance", href: "/service-records/repetitive" },
       { name: "CCTV Maintenance", href: "/service-records/cctv-maintenance" },
       { name: "ISP Speed Test", href: "/service-records/isp" },
+      { name: "Biling Records", href: "/service-records/biling-records" },
       { name: "Problem Sequence", href: "/service-records/problem-sequence" },
     ],
   },

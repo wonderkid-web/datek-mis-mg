@@ -48,6 +48,8 @@ model User {
   role             String?           @db.VarChar(15)
   assetAssignments AssetAssignment[] @relation("UserAssetAssignments")
   IpAddress        IpAddress[]
+  phoneAccounts    PhoneAccount[]
+  bilingRecords    BilingRecord[]
 
   @@map("users")
 }
@@ -609,4 +611,61 @@ model ProblemSequence {
 
   @@index([ispId])
   @@map("problem_sequences")
+}
+
+model BilingRecord {
+  id        Int      @id @default(autoincrement())
+  callDate  DateTime @map("call_date")
+  userId    Int
+  extension Int
+  dial      String   @db.VarChar(255)
+  duration  String   @db.VarChar(20)
+  trunk     Int
+  pstn      Int
+  cost      Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("biling_records")
+}
+
+model CallOutgoingOption {
+  id            Int            @id @default(autoincrement())
+  value         String         @unique @db.VarChar(100)
+  phoneAccounts PhoneAccount[]
+
+  @@map("call_outgoing_options")
+}
+
+model CoGroupOption {
+  id            Int            @id @default(autoincrement())
+  value         String         @unique @db.VarChar(100)
+  phoneAccounts PhoneAccount[]
+
+  @@map("co_group_options")
+}
+
+model PhoneAccount {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  extension      Int
+  account        Int
+  codeDial       String   @map("code_dial") @db.VarChar(255)
+  deposit        Decimal  @db.Decimal(12, 2)
+  callOutgoingId Int      @map("call_outgoing_id")
+  coGroupId      Int      @map("co_group_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user               User               @relation(fields: [userId], references: [id])
+  callOutgoingOption CallOutgoingOption @relation(fields: [callOutgoingId], references: [id])
+  coGroupOption      CoGroupOption      @relation(fields: [coGroupId], references: [id])
+
+  @@index([userId])
+  @@index([callOutgoingId])
+  @@index([coGroupId])
+  @@map("phone_accounts")
 }
