@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ReactSelect from "react-select";
 
@@ -9,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DataTable } from "@/components/ui/data-table";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
   Select,
   SelectContent,
@@ -16,10 +20,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import { getUsers } from "@/lib/userService";
 import { getCallOutgoingOptions } from "@/lib/callOutgoingService";
 import { getCoGroupOptions } from "@/lib/coGroupService";
-import { createPhoneAccount } from "@/lib/phoneAccountService";
+import {
+  createPhoneAccount,
+  deletePhoneAccount,
+  getPhoneAccounts,
+  updatePhoneAccount,
+} from "@/lib/phoneAccountService";
 
 type UserOption = {
   id: number;
@@ -28,7 +54,153 @@ type UserOption = {
   departemen: string | null;
 };
 
+type PhoneAccountRow = Awaited<ReturnType<typeof getPhoneAccounts>>[number];
+type CallOutgoingOption = Awaited<ReturnType<typeof getCallOutgoingOptions>>[number];
+type CoGroupOption = Awaited<ReturnType<typeof getCoGroupOptions>>[number];
+
+type FormPayload = {
+  userId: number | null;
+  extension: string;
+  account: string;
+  codeDial: string;
+  deposit: string;
+  callOutgoingId: number | null;
+  coGroupId: number | null;
+};
+
+const formatRupiah = (value: unknown) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(numeric);
+};
+
+const buildColumns = ({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: (row: PhoneAccountRow) => void;
+  onDelete: (row: PhoneAccountRow) => void;
+}): ColumnDef<PhoneAccountRow>[] => [
+  {
+    id: "no",
+    header: () => <div className="text-center">No</div>,
+    cell: ({ row }) => <div className="text-center">{row.index + 1}</div>,
+  },
+  {
+    accessorKey: "user.namaLengkap",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Nama User
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => row.original.user.namaLengkap,
+  },
+  {
+    accessorKey: "user.lokasiKantor",
+    header: "Corporate",
+    cell: ({ row }) => row.original.user.lokasiKantor || "-",
+  },
+  {
+    accessorKey: "user.departemen",
+    header: "Department",
+    cell: ({ row }) => row.original.user.departemen || "-",
+  },
+  {
+    accessorKey: "extension",
+    header: "Extension",
+  },
+  {
+    accessorKey: "account",
+    header: "Account",
+  },
+  {
+    accessorKey: "codeDial",
+    header: "Code Dial",
+  },
+  {
+    accessorKey: "deposit",
+    header: "Deposit",
+    cell: ({ row }) => formatRupiah(row.original.deposit),
+  },
+  {
+    accessorKey: "callOutgoingOption.value",
+    header: "Call Outgoing",
+    cell: ({ row }) => row.original.callOutgoingOption?.value || "-",
+  },
+  {
+    accessorKey: "coGroupOption.value",
+    header: "CO Group",
+    cell: ({ row }) => row.original.coGroupOption?.value || "-",
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(row.original);
+          }}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(row.original);
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    ),
+  },
+];
+
+const hasRequiredFields = (payload: FormPayload) =>
+  Boolean(
+    payload.userId &&
+      payload.extension &&
+      payload.account &&
+      payload.codeDial &&
+      payload.deposit &&
+      payload.callOutgoingId &&
+      payload.coGroupId
+  );
+
+const toNumericPayload = (payload: FormPayload) => {
+  const extension = Number(payload.extension);
+  const account = Number(payload.account);
+  const deposit = Number(payload.deposit);
+
+  if (!Number.isFinite(extension) || !Number.isFinite(account) || !Number.isFinite(deposit)) {
+    return null;
+  }
+
+  return {
+    userId: payload.userId!,
+    extension,
+    account,
+    codeDial: payload.codeDial.trim(),
+    deposit,
+    callOutgoingId: payload.callOutgoingId!,
+    coGroupId: payload.coGroupId!,
+  };
+};
+
 export default function AkunTeleponPage() {
+  const queryClient = useQueryClient();
+
   const [userId, setUserId] = useState<number | null>(null);
   const [extension, setExtension] = useState("");
   const [account, setAccount] = useState("");
@@ -36,25 +208,49 @@ export default function AkunTeleponPage() {
   const [deposit, setDeposit] = useState("");
   const [callOutgoingId, setCallOutgoingId] = useState<number | null>(null);
   const [coGroupId, setCoGroupId] = useState<number | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: users } = useQuery({
+  const [recordToEdit, setRecordToEdit] = useState<PhoneAccountRow | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editUserId, setEditUserId] = useState<number | null>(null);
+  const [editExtension, setEditExtension] = useState("");
+  const [editAccount, setEditAccount] = useState("");
+  const [editCodeDial, setEditCodeDial] = useState("");
+  const [editDeposit, setEditDeposit] = useState("");
+  const [editCallOutgoingId, setEditCallOutgoingId] = useState<number | null>(null);
+  const [editCoGroupId, setEditCoGroupId] = useState<number | null>(null);
+
+  const [recordToDelete, setRecordToDelete] = useState<PhoneAccountRow | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const { data: users } = useQuery<UserOption[]>({
     queryKey: ["users"],
-    queryFn: getUsers,
+    queryFn: () => getUsers(),
   });
 
-  const { data: callOutgoingOptions } = useQuery({
+  const { data: callOutgoingOptions } = useQuery<CallOutgoingOption[]>({
     queryKey: ["callOutgoingOptions"],
-    queryFn: getCallOutgoingOptions,
+    queryFn: () => getCallOutgoingOptions(),
   });
 
-  const { data: coGroupOptions } = useQuery({
+  const { data: coGroupOptions } = useQuery<CoGroupOption[]>({
     queryKey: ["coGroupOptions"],
-    queryFn: getCoGroupOptions,
+    queryFn: () => getCoGroupOptions(),
+  });
+
+  const { data: phoneAccounts, isLoading } = useQuery<PhoneAccountRow[]>({
+    queryKey: ["phone-accounts"],
+    queryFn: () => getPhoneAccounts(),
   });
 
   const selectedUser = useMemo(() => {
-    return (users as UserOption[] | undefined)?.find((item) => item.id === userId) ?? null;
+    return users?.find((item) => item.id === userId) ?? null;
   }, [users, userId]);
+
+  const selectedEditUser = useMemo(() => {
+    return users?.find((item) => item.id === editUserId) ?? null;
+  }, [users, editUserId]);
 
   useEffect(() => {
     if (!callOutgoingId && callOutgoingOptions?.length) {
@@ -74,57 +270,180 @@ export default function AkunTeleponPage() {
     }
   }, [coGroupOptions, coGroupId]);
 
+  const resetCreateForm = () => {
+    setUserId(null);
+    setExtension("");
+    setAccount("");
+    setCodeDial("");
+    setDeposit("");
+    setCallOutgoingId(null);
+    setCoGroupId(null);
+  };
+
   const createMutation = useMutation({
     mutationFn: createPhoneAccount,
     onSuccess: () => {
       toast.success("Akun Telepon berhasil disimpan.");
-      setUserId(null);
-      setExtension("");
-      setAccount("");
-      setCodeDial("");
-      setDeposit("");
-      setCallOutgoingId(null);
-      setCoGroupId(null);
+      resetCreateForm();
+      queryClient.invalidateQueries({ queryKey: ["phone-accounts"] });
+      setIsCreateDialogOpen(false);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Gagal menyimpan Akun Telepon.");
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (payload: { id: number; data: Parameters<typeof updatePhoneAccount>[1] }) =>
+      updatePhoneAccount(payload.id, payload.data),
+    onSuccess: () => {
+      toast.success("Akun Telepon berhasil diperbarui.");
+      queryClient.invalidateQueries({ queryKey: ["phone-accounts"] });
+      setIsEditDialogOpen(false);
+      setRecordToEdit(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Gagal memperbarui Akun Telepon.");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deletePhoneAccount,
+    onSuccess: () => {
+      toast.success("Akun Telepon berhasil dihapus.");
+      queryClient.invalidateQueries({ queryKey: ["phone-accounts"] });
+      setIsDeleteDialogOpen(false);
+      setRecordToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Gagal menghapus Akun Telepon.");
+    },
+  });
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!userId || !extension || !account || !codeDial || !deposit || !callOutgoingId || !coGroupId) {
+    const form: FormPayload = {
+      userId,
+      extension,
+      account,
+      codeDial,
+      deposit,
+      callOutgoingId,
+      coGroupId,
+    };
+
+    if (!hasRequiredFields(form)) {
       toast.error("Semua field wajib diisi.");
       return;
     }
 
-    createMutation.mutate({
-      userId,
-      extension: Number(extension),
-      account: Number(account),
-      codeDial: codeDial.trim(),
-      deposit: Number(deposit),
-      callOutgoingId,
-      coGroupId,
+    const payload = toNumericPayload(form);
+    if (!payload) {
+      toast.error("Extension, Account, dan Deposit harus berupa angka valid.");
+      return;
+    }
+
+    createMutation.mutate(payload);
+  };
+
+  const openEditDialog = (record: PhoneAccountRow) => {
+    setRecordToEdit(record);
+    setEditUserId(record.userId);
+    setEditExtension(String(record.extension));
+    setEditAccount(String(record.account));
+    setEditCodeDial(record.codeDial);
+    setEditDeposit(String(record.deposit));
+    setEditCallOutgoingId(record.callOutgoingId);
+    setEditCoGroupId(record.coGroupId);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = () => {
+    if (!recordToEdit) return;
+
+    const form: FormPayload = {
+      userId: editUserId,
+      extension: editExtension,
+      account: editAccount,
+      codeDial: editCodeDial,
+      deposit: editDeposit,
+      callOutgoingId: editCallOutgoingId,
+      coGroupId: editCoGroupId,
+    };
+
+    if (!hasRequiredFields(form)) {
+      toast.error("Semua field wajib diisi.");
+      return;
+    }
+
+    const payload = toNumericPayload(form);
+    if (!payload) {
+      toast.error("Extension, Account, dan Deposit harus berupa angka valid.");
+      return;
+    }
+
+    updateMutation.mutate({
+      id: recordToEdit.id,
+      data: payload,
     });
   };
 
+  const filteredPhoneAccounts = useMemo(() => {
+    if (!phoneAccounts) return [];
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return phoneAccounts;
+
+    return phoneAccounts.filter((row) =>
+      [
+        row.user.namaLengkap,
+        row.user.lokasiKantor ?? "",
+        row.user.departemen ?? "",
+        String(row.extension),
+        String(row.account),
+        row.codeDial,
+        String(row.deposit),
+        row.callOutgoingOption?.value ?? "",
+        row.coGroupOption?.value ?? "",
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [phoneAccounts, searchTerm]);
+
+  const columns = useMemo(
+    () =>
+      buildColumns({
+        onEdit: openEditDialog,
+        onDelete: (row) => {
+          setRecordToDelete(row);
+          setIsDeleteDialogOpen(true);
+        },
+      }),
+    []
+  );
+
   return (
-    <div className="container mx-auto py-10">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Akun Telepon</CardTitle>
-          <CardDescription>
-            Input akun telepon berdasarkan data employee dan master data Call Outgoing/CO Group.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="container mx-auto py-10 space-y-6">
+      <Dialog
+        open={isCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) {
+            resetCreateForm();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create Akun Telepon</DialogTitle>
+          </DialogHeader>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label>Nama User</Label>
               <ReactSelect
-                options={(users as UserOption[] | undefined)?.map((item) => ({
+                options={(users ?? []).map((item) => ({
                   value: String(item.id),
                   label: item.namaLengkap,
                 }))}
@@ -230,14 +549,199 @@ export default function AkunTeleponPage() {
               </Select>
             </div>
 
-            <div className="pt-2">
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Saving..." : "Save Akun Telepon"}
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle>Akun Telepon</CardTitle>
+              <CardDescription>Daftar akun telepon yang sudah tersimpan.</CardDescription>
+            </div>
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search..."
+                className="w-full sm:w-64"
+              />
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                Add Akun Telepon
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <TableSkeleton />
+          ) : (
+            <DataTable columns={columns} data={filteredPhoneAccounts} />
+          )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            setRecordToEdit(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Akun Telepon</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nama User</Label>
+              <ReactSelect
+                options={(users ?? []).map((item) => ({
+                  value: String(item.id),
+                  label: item.namaLengkap,
+                }))}
+                value={
+                  selectedEditUser
+                    ? { value: String(selectedEditUser.id), label: selectedEditUser.namaLengkap }
+                    : null
+                }
+                onChange={(option) => setEditUserId(option ? Number(option.value) : null)}
+                placeholder="Pilih user dari employee"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Corporate</Label>
+              <Input value={selectedEditUser?.lokasiKantor ?? ""} disabled />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Department</Label>
+              <Input value={selectedEditUser?.departemen ?? ""} disabled />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Extension</Label>
+              <Input
+                type="number"
+                value={editExtension}
+                onChange={(event) => setEditExtension(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Account</Label>
+              <Input
+                type="number"
+                value={editAccount}
+                onChange={(event) => setEditAccount(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Code Dial</Label>
+              <Input
+                value={editCodeDial}
+                onChange={(event) => setEditCodeDial(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Deposit (Nominal Rupiah)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={editDeposit}
+                onChange={(event) => setEditDeposit(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Call Outgoing</Label>
+              <Select
+                value={editCallOutgoingId ? String(editCallOutgoingId) : undefined}
+                onValueChange={(value) => setEditCallOutgoingId(Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Call Outgoing" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(callOutgoingOptions ?? []).map((item) => (
+                    <SelectItem key={item.id} value={String(item.id)}>
+                      {item.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>CO Group</Label>
+              <Select
+                value={editCoGroupId ? String(editCoGroupId) : undefined}
+                onValueChange={(value) => setEditCoGroupId(Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih CO Group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(coGroupOptions ?? []).map((item) => (
+                    <SelectItem key={item.id} value={String(item.id)}>
+                      {item.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditSubmit} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Akun Telepon?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Data untuk user {recordToDelete?.user.namaLengkap ?? "-"} akan dihapus permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!recordToDelete) return;
+                deleteMutation.mutate(recordToDelete.id);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
