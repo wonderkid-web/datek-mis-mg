@@ -10,8 +10,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select as UiSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getUsers } from "@/lib/userService";
 import { getPhoneAccounts } from "@/lib/phoneAccountService";
+import { getTrunks } from "@/lib/trunkService";
+import { getPstns } from "@/lib/pstnService";
 import { createBilingRecord, updateBilingRecord } from "@/lib/bilingRecordService";
 import { BilingRecordWithUser } from "@/lib/types";
 
@@ -27,6 +36,8 @@ type UserOption = {
 };
 
 type PhoneAccountWithDetails = Awaited<ReturnType<typeof getPhoneAccounts>>[number];
+type TrunkOption = Awaited<ReturnType<typeof getTrunks>>[number];
+type PstnOption = Awaited<ReturnType<typeof getPstns>>[number];
 
 const DURATION_PATTERN = /^\d{1,2}:[0-5]\d:[0-5]\d$/;
 const MAX_DURATION_DIGITS = 6;
@@ -94,6 +105,14 @@ export function BilingRecordForm({
     queryKey: ["phone-accounts"],
     queryFn: () => getPhoneAccounts(),
   });
+  const { data: trunks } = useQuery<TrunkOption[]>({
+    queryKey: ["trunkOptions"],
+    queryFn: () => getTrunks(),
+  });
+  const { data: pstns } = useQuery<PstnOption[]>({
+    queryKey: ["pstnOptions"],
+    queryFn: () => getPstns(),
+  });
 
   const [callDate, setCallDate] = useState<Date | null>(
     defaultValue?.callDate ? new Date(defaultValue.callDate) : null
@@ -151,6 +170,18 @@ export function BilingRecordForm({
     }
   }, [open, userId, matchedPhoneAccount, isEditing, defaultValue?.userId]);
 
+  const selectedTrunk = useMemo(() => {
+    const numericTrunk = Number(trunk);
+    if (!Number.isFinite(numericTrunk)) return null;
+    return trunks?.find((item) => item.nomorLine === numericTrunk) ?? null;
+  }, [trunks, trunk]);
+
+  const selectedPstn = useMemo(() => {
+    const numericPstn = Number(pstn);
+    if (!Number.isFinite(numericPstn)) return null;
+    return pstns?.find((item) => item.pstnCode === numericPstn) ?? null;
+  }, [pstns, pstn]);
+
   const mutation = useMutation({
     mutationFn: async (payload: any) => {
       if (isEditing && defaultValue) {
@@ -191,6 +222,11 @@ export function BilingRecordForm({
 
     if (!DURATION_PATTERN.test(duration.trim())) {
       toast.warning("Duration format must be HH:MM:SS.");
+      return;
+    }
+
+    if (!selectedTrunk || !selectedPstn) {
+      toast.warning("Please select valid Trunk and PSTN options.");
       return;
     }
 
@@ -287,37 +323,65 @@ export function BilingRecordForm({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid gap-2">
+            <Label>TRUNK (Nomor Line)</Label>
+            <UiSelect value={trunk || undefined} onValueChange={setTrunk}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih nomor line trunk" />
+              </SelectTrigger>
+              <SelectContent>
+                {(trunks ?? []).map((item) => (
+                  <SelectItem key={item.id} value={String(item.nomorLine)}>
+                    {item.nomorLine}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </UiSelect>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label>TRUNK</Label>
-              <Input
-                type="number"
-                min={0}
-                value={trunk}
-                onChange={(event) => setTrunk(event.target.value)}
-              />
+              <Label>Trunk Company</Label>
+              <Input value={selectedTrunk?.company ?? ""} disabled />
             </div>
             <div className="grid gap-2">
-              <Label>PSTN</Label>
-              <Input
-                type="number"
-                min={0}
-                value={pstn}
-                onChange={(event) => setPstn(event.target.value)}
-              />
+              <Label>Trunk Extension</Label>
+              <Input value={selectedTrunk ? String(selectedTrunk.extension) : ""} disabled />
             </div>
-            <div className="grid gap-2">
-              <Label>COST</Label>
-              <Input
-                type="text"
-                inputMode="numeric"
-                value={formatRupiahInput(cost)}
-                onChange={(event) =>
-                  setCost(event.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, ""))
-                }
-                placeholder="Rp0"
-              />
-            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>PSTN (Code)</Label>
+            <UiSelect value={pstn || undefined} onValueChange={setPstn}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih PSTN code" />
+              </SelectTrigger>
+              <SelectContent>
+                {(pstns ?? []).map((item) => (
+                  <SelectItem key={item.id} value={String(item.pstnCode)}>
+                    {item.pstnCode}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </UiSelect>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>PSTN Name</Label>
+            <Input value={selectedPstn?.pstnName ?? ""} disabled />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>COST</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={formatRupiahInput(cost)}
+              onChange={(event) =>
+                setCost(event.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, ""))
+              }
+              placeholder="Rp0"
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

@@ -23,14 +23,14 @@ export default function ServiceRecordsLayout({
   ];
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
-      <h1 className="text-2xl font-bold">Service Records</h1>
-      <div className="flex items-center space-x-2 border-b pb-4">
+    <div className="container mx-auto space-y-6 py-6 sm:space-y-8 sm:py-10">
+      <h1 className="text-xl font-bold sm:text-2xl">Service Records</h1>
+      <div className="flex items-center gap-2 overflow-x-auto border-b pb-4">
         {navLinks.map((link) => {
           const isActive = pathname === link.href;
           return (
             <Link key={link.href} href={link.href} passHref>
-              <Button variant={isActive ? 'default' : 'outline'}>
+              <Button variant={isActive ? 'default' : 'outline'} size="sm" className="shrink-0">
                 {link.label}
               </Button>
             </Link>

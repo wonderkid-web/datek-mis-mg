@@ -45,7 +45,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Spesifikasi CCTV", href: "/master-data/cctv" },
       { name: "Asset Categories", href: "/master-data/asset-categories" },
       { name: "ISP", href: "/master-data/isp" },
-      { name: "Call Outgoing & CO Group", href: "/master-data/call-outgoing-co-group" },
+      { name: "Callout Going & PSTN & Trunk", href: "/master-data/call-outgoing-co-group" },
     ],
   },
   {

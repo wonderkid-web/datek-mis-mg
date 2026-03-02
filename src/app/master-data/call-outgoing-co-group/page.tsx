@@ -36,27 +36,32 @@ import {
   getCallOutgoingOptions,
   updateCallOutgoingOption,
 } from "@/lib/callOutgoingService";
-import {
-  createCoGroupOption,
-  deleteCoGroupOption,
-  getCoGroupOptions,
-  updateCoGroupOption,
-} from "@/lib/coGroupService";
+import { createTrunk, deleteTrunk, getTrunks, updateTrunk } from "@/lib/trunkService";
+import { createPstn, deletePstn, getPstns, updatePstn } from "@/lib/pstnService";
 
-type OptionItem = {
-  id: number;
-  value: string;
+type CalloutItem = Awaited<ReturnType<typeof getCallOutgoingOptions>>[number];
+type TrunkItem = Awaited<ReturnType<typeof getTrunks>>[number];
+type PstnItem = Awaited<ReturnType<typeof getPstns>>[number];
+
+type DeleteContext =
+  | { type: "callout"; id: number; label: string }
+  | { type: "trunk"; id: number; label: string }
+  | { type: "pstn"; id: number; label: string }
+  | null;
+
+const parseNumber = (value: string) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return numeric;
 };
 
-type OptionType = "call-outgoing" | "co-group";
-
-const buildColumns = ({
+const buildCalloutColumns = ({
   onEdit,
   onDelete,
 }: {
-  onEdit: (item: OptionItem) => void;
-  onDelete: (item: OptionItem) => void;
-}): ColumnDef<OptionItem>[] => [
+  onEdit: (item: CalloutItem) => void;
+  onDelete: (item: CalloutItem) => void;
+}): ColumnDef<CalloutItem>[] => [
   {
     id: "no",
     header: () => <div className="text-center">No</div>,
@@ -73,7 +78,14 @@ const buildColumns = ({
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <div>{row.original.value}</div>,
+  },
+  {
+    accessorKey: "line",
+    header: "Line",
+  },
+  {
+    accessorKey: "company",
+    header: "Company",
   },
   {
     id: "actions",
@@ -105,333 +117,769 @@ const buildColumns = ({
   },
 ];
 
-export default function CallOutgoingCoGroupPage() {
+const buildTrunkColumns = ({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: (item: TrunkItem) => void;
+  onDelete: (item: TrunkItem) => void;
+}): ColumnDef<TrunkItem>[] => [
+  {
+    id: "no",
+    header: () => <div className="text-center">No</div>,
+    cell: ({ row }) => <div className="text-center">{row.index + 1}</div>,
+  },
+  {
+    accessorKey: "nomorLine",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Nomor Line
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "company",
+    header: "Company",
+  },
+  {
+    accessorKey: "extension",
+    header: "Extension",
+  },
+  {
+    id: "actions",
+    header: () => <div className="text-center">Actions</div>,
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(row.original);
+          }}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(row.original);
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    ),
+  },
+];
+
+const buildPstnColumns = ({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: (item: PstnItem) => void;
+  onDelete: (item: PstnItem) => void;
+}): ColumnDef<PstnItem>[] => [
+  {
+    id: "no",
+    header: () => <div className="text-center">No</div>,
+    cell: ({ row }) => <div className="text-center">{row.index + 1}</div>,
+  },
+  {
+    accessorKey: "pstnCode",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        PSTN Code
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "pstnName",
+    header: "PSTN Name",
+  },
+  {
+    id: "actions",
+    header: () => <div className="text-center">Actions</div>,
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(row.original);
+          }}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(row.original);
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    ),
+  },
+];
+
+export default function CalloutPstnTrunkPage() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "administrator";
   const queryClient = useQueryClient();
 
-  const [callSearch, setCallSearch] = useState("");
-  const [coGroupSearch, setCoGroupSearch] = useState("");
+  const [calloutSearch, setCalloutSearch] = useState("");
+  const [trunkSearch, setTrunkSearch] = useState("");
+  const [pstnSearch, setPstnSearch] = useState("");
 
-  const [createDialogType, setCreateDialogType] = useState<OptionType | null>(null);
-  const [createValue, setCreateValue] = useState("");
+  const [calloutCreateOpen, setCalloutCreateOpen] = useState(false);
+  const [calloutCreateValue, setCalloutCreateValue] = useState("");
+  const [calloutCreateLine, setCalloutCreateLine] = useState("");
+  const [calloutCreateCompany, setCalloutCreateCompany] = useState("");
 
-  const [editDialogType, setEditDialogType] = useState<OptionType | null>(null);
-  const [editItem, setEditItem] = useState<OptionItem | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const [trunkCreateOpen, setTrunkCreateOpen] = useState(false);
+  const [trunkCreateLine, setTrunkCreateLine] = useState("");
+  const [trunkCreateCompany, setTrunkCreateCompany] = useState("");
+  const [trunkCreateExtension, setTrunkCreateExtension] = useState("");
 
-  const [deleteDialogType, setDeleteDialogType] = useState<OptionType | null>(null);
-  const [deleteItem, setDeleteItem] = useState<OptionItem | null>(null);
+  const [pstnCreateOpen, setPstnCreateOpen] = useState(false);
+  const [pstnCreateCode, setPstnCreateCode] = useState("");
+  const [pstnCreateName, setPstnCreateName] = useState("");
 
-  const { data: callOutgoingOptions } = useQuery({
+  const [calloutEditOpen, setCalloutEditOpen] = useState(false);
+  const [calloutEditItem, setCalloutEditItem] = useState<CalloutItem | null>(null);
+  const [calloutEditValue, setCalloutEditValue] = useState("");
+  const [calloutEditLine, setCalloutEditLine] = useState("");
+  const [calloutEditCompany, setCalloutEditCompany] = useState("");
+
+  const [trunkEditOpen, setTrunkEditOpen] = useState(false);
+  const [trunkEditItem, setTrunkEditItem] = useState<TrunkItem | null>(null);
+  const [trunkEditLine, setTrunkEditLine] = useState("");
+  const [trunkEditCompany, setTrunkEditCompany] = useState("");
+  const [trunkEditExtension, setTrunkEditExtension] = useState("");
+
+  const [pstnEditOpen, setPstnEditOpen] = useState(false);
+  const [pstnEditItem, setPstnEditItem] = useState<PstnItem | null>(null);
+  const [pstnEditCode, setPstnEditCode] = useState("");
+  const [pstnEditName, setPstnEditName] = useState("");
+
+  const [deleteContext, setDeleteContext] = useState<DeleteContext>(null);
+
+  const { data: calloutOptions } = useQuery<CalloutItem[]>({
     queryKey: ["callOutgoingOptions"],
-    queryFn: getCallOutgoingOptions,
+    queryFn: () => getCallOutgoingOptions(),
   });
 
-  const { data: coGroupOptions } = useQuery({
-    queryKey: ["coGroupOptions"],
-    queryFn: getCoGroupOptions,
+  const { data: trunkOptions } = useQuery<TrunkItem[]>({
+    queryKey: ["trunkOptions"],
+    queryFn: () => getTrunks(),
   });
 
-  const createCallOutgoingMutation = useMutation({
+  const { data: pstnOptions } = useQuery<PstnItem[]>({
+    queryKey: ["pstnOptions"],
+    queryFn: () => getPstns(),
+  });
+
+  const createCalloutMutation = useMutation({
     mutationFn: createCallOutgoingOption,
     onSuccess: () => {
-      toast.success("Call Outgoing option created.");
+      toast.success("Callout Going created.");
       queryClient.invalidateQueries({ queryKey: ["callOutgoingOptions"] });
-      setCreateDialogType(null);
-      setCreateValue("");
+      setCalloutCreateOpen(false);
+      setCalloutCreateValue("");
+      setCalloutCreateLine("");
+      setCalloutCreateCompany("");
     },
-    onError: (error: Error) => toast.error(error.message || "Failed to create option."),
+    onError: (error: Error) => toast.error(error.message || "Failed to create Callout Going."),
   });
 
-  const createCoGroupMutation = useMutation({
-    mutationFn: createCoGroupOption,
+  const createTrunkMutation = useMutation({
+    mutationFn: createTrunk,
     onSuccess: () => {
-      toast.success("CO Group option created.");
-      queryClient.invalidateQueries({ queryKey: ["coGroupOptions"] });
-      setCreateDialogType(null);
-      setCreateValue("");
+      toast.success("Trunk created.");
+      queryClient.invalidateQueries({ queryKey: ["trunkOptions"] });
+      setTrunkCreateOpen(false);
+      setTrunkCreateLine("");
+      setTrunkCreateCompany("");
+      setTrunkCreateExtension("");
     },
-    onError: (error: Error) => toast.error(error.message || "Failed to create option."),
+    onError: (error: Error) => toast.error(error.message || "Failed to create Trunk."),
   });
 
-  const updateCallOutgoingMutation = useMutation({
-    mutationFn: (payload: { id: number; value: string }) =>
-      updateCallOutgoingOption(payload.id, { value: payload.value }),
+  const createPstnMutation = useMutation({
+    mutationFn: createPstn,
     onSuccess: () => {
-      toast.success("Call Outgoing option updated.");
+      toast.success("PSTN created.");
+      queryClient.invalidateQueries({ queryKey: ["pstnOptions"] });
+      setPstnCreateOpen(false);
+      setPstnCreateCode("");
+      setPstnCreateName("");
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to create PSTN."),
+  });
+
+  const updateCalloutMutation = useMutation({
+    mutationFn: (payload: { id: number; value: number; line: number; company: string }) =>
+      updateCallOutgoingOption(payload.id, {
+        value: payload.value,
+        line: payload.line,
+        company: payload.company,
+      }),
+    onSuccess: () => {
+      toast.success("Callout Going updated.");
       queryClient.invalidateQueries({ queryKey: ["callOutgoingOptions"] });
-      setEditDialogType(null);
-      setEditItem(null);
-      setEditValue("");
+      setCalloutEditOpen(false);
+      setCalloutEditItem(null);
     },
-    onError: (error: Error) => toast.error(error.message || "Failed to update option."),
+    onError: (error: Error) => toast.error(error.message || "Failed to update Callout Going."),
   });
 
-  const updateCoGroupMutation = useMutation({
-    mutationFn: (payload: { id: number; value: string }) =>
-      updateCoGroupOption(payload.id, { value: payload.value }),
+  const updateTrunkMutation = useMutation({
+    mutationFn: (payload: { id: number; nomorLine: number; company: string; extension: number }) =>
+      updateTrunk(payload.id, {
+        nomorLine: payload.nomorLine,
+        company: payload.company,
+        extension: payload.extension,
+      }),
     onSuccess: () => {
-      toast.success("CO Group option updated.");
-      queryClient.invalidateQueries({ queryKey: ["coGroupOptions"] });
-      setEditDialogType(null);
-      setEditItem(null);
-      setEditValue("");
+      toast.success("Trunk updated.");
+      queryClient.invalidateQueries({ queryKey: ["trunkOptions"] });
+      setTrunkEditOpen(false);
+      setTrunkEditItem(null);
     },
-    onError: (error: Error) => toast.error(error.message || "Failed to update option."),
+    onError: (error: Error) => toast.error(error.message || "Failed to update Trunk."),
   });
 
-  const deleteCallOutgoingMutation = useMutation({
+  const updatePstnMutation = useMutation({
+    mutationFn: (payload: { id: number; pstnCode: number; pstnName: string }) =>
+      updatePstn(payload.id, {
+        pstnCode: payload.pstnCode,
+        pstnName: payload.pstnName,
+      }),
+    onSuccess: () => {
+      toast.success("PSTN updated.");
+      queryClient.invalidateQueries({ queryKey: ["pstnOptions"] });
+      setPstnEditOpen(false);
+      setPstnEditItem(null);
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to update PSTN."),
+  });
+
+  const deleteCalloutMutation = useMutation({
     mutationFn: deleteCallOutgoingOption,
     onSuccess: () => {
-      toast.success("Call Outgoing option deleted.");
+      toast.success("Callout Going deleted.");
       queryClient.invalidateQueries({ queryKey: ["callOutgoingOptions"] });
-      setDeleteDialogType(null);
-      setDeleteItem(null);
+      setDeleteContext(null);
     },
-    onError: (error: Error) => toast.error(error.message || "Failed to delete option."),
+    onError: (error: Error) => toast.error(error.message || "Failed to delete Callout Going."),
   });
 
-  const deleteCoGroupMutation = useMutation({
-    mutationFn: deleteCoGroupOption,
+  const deleteTrunkMutation = useMutation({
+    mutationFn: deleteTrunk,
     onSuccess: () => {
-      toast.success("CO Group option deleted.");
-      queryClient.invalidateQueries({ queryKey: ["coGroupOptions"] });
-      setDeleteDialogType(null);
-      setDeleteItem(null);
+      toast.success("Trunk deleted.");
+      queryClient.invalidateQueries({ queryKey: ["trunkOptions"] });
+      setDeleteContext(null);
     },
-    onError: (error: Error) => toast.error(error.message || "Failed to delete option."),
+    onError: (error: Error) => toast.error(error.message || "Failed to delete Trunk."),
   });
 
-  const filteredCallOutgoing = useMemo(() => {
-    const items = callOutgoingOptions ?? [];
-    if (!callSearch.trim()) return items;
-    const query = callSearch.trim().toLowerCase();
-    return items.filter((item) => item.value.toLowerCase().includes(query));
-  }, [callOutgoingOptions, callSearch]);
+  const deletePstnMutation = useMutation({
+    mutationFn: deletePstn,
+    onSuccess: () => {
+      toast.success("PSTN deleted.");
+      queryClient.invalidateQueries({ queryKey: ["pstnOptions"] });
+      setDeleteContext(null);
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to delete PSTN."),
+  });
 
-  const filteredCoGroup = useMemo(() => {
-    const items = coGroupOptions ?? [];
-    if (!coGroupSearch.trim()) return items;
-    const query = coGroupSearch.trim().toLowerCase();
-    return items.filter((item) => item.value.toLowerCase().includes(query));
-  }, [coGroupOptions, coGroupSearch]);
+  const filteredCalloutOptions = useMemo(() => {
+    const items = calloutOptions ?? [];
+    const query = calloutSearch.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) =>
+      `${item.value} ${item.line} ${item.company}`.toLowerCase().includes(query)
+    );
+  }, [calloutOptions, calloutSearch]);
 
-  const createDialogTitle =
-    createDialogType === "call-outgoing" ? "Add Call Outgoing" : "Add CO Group";
-  const editDialogTitle =
-    editDialogType === "call-outgoing" ? "Edit Call Outgoing" : "Edit CO Group";
+  const filteredTrunkOptions = useMemo(() => {
+    const items = trunkOptions ?? [];
+    const query = trunkSearch.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) =>
+      `${item.nomorLine} ${item.company} ${item.extension}`.toLowerCase().includes(query)
+    );
+  }, [trunkOptions, trunkSearch]);
 
-  const handleCreateSubmit = () => {
-    const value = createValue.trim();
-    if (!value) {
-      toast.error("Value is required.");
+  const filteredPstnOptions = useMemo(() => {
+    const items = pstnOptions ?? [];
+    const query = pstnSearch.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) =>
+      `${item.pstnCode} ${item.pstnName}`.toLowerCase().includes(query)
+    );
+  }, [pstnOptions, pstnSearch]);
+
+  const handleCalloutCreate = () => {
+    const value = parseNumber(calloutCreateValue);
+    const line = parseNumber(calloutCreateLine);
+    const company = calloutCreateCompany.trim();
+
+    if (value === null || line === null || !company) {
+      toast.error("Value, line, dan company wajib diisi.");
       return;
     }
-    if (createDialogType === "call-outgoing") {
-      createCallOutgoingMutation.mutate({ value });
-      return;
-    }
-    if (createDialogType === "co-group") {
-      createCoGroupMutation.mutate({ value });
-    }
+
+    createCalloutMutation.mutate({ value, line, company });
   };
 
-  const handleEditSubmit = () => {
-    if (!editItem) return;
-    const value = editValue.trim();
-    if (!value) {
-      toast.error("Value is required.");
+  const handleTrunkCreate = () => {
+    const nomorLine = parseNumber(trunkCreateLine);
+    const extension = parseNumber(trunkCreateExtension);
+    const company = trunkCreateCompany.trim();
+
+    if (nomorLine === null || extension === null || !company) {
+      toast.error("Nomor line, company, dan extension wajib diisi.");
       return;
     }
-    if (editDialogType === "call-outgoing") {
-      updateCallOutgoingMutation.mutate({ id: editItem.id, value });
+
+    createTrunkMutation.mutate({ nomorLine, company, extension });
+  };
+
+  const handlePstnCreate = () => {
+    const pstnCode = parseNumber(pstnCreateCode);
+    const pstnName = pstnCreateName.trim();
+
+    if (pstnCode === null || !pstnName) {
+      toast.error("PSTN code dan PSTN name wajib diisi.");
       return;
     }
-    if (editDialogType === "co-group") {
-      updateCoGroupMutation.mutate({ id: editItem.id, value });
+
+    createPstnMutation.mutate({ pstnCode, pstnName });
+  };
+
+  const handleCalloutEdit = () => {
+    if (!calloutEditItem) return;
+    const value = parseNumber(calloutEditValue);
+    const line = parseNumber(calloutEditLine);
+    const company = calloutEditCompany.trim();
+    if (value === null || line === null || !company) {
+      toast.error("Value, line, dan company wajib diisi.");
+      return;
     }
+    updateCalloutMutation.mutate({
+      id: calloutEditItem.id,
+      value,
+      line,
+      company,
+    });
+  };
+
+  const handleTrunkEdit = () => {
+    if (!trunkEditItem) return;
+    const nomorLine = parseNumber(trunkEditLine);
+    const extension = parseNumber(trunkEditExtension);
+    const company = trunkEditCompany.trim();
+    if (nomorLine === null || extension === null || !company) {
+      toast.error("Nomor line, company, dan extension wajib diisi.");
+      return;
+    }
+    updateTrunkMutation.mutate({
+      id: trunkEditItem.id,
+      nomorLine,
+      company,
+      extension,
+    });
+  };
+
+  const handlePstnEdit = () => {
+    if (!pstnEditItem) return;
+    const pstnCode = parseNumber(pstnEditCode);
+    const pstnName = pstnEditName.trim();
+    if (pstnCode === null || !pstnName) {
+      toast.error("PSTN code dan PSTN name wajib diisi.");
+      return;
+    }
+    updatePstnMutation.mutate({
+      id: pstnEditItem.id,
+      pstnCode,
+      pstnName,
+    });
   };
 
   const handleDeleteConfirm = () => {
-    if (!deleteItem || !deleteDialogType) return;
-    if (deleteDialogType === "call-outgoing") {
-      deleteCallOutgoingMutation.mutate(deleteItem.id);
+    if (!deleteContext) return;
+    if (deleteContext.type === "callout") {
+      deleteCalloutMutation.mutate(deleteContext.id);
       return;
     }
-    deleteCoGroupMutation.mutate(deleteItem.id);
+    if (deleteContext.type === "trunk") {
+      deleteTrunkMutation.mutate(deleteContext.id);
+      return;
+    }
+    deletePstnMutation.mutate(deleteContext.id);
   };
 
   return (
     <div className="container mx-auto py-10 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Master Data Call Outgoing & CO Group</CardTitle>
+          <CardTitle>Master Data Callout Going & PSTN & Trunk</CardTitle>
           <CardDescription>
-            Kelola opsi Call Outgoing dan CO Group untuk kebutuhan Akun Telepon.
+            Kelola data Callout Going, Trunk, dan PSTN untuk Akun Telepon dan Billing Records.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <Input
-                placeholder="Search Call Outgoing..."
-                value={callSearch}
-                onChange={(event) => setCallSearch(event.target.value)}
+                placeholder="Search Callout Going..."
+                value={calloutSearch}
+                onChange={(event) => setCalloutSearch(event.target.value)}
                 className="max-w-sm"
               />
               {isAdmin && (
-                <Button
-                  onClick={() => {
-                    setCreateDialogType("call-outgoing");
-                    setCreateValue("");
-                  }}
-                >
-                  Add Call Outgoing
+                <Button onClick={() => setCalloutCreateOpen(true)}>
+                  Add Callout Going
                 </Button>
               )}
             </div>
             <DataTable
-              columns={buildColumns({
+              columns={buildCalloutColumns({
                 onEdit: (item) => {
-                  setEditDialogType("call-outgoing");
-                  setEditItem(item);
-                  setEditValue(item.value);
+                  setCalloutEditItem(item);
+                  setCalloutEditValue(String(item.value));
+                  setCalloutEditLine(String(item.line));
+                  setCalloutEditCompany(item.company);
+                  setCalloutEditOpen(true);
                 },
-                onDelete: (item) => {
-                  setDeleteDialogType("call-outgoing");
-                  setDeleteItem(item);
-                },
+                onDelete: (item) =>
+                  setDeleteContext({
+                    type: "callout",
+                    id: item.id,
+                    label: `${item.value} / ${item.line} / ${item.company}`,
+                  }),
               })}
-              data={filteredCallOutgoing}
+              data={filteredCalloutOptions}
             />
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <Input
-                placeholder="Search CO Group..."
-                value={coGroupSearch}
-                onChange={(event) => setCoGroupSearch(event.target.value)}
+                placeholder="Search Trunk..."
+                value={trunkSearch}
+                onChange={(event) => setTrunkSearch(event.target.value)}
                 className="max-w-sm"
               />
-              {isAdmin && (
-                <Button
-                  onClick={() => {
-                    setCreateDialogType("co-group");
-                    setCreateValue("");
-                  }}
-                >
-                  Add CO Group
-                </Button>
-              )}
+              {isAdmin && <Button onClick={() => setTrunkCreateOpen(true)}>Add Trunk</Button>}
             </div>
             <DataTable
-              columns={buildColumns({
+              columns={buildTrunkColumns({
                 onEdit: (item) => {
-                  setEditDialogType("co-group");
-                  setEditItem(item);
-                  setEditValue(item.value);
+                  setTrunkEditItem(item);
+                  setTrunkEditLine(String(item.nomorLine));
+                  setTrunkEditCompany(item.company);
+                  setTrunkEditExtension(String(item.extension));
+                  setTrunkEditOpen(true);
                 },
-                onDelete: (item) => {
-                  setDeleteDialogType("co-group");
-                  setDeleteItem(item);
-                },
+                onDelete: (item) =>
+                  setDeleteContext({
+                    type: "trunk",
+                    id: item.id,
+                    label: `${item.nomorLine} / ${item.company}`,
+                  }),
               })}
-              data={filteredCoGroup}
+              data={filteredTrunkOptions}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <Input
+                placeholder="Search PSTN..."
+                value={pstnSearch}
+                onChange={(event) => setPstnSearch(event.target.value)}
+                className="max-w-sm"
+              />
+              {isAdmin && <Button onClick={() => setPstnCreateOpen(true)}>Add PSTN</Button>}
+            </div>
+            <DataTable
+              columns={buildPstnColumns({
+                onEdit: (item) => {
+                  setPstnEditItem(item);
+                  setPstnEditCode(String(item.pstnCode));
+                  setPstnEditName(item.pstnName);
+                  setPstnEditOpen(true);
+                },
+                onDelete: (item) =>
+                  setDeleteContext({
+                    type: "pstn",
+                    id: item.id,
+                    label: `${item.pstnCode} / ${item.pstnName}`,
+                  }),
+              })}
+              data={filteredPstnOptions}
             />
           </div>
         </CardContent>
       </Card>
 
-      <Dialog
-        open={createDialogType !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCreateDialogType(null);
-            setCreateValue("");
-          }
-        }}
-      >
+      <Dialog open={calloutCreateOpen} onOpenChange={setCalloutCreateOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{createDialogTitle}</DialogTitle>
-            <DialogDescription>Input value baru lalu simpan perubahan.</DialogDescription>
+            <DialogTitle>Add Callout Going</DialogTitle>
+            <DialogDescription>Masukkan value, line, dan company.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="create-value">Value</Label>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Value</Label>
               <Input
-                id="create-value"
-                value={createValue}
-                onChange={(event) => setCreateValue(event.target.value)}
+                type="number"
+                value={calloutCreateValue}
+                onChange={(event) => setCalloutCreateValue(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Line</Label>
+              <Input
+                type="number"
+                value={calloutCreateLine}
+                onChange={(event) => setCalloutCreateLine(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Company</Label>
+              <Input
+                value={calloutCreateCompany}
+                onChange={(event) => setCalloutCreateCompany(event.target.value)}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogType(null)}>
+            <Button variant="outline" onClick={() => setCalloutCreateOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateSubmit}>Save</Button>
+            <Button onClick={handleCalloutCreate} disabled={createCalloutMutation.isPending}>
+              {createCalloutMutation.isPending ? "Saving..." : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={editDialogType !== null && editItem !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditDialogType(null);
-            setEditItem(null);
-            setEditValue("");
-          }
-        }}
-      >
+      <Dialog open={trunkCreateOpen} onOpenChange={setTrunkCreateOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{editDialogTitle}</DialogTitle>
-            <DialogDescription>Perbarui value lalu simpan perubahan.</DialogDescription>
+            <DialogTitle>Add Trunk</DialogTitle>
+            <DialogDescription>Masukkan nomor line, company, dan extension.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-value">Value</Label>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Nomor Line</Label>
               <Input
-                id="edit-value"
-                value={editValue}
-                onChange={(event) => setEditValue(event.target.value)}
+                type="number"
+                value={trunkCreateLine}
+                onChange={(event) => setTrunkCreateLine(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Company</Label>
+              <Input
+                value={trunkCreateCompany}
+                onChange={(event) => setTrunkCreateCompany(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Extension</Label>
+              <Input
+                type="number"
+                value={trunkCreateExtension}
+                onChange={(event) => setTrunkCreateExtension(event.target.value)}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditDialogType(null);
-                setEditItem(null);
-                setEditValue("");
-              }}
-            >
+            <Button variant="outline" onClick={() => setTrunkCreateOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditSubmit}>Save</Button>
+            <Button onClick={handleTrunkCreate} disabled={createTrunkMutation.isPending}>
+              {createTrunkMutation.isPending ? "Saving..." : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={deleteDialogType !== null && deleteItem !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeleteDialogType(null);
-            setDeleteItem(null);
-          }
-        }}
-      >
+      <Dialog open={pstnCreateOpen} onOpenChange={setPstnCreateOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add PSTN</DialogTitle>
+            <DialogDescription>Masukkan PSTN code dan PSTN name.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>PSTN Code</Label>
+              <Input
+                type="number"
+                value={pstnCreateCode}
+                onChange={(event) => setPstnCreateCode(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>PSTN Name</Label>
+              <Input
+                value={pstnCreateName}
+                onChange={(event) => setPstnCreateName(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPstnCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePstnCreate} disabled={createPstnMutation.isPending}>
+              {createPstnMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={calloutEditOpen} onOpenChange={setCalloutEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Callout Going</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Value</Label>
+              <Input
+                type="number"
+                value={calloutEditValue}
+                onChange={(event) => setCalloutEditValue(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Line</Label>
+              <Input
+                type="number"
+                value={calloutEditLine}
+                onChange={(event) => setCalloutEditLine(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Company</Label>
+              <Input
+                value={calloutEditCompany}
+                onChange={(event) => setCalloutEditCompany(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCalloutEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCalloutEdit} disabled={updateCalloutMutation.isPending}>
+              {updateCalloutMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={trunkEditOpen} onOpenChange={setTrunkEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Trunk</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Nomor Line</Label>
+              <Input
+                type="number"
+                value={trunkEditLine}
+                onChange={(event) => setTrunkEditLine(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Company</Label>
+              <Input
+                value={trunkEditCompany}
+                onChange={(event) => setTrunkEditCompany(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Extension</Label>
+              <Input
+                type="number"
+                value={trunkEditExtension}
+                onChange={(event) => setTrunkEditExtension(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrunkEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleTrunkEdit} disabled={updateTrunkMutation.isPending}>
+              {updateTrunkMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pstnEditOpen} onOpenChange={setPstnEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit PSTN</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>PSTN Code</Label>
+              <Input
+                type="number"
+                value={pstnEditCode}
+                onChange={(event) => setPstnEditCode(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>PSTN Name</Label>
+              <Input
+                value={pstnEditName}
+                onChange={(event) => setPstnEditName(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPstnEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePstnEdit} disabled={updatePstnMutation.isPending}>
+              {updatePstnMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={Boolean(deleteContext)} onOpenChange={(open) => !open && setDeleteContext(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete option?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Data?</AlertDialogTitle>
             <AlertDialogDescription>
-              Option <strong>{deleteItem?.value}</strong> akan dihapus permanen.
+              This action cannot be undone. Data {deleteContext?.label ?? ""} will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

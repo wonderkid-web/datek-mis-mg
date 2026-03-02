@@ -63,12 +63,12 @@ export default function Navbar() {
   const navItems = navigationItems.filter((item) => isAdmin || item.name !== "Asset");
 
   return (
-    <nav className="bg-primary text-primary-foreground p-4 shadow-md sticky top-0 z-50">
+    <nav className="sticky top-0 z-50 bg-primary p-3 text-primary-foreground shadow-md sm:p-4">
       <div className="container mx-auto flex justify-between items-center">
         {/* <div className="relative size-16 flex items-center">
           <Image src={logo} objectFit="cover" alt="logo" layout="objectFit" />
         </div> */}
-        <Link href="/dashboard" className="text-lg font-bold flex items-center justify-center">
+        <Link href="/dashboard" className="flex items-center justify-center text-base font-bold sm:text-lg">
           Datek Holding
         </Link>
 
@@ -160,18 +160,18 @@ export default function Navbar() {
               </SheetTrigger>
               <SheetContent
                 side="left"
-                className="w-full max-w-xs bg-primary text-primary-foreground"
+                className="w-[88vw] max-w-sm bg-primary text-primary-foreground"
               >
                 <SheetHeader>
                   <SheetTitle className="text-2xl font-bold text-primary-foreground">
                     Menu
                   </SheetTitle>
                 </SheetHeader>
-                <div className="mt-4 flex items-center space-x-3 p-3 rounded-md bg-green-700">
+                <div className="mt-4 flex items-center space-x-3 rounded-md bg-green-700 p-3">
                   <div className="h-9 w-9 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold">
                     {session.user?.name?.charAt(0)?.toUpperCase()}
                   </div>
-                  <span className="font-semibold">{session.user?.name}</span>
+                  <span className="truncate font-semibold">{session.user?.name}</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between rounded-md border border-primary-foreground/20 px-3 py-2">
                   <span className="text-sm">Tema</span>

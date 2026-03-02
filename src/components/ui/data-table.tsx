@@ -110,21 +110,21 @@ function DataTablePagination<TData>({
   });
 
   return (
-    <div className="flex items-center justify-between px-2 mt-4">
-      <div className="flex-1 text-sm text-muted-foreground">
+    <div className="mt-4 flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="order-2 text-xs text-muted-foreground sm:order-1 sm:text-sm">
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected.
       </div>
-      <div className="flex items-center space-x-6 lg:space-x-8">
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+      <div className="order-1 flex flex-wrap items-center gap-2 sm:order-2 sm:gap-4 lg:gap-6">
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-medium sm:text-sm">Rows</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
               table.setPageSize(Number(value));
             }}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className="h-8 w-[72px]">
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -136,10 +136,10 @@ function DataTablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+        <div className="text-xs font-medium sm:text-sm">
           Page {currentPage} of {pageCount}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="outline"
             className="h-8 w-8 p-0"
@@ -149,23 +149,27 @@ function DataTablePagination<TData>({
             <span className="sr-only">Go to previous page</span>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          {paginationRange?.map((pageNumber, index) => {
-            if (pageNumber === DOTS) {
+          <div className="hidden items-center gap-1 sm:flex">
+            {paginationRange?.map((pageNumber, index) => {
+              if (pageNumber === DOTS) {
+                return (
+                  <span key={index} className="px-2 py-1 text-sm">
+                    ...
+                  </span>
+                );
+              }
               return (
-                <span key={index} className="px-2 py-1 text-sm">...</span>
+                <Button
+                  key={index}
+                  variant={pageNumber === currentPage ? "default" : "outline"}
+                  className="h-8 w-8 p-0"
+                  onClick={() => table.setPageIndex(Number(pageNumber) - 1)}
+                >
+                  {pageNumber}
+                </Button>
               );
-            }
-            return (
-              <Button
-                key={index}
-                variant={pageNumber === currentPage ? "default" : "outline"}
-                className="h-8 w-8 p-0"
-                onClick={() => table.setPageIndex(Number(pageNumber) - 1)}
-              >
-                {pageNumber}
-              </Button>
-            );
-          })}
+            })}
+          </div>
           <Button
             variant="outline"
             className="h-8 w-8 p-0"
@@ -233,8 +237,9 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div className="rounded-md border">
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <div className="overflow-x-auto">
+          <Table className="min-w-[760px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="bg-gray-200">
@@ -266,7 +271,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="even:bg-emerald-50 cursor-pointer"
+                  className={`even:bg-emerald-50 ${onRowClick ? "cursor-pointer" : ""}`}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => {
@@ -293,7 +298,8 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
       <DataTablePagination table={table} />
     </div>

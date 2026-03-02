@@ -137,8 +137,23 @@ export type LaptopLicenseOption = MasterDataOption;
 export type PrinterTypeOption = MasterDataOption;
 export type PrinterBrandOption = MasterDataOption;
 export type PrinterModelOption = MasterDataOption;
-export type CallOutgoingOption = MasterDataOption;
-export type CoGroupOption = MasterDataOption;
+export interface CallOutgoingOption {
+  id: number;
+  value: number;
+  line: number;
+  company: string;
+}
+export interface TrunkOption {
+  id: number;
+  nomorLine: number;
+  company: string;
+  extension: number;
+}
+export interface PstnOption {
+  id: number;
+  pstnCode: number;
+  pstnName: string;
+}
 
 // Specific types for CCTV options
 export type CctvBrandOption = MasterDataOption;
@@ -291,9 +306,8 @@ export interface PhoneAccount {
   extension: number;
   account: number;
   codeDial: string;
-  deposit: string;
+  deposit: string | number | { toString: () => string };
   callOutgoingId: number;
-  coGroupId: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -301,7 +315,6 @@ export interface PhoneAccount {
 export interface PhoneAccountWithDetails extends PhoneAccount {
   user: User;
   callOutgoingOption: CallOutgoingOption;
-  coGroupOption: CoGroupOption;
 }
 
 export interface ComputerMaintenance {

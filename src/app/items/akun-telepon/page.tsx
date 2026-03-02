@@ -39,7 +39,6 @@ import {
 
 import { getUsers } from "@/lib/userService";
 import { getCallOutgoingOptions } from "@/lib/callOutgoingService";
-import { getCoGroupOptions } from "@/lib/coGroupService";
 import {
   createPhoneAccount,
   deletePhoneAccount,
@@ -56,7 +55,6 @@ type UserOption = {
 
 type PhoneAccountRow = Awaited<ReturnType<typeof getPhoneAccounts>>[number];
 type CallOutgoingOption = Awaited<ReturnType<typeof getCallOutgoingOptions>>[number];
-type CoGroupOption = Awaited<ReturnType<typeof getCoGroupOptions>>[number];
 
 type FormPayload = {
   userId: number | null;
@@ -65,7 +63,6 @@ type FormPayload = {
   codeDial: string;
   deposit: string;
   callOutgoingId: number | null;
-  coGroupId: number | null;
 };
 
 const formatRupiah = (value: unknown) => {
@@ -129,13 +126,18 @@ const buildColumns = ({
   },
   {
     accessorKey: "callOutgoingOption.value",
-    header: "Call Outgoing",
-    cell: ({ row }) => row.original.callOutgoingOption?.value || "-",
+    header: "Callout Value",
+    cell: ({ row }) => row.original.callOutgoingOption?.value ?? "-",
   },
   {
-    accessorKey: "coGroupOption.value",
-    header: "CO Group",
-    cell: ({ row }) => row.original.coGroupOption?.value || "-",
+    accessorKey: "callOutgoingOption.line",
+    header: "Line",
+    cell: ({ row }) => row.original.callOutgoingOption?.line ?? "-",
+  },
+  {
+    accessorKey: "callOutgoingOption.company",
+    header: "Company",
+    cell: ({ row }) => row.original.callOutgoingOption?.company ?? "-",
   },
   {
     id: "actions",
@@ -174,8 +176,7 @@ const hasRequiredFields = (payload: FormPayload) =>
       payload.account &&
       payload.codeDial &&
       payload.deposit &&
-      payload.callOutgoingId &&
-      payload.coGroupId
+      payload.callOutgoingId
   );
 
 const toNumericPayload = (payload: FormPayload) => {
@@ -194,7 +195,6 @@ const toNumericPayload = (payload: FormPayload) => {
     codeDial: payload.codeDial.trim(),
     deposit,
     callOutgoingId: payload.callOutgoingId!,
-    coGroupId: payload.coGroupId!,
   };
 };
 
@@ -207,7 +207,6 @@ export default function AkunTeleponPage() {
   const [codeDial, setCodeDial] = useState("");
   const [deposit, setDeposit] = useState("");
   const [callOutgoingId, setCallOutgoingId] = useState<number | null>(null);
-  const [coGroupId, setCoGroupId] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -219,7 +218,6 @@ export default function AkunTeleponPage() {
   const [editCodeDial, setEditCodeDial] = useState("");
   const [editDeposit, setEditDeposit] = useState("");
   const [editCallOutgoingId, setEditCallOutgoingId] = useState<number | null>(null);
-  const [editCoGroupId, setEditCoGroupId] = useState<number | null>(null);
 
   const [recordToDelete, setRecordToDelete] = useState<PhoneAccountRow | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -234,11 +232,6 @@ export default function AkunTeleponPage() {
     queryFn: () => getCallOutgoingOptions(),
   });
 
-  const { data: coGroupOptions } = useQuery<CoGroupOption[]>({
-    queryKey: ["coGroupOptions"],
-    queryFn: () => getCoGroupOptions(),
-  });
-
   const { data: phoneAccounts, isLoading } = useQuery<PhoneAccountRow[]>({
     queryKey: ["phone-accounts"],
     queryFn: () => getPhoneAccounts(),
@@ -248,27 +241,26 @@ export default function AkunTeleponPage() {
     return users?.find((item) => item.id === userId) ?? null;
   }, [users, userId]);
 
+  const selectedCallout = useMemo(() => {
+    return callOutgoingOptions?.find((item) => item.id === callOutgoingId) ?? null;
+  }, [callOutgoingOptions, callOutgoingId]);
+
   const selectedEditUser = useMemo(() => {
     return users?.find((item) => item.id === editUserId) ?? null;
   }, [users, editUserId]);
 
+  const selectedEditCallout = useMemo(() => {
+    return callOutgoingOptions?.find((item) => item.id === editCallOutgoingId) ?? null;
+  }, [callOutgoingOptions, editCallOutgoingId]);
+
   useEffect(() => {
     if (!callOutgoingId && callOutgoingOptions?.length) {
-      const defaultOption = callOutgoingOptions.find((item) => item.value === "12");
+      const defaultOption = callOutgoingOptions.find((item) => item.value === 12);
       if (defaultOption) {
         setCallOutgoingId(defaultOption.id);
       }
     }
   }, [callOutgoingOptions, callOutgoingId]);
-
-  useEffect(() => {
-    if (!coGroupId && coGroupOptions?.length) {
-      const defaultOption = coGroupOptions.find((item) => item.value === "6");
-      if (defaultOption) {
-        setCoGroupId(defaultOption.id);
-      }
-    }
-  }, [coGroupOptions, coGroupId]);
 
   const resetCreateForm = () => {
     setUserId(null);
@@ -277,7 +269,6 @@ export default function AkunTeleponPage() {
     setCodeDial("");
     setDeposit("");
     setCallOutgoingId(null);
-    setCoGroupId(null);
   };
 
   const createMutation = useMutation({
@@ -320,7 +311,7 @@ export default function AkunTeleponPage() {
     },
   });
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleCreateSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 
     const form: FormPayload = {
@@ -330,7 +321,6 @@ export default function AkunTeleponPage() {
       codeDial,
       deposit,
       callOutgoingId,
-      coGroupId,
     };
 
     if (!hasRequiredFields(form)) {
@@ -355,7 +345,6 @@ export default function AkunTeleponPage() {
     setEditCodeDial(record.codeDial);
     setEditDeposit(String(record.deposit));
     setEditCallOutgoingId(record.callOutgoingId);
-    setEditCoGroupId(record.coGroupId);
     setIsEditDialogOpen(true);
   };
 
@@ -369,7 +358,6 @@ export default function AkunTeleponPage() {
       codeDial: editCodeDial,
       deposit: editDeposit,
       callOutgoingId: editCallOutgoingId,
-      coGroupId: editCoGroupId,
     };
 
     if (!hasRequiredFields(form)) {
@@ -403,8 +391,9 @@ export default function AkunTeleponPage() {
         String(row.account),
         row.codeDial,
         String(row.deposit),
-        row.callOutgoingOption?.value ?? "",
-        row.coGroupOption?.value ?? "",
+        String(row.callOutgoingOption?.value ?? ""),
+        String(row.callOutgoingOption?.line ?? ""),
+        row.callOutgoingOption?.company ?? "",
       ]
         .join(" ")
         .toLowerCase()
@@ -439,7 +428,7 @@ export default function AkunTeleponPage() {
           <DialogHeader>
             <DialogTitle>Create Akun Telepon</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleCreateSubmit}>
             <div className="space-y-2">
               <Label>Nama User</Label>
               <ReactSelect
@@ -512,13 +501,13 @@ export default function AkunTeleponPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Call Outgoing</Label>
+              <Label>Callout Going</Label>
               <Select
                 value={callOutgoingId ? String(callOutgoingId) : undefined}
                 onValueChange={(value) => setCallOutgoingId(Number(value))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih Call Outgoing" />
+                  <SelectValue placeholder="Pilih value Callout Going" />
                 </SelectTrigger>
                 <SelectContent>
                   {(callOutgoingOptions ?? []).map((item) => (
@@ -531,22 +520,13 @@ export default function AkunTeleponPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>CO Group</Label>
-              <Select
-                value={coGroupId ? String(coGroupId) : undefined}
-                onValueChange={(value) => setCoGroupId(Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih CO Group" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(coGroupOptions ?? []).map((item) => (
-                    <SelectItem key={item.id} value={String(item.id)}>
-                      {item.value}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Line</Label>
+              <Input value={selectedCallout ? String(selectedCallout.line) : ""} disabled />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Company</Label>
+              <Input value={selectedCallout?.company ?? ""} disabled />
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
@@ -672,13 +652,13 @@ export default function AkunTeleponPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Call Outgoing</Label>
+              <Label>Callout Going</Label>
               <Select
                 value={editCallOutgoingId ? String(editCallOutgoingId) : undefined}
                 onValueChange={(value) => setEditCallOutgoingId(Number(value))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih Call Outgoing" />
+                  <SelectValue placeholder="Pilih value Callout Going" />
                 </SelectTrigger>
                 <SelectContent>
                   {(callOutgoingOptions ?? []).map((item) => (
@@ -691,22 +671,13 @@ export default function AkunTeleponPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>CO Group</Label>
-              <Select
-                value={editCoGroupId ? String(editCoGroupId) : undefined}
-                onValueChange={(value) => setEditCoGroupId(Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih CO Group" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(coGroupOptions ?? []).map((item) => (
-                    <SelectItem key={item.id} value={String(item.id)}>
-                      {item.value}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Line</Label>
+              <Input value={selectedEditCallout ? String(selectedEditCallout.line) : ""} disabled />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Company</Label>
+              <Input value={selectedEditCallout?.company ?? ""} disabled />
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

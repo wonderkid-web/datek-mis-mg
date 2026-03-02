@@ -9,7 +9,6 @@ const REVALIDATE_TAG = "phone-accounts";
 const defaultInclude = {
   user: true,
   callOutgoingOption: true,
-  coGroupOption: true,
 };
 
 export const getPhoneAccounts = unstable_cache(

@@ -16,7 +16,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <NextAuthProvider>
       <Providers>
         {!hideNavbar && <Navbar />}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-4 sm:pb-0">{children}</main>
         <Toaster />
       </Providers>
     </NextAuthProvider>

@@ -12,23 +12,27 @@ export const getCallOutgoingOptions = async (): Promise<CallOutgoingOption[]> =>
 };
 
 export const createCallOutgoingOption = async (
-  data: { value: string }
+  data: { value: number; line: number; company: string }
 ): Promise<CallOutgoingOption> => {
   return prisma.callOutgoingOption.create({
     data: {
       value: data.value,
+      line: data.line,
+      company: data.company,
     },
   });
 };
 
 export const updateCallOutgoingOption = async (
   id: number,
-  data: { value: string }
+  data: { value: number; line: number; company: string }
 ): Promise<CallOutgoingOption> => {
   return prisma.callOutgoingOption.update({
     where: { id },
     data: {
       value: data.value,
+      line: data.line,
+      company: data.company,
     },
   });
 };

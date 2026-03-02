@@ -66,12 +66,12 @@ export function ExportActions<TData extends object>({
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm" onClick={handleExcelExport}>
+    <div className="flex flex-wrap items-center gap-2">
+      <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={handleExcelExport}>
         <FileDown className="mr-2 h-4 w-4" />
         Excel
       </Button>
-      <Button variant="outline" size="sm" onClick={handlePdfExport}>
+      <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={handlePdfExport}>
         <FileDown className="mr-2 h-4 w-4" />
         PDF
       </Button>
