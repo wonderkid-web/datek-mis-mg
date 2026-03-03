@@ -40,33 +40,31 @@ type TrunkOption = Awaited<ReturnType<typeof getTrunks>>[number];
 type PstnOption = Awaited<ReturnType<typeof getPstns>>[number];
 
 const DURATION_PATTERN = /^\d{1,2}:[0-5]\d:[0-5]\d$/;
-const MAX_DURATION_DIGITS = 6;
 
-const clampDurationUnit = (value: string) => {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return "00";
-  return String(Math.min(Math.max(0, Math.trunc(numeric)), 59)).padStart(2, "0");
-};
+const sanitizeDurationInput = (value: string, maxLength: number) =>
+  value.replace(/\D/g, "").slice(0, maxLength);
 
-const formatDurationInput = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, MAX_DURATION_DIGITS);
-  if (!digits) return "";
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) {
-    return `${clampDurationUnit(digits.slice(0, -2))}:${clampDurationUnit(
-      digits.slice(-2)
-    )}`;
+const splitDuration = (value: string | undefined) => {
+  if (!value) return { hours: "", minutes: "", seconds: "" };
+
+  const [hoursRaw, minutesRaw, secondsRaw] = value.split(":");
+  if (!hoursRaw || !minutesRaw || !secondsRaw) {
+    return { hours: "", minutes: "", seconds: "" };
   }
 
-  const hours = digits.slice(0, -4);
-  const minutes = clampDurationUnit(digits.slice(-4, -2));
-  const seconds = clampDurationUnit(digits.slice(-2));
-  return `${hours}:${minutes}:${seconds}`;
-};
+  const hours = sanitizeDurationInput(hoursRaw, 2);
+  const minutes = sanitizeDurationInput(minutesRaw, 2);
+  const seconds = sanitizeDurationInput(secondsRaw, 2);
 
-const normalizeDuration = (value: string | undefined) => {
-  if (!value) return "";
-  return formatDurationInput(value);
+  if (!hours || !minutes || !seconds) {
+    return { hours: "", minutes: "", seconds: "" };
+  }
+
+  return {
+    hours: String(Number(hours)),
+    minutes: String(Math.min(Number(minutes), 59)),
+    seconds: String(Math.min(Number(seconds), 59)),
+  };
 };
 
 const normalizeCostDigits = (value: unknown) => {
@@ -120,7 +118,15 @@ export function BilingRecordForm({
   const [userId, setUserId] = useState<number | null>(defaultValue?.userId ?? null);
   const [extension, setExtension] = useState(defaultValue?.extension?.toString() ?? "");
   const [dial, setDial] = useState(defaultValue?.dial ?? "");
-  const [duration, setDuration] = useState(normalizeDuration(defaultValue?.duration));
+  const [durationHours, setDurationHours] = useState(
+    splitDuration(defaultValue?.duration).hours
+  );
+  const [durationMinutes, setDurationMinutes] = useState(
+    splitDuration(defaultValue?.duration).minutes
+  );
+  const [durationSeconds, setDurationSeconds] = useState(
+    splitDuration(defaultValue?.duration).seconds
+  );
   const [trunk, setTrunk] = useState(defaultValue?.trunk?.toString() ?? "");
   const [pstn, setPstn] = useState(defaultValue?.pstn?.toString() ?? "");
   const [cost, setCost] = useState(normalizeCostDigits(defaultValue?.cost));
@@ -131,7 +137,10 @@ export function BilingRecordForm({
       setUserId(defaultValue?.userId ?? null);
       setExtension(defaultValue?.extension?.toString() ?? "");
       setDial(defaultValue?.dial ?? "");
-      setDuration(normalizeDuration(defaultValue?.duration));
+      const durationParts = splitDuration(defaultValue?.duration);
+      setDurationHours(durationParts.hours);
+      setDurationMinutes(durationParts.minutes);
+      setDurationSeconds(durationParts.seconds);
       setTrunk(defaultValue?.trunk?.toString() ?? "");
       setPstn(defaultValue?.pstn?.toString() ?? "");
       setCost(normalizeCostDigits(defaultValue?.cost));
@@ -142,11 +151,25 @@ export function BilingRecordForm({
     setUserId(null);
     setExtension("");
     setDial("");
-    setDuration("");
+    setDurationHours("");
+    setDurationMinutes("");
+    setDurationSeconds("");
     setTrunk("");
     setPstn("");
     setCost("");
   }, [open, defaultValue]);
+
+  const duration = useMemo(() => {
+    if (!durationHours || !durationMinutes || !durationSeconds) {
+      return "";
+    }
+
+    const hours = String(Number(durationHours)).padStart(2, "0");
+    const minutes = String(Number(durationMinutes)).padStart(2, "0");
+    const seconds = String(Number(durationSeconds)).padStart(2, "0");
+
+    return `${hours}:${minutes}:${seconds}`;
+  }, [durationHours, durationMinutes, durationSeconds]);
 
   const matchedPhoneAccount = useMemo(() => {
     if (!userId) return null;
@@ -316,11 +339,52 @@ export function BilingRecordForm({
 
           <div className="grid gap-2">
             <Label>DURATION</Label>
-            <Input
-              value={duration}
-              onChange={(event) => setDuration(formatDurationInput(event.target.value))}
-              placeholder="00:00:00"
-            />
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={99}
+                value={durationHours}
+                onChange={(event) =>
+                  setDurationHours(sanitizeDurationInput(event.target.value, 2))
+                }
+                placeholder="Jam"
+              />
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={59}
+                value={durationMinutes}
+                onChange={(event) => {
+                  const nextValue = sanitizeDurationInput(event.target.value, 2);
+                  if (!nextValue) {
+                    setDurationMinutes("");
+                    return;
+                  }
+                  setDurationMinutes(String(Math.min(Number(nextValue), 59)));
+                }}
+                placeholder="Menit"
+              />
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={59}
+                value={durationSeconds}
+                onChange={(event) => {
+                  const nextValue = sanitizeDurationInput(event.target.value, 2);
+                  if (!nextValue) {
+                    setDurationSeconds("");
+                    return;
+                  }
+                  setDurationSeconds(String(Math.min(Number(nextValue), 59)));
+                }}
+                placeholder="Detik"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Format tersimpan otomatis jadi HH:MM:SS.</p>
           </div>
 
           <div className="grid gap-2">

@@ -75,6 +75,20 @@ const formatRupiah = (value: unknown) => {
   }).format(numeric);
 };
 
+const normalizeNumericDigits = (value: unknown) =>
+  String(value ?? "")
+    .replace(/\D/g, "")
+    .replace(/^0+(?=\d)/, "");
+
+const formatNumberWithDots = (digits: string) => {
+  if (!digits) return "";
+  const numeric = Number(digits);
+  if (!Number.isFinite(numeric)) return "";
+  return new Intl.NumberFormat("id-ID", {
+    maximumFractionDigits: 0,
+  }).format(numeric);
+};
+
 const buildColumns = ({
   onEdit,
   onDelete,
@@ -182,7 +196,7 @@ const hasRequiredFields = (payload: FormPayload) =>
 const toNumericPayload = (payload: FormPayload) => {
   const extension = Number(payload.extension);
   const account = Number(payload.account);
-  const deposit = Number(payload.deposit);
+  const deposit = Number(normalizeNumericDigits(payload.deposit));
 
   if (!Number.isFinite(extension) || !Number.isFinite(account) || !Number.isFinite(deposit)) {
     return null;
@@ -343,7 +357,7 @@ export default function AkunTeleponPage() {
     setEditExtension(String(record.extension));
     setEditAccount(String(record.account));
     setEditCodeDial(record.codeDial);
-    setEditDeposit(String(record.deposit));
+    setEditDeposit(normalizeNumericDigits(record.deposit));
     setEditCallOutgoingId(record.callOutgoingId);
     setIsEditDialogOpen(true);
   };
@@ -492,10 +506,10 @@ export default function AkunTeleponPage() {
               <Label htmlFor="deposit">Deposit (Nominal Rupiah)</Label>
               <Input
                 id="deposit"
-                type="number"
-                min={0}
-                value={deposit}
-                onChange={(event) => setDeposit(event.target.value)}
+                type="text"
+                inputMode="numeric"
+                value={formatNumberWithDots(deposit)}
+                onChange={(event) => setDeposit(normalizeNumericDigits(event.target.value))}
                 placeholder="Input nominal rupiah"
               />
             </div>
@@ -644,10 +658,10 @@ export default function AkunTeleponPage() {
             <div className="space-y-2">
               <Label>Deposit (Nominal Rupiah)</Label>
               <Input
-                type="number"
-                min={0}
-                value={editDeposit}
-                onChange={(event) => setEditDeposit(event.target.value)}
+                type="text"
+                inputMode="numeric"
+                value={formatNumberWithDots(editDeposit)}
+                onChange={(event) => setEditDeposit(normalizeNumericDigits(event.target.value))}
               />
             </div>
 
