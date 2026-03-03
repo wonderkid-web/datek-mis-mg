@@ -87,6 +87,21 @@ const formatRupiahInput = (digits: string) => {
   }).format(numeric);
 };
 
+const buildPrefixedSelectValue = (
+  prefix: "trunk" | "pstn",
+  value: number | null | undefined
+) => (value === null || value === undefined ? "" : `${prefix}:${value}`);
+
+const parsePrefixedSelectValue = (
+  prefix: "trunk" | "pstn",
+  value: string
+) => {
+  if (!value) return null;
+  const normalized = value.startsWith(`${prefix}:`) ? value.slice(prefix.length + 1) : value;
+  const numeric = Number(normalized);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
 export function BilingRecordForm({
   open,
   onOpenChange,
@@ -127,8 +142,8 @@ export function BilingRecordForm({
   const [durationSeconds, setDurationSeconds] = useState(
     splitDuration(defaultValue?.duration).seconds
   );
-  const [trunk, setTrunk] = useState(defaultValue?.trunk?.toString() ?? "");
-  const [pstn, setPstn] = useState(defaultValue?.pstn?.toString() ?? "");
+  const [trunk, setTrunk] = useState(buildPrefixedSelectValue("trunk", defaultValue?.trunk));
+  const [pstn, setPstn] = useState(buildPrefixedSelectValue("pstn", defaultValue?.pstn));
   const [cost, setCost] = useState(normalizeCostDigits(defaultValue?.cost));
 
   useEffect(() => {
@@ -141,8 +156,8 @@ export function BilingRecordForm({
       setDurationHours(durationParts.hours);
       setDurationMinutes(durationParts.minutes);
       setDurationSeconds(durationParts.seconds);
-      setTrunk(defaultValue?.trunk?.toString() ?? "");
-      setPstn(defaultValue?.pstn?.toString() ?? "");
+      setTrunk(buildPrefixedSelectValue("trunk", defaultValue?.trunk));
+      setPstn(buildPrefixedSelectValue("pstn", defaultValue?.pstn));
       setCost(normalizeCostDigits(defaultValue?.cost));
       return;
     }
@@ -194,16 +209,61 @@ export function BilingRecordForm({
   }, [open, userId, matchedPhoneAccount, isEditing, defaultValue?.userId]);
 
   const selectedTrunk = useMemo(() => {
-    const numericTrunk = Number(trunk);
-    if (!Number.isFinite(numericTrunk)) return null;
+    const numericTrunk = parsePrefixedSelectValue("trunk", trunk);
+    if (numericTrunk === null) return null;
     return trunks?.find((item) => item.nomorLine === numericTrunk) ?? null;
   }, [trunks, trunk]);
 
   const selectedPstn = useMemo(() => {
-    const numericPstn = Number(pstn);
-    if (!Number.isFinite(numericPstn)) return null;
+    const numericPstn = parsePrefixedSelectValue("pstn", pstn);
+    if (numericPstn === null) return null;
     return pstns?.find((item) => item.pstnCode === numericPstn) ?? null;
   }, [pstns, pstn]);
+
+  const trunkOptions = useMemo(() => {
+    const options = trunks ?? [];
+    if (!isEditing || trunk === "") return options;
+
+    const hasCurrentValue = options.some(
+      (item) => buildPrefixedSelectValue("trunk", item.nomorLine) === trunk
+    );
+    if (hasCurrentValue) return options;
+
+    const fallbackNomorLine = parsePrefixedSelectValue("trunk", trunk);
+    if (fallbackNomorLine === null) return options;
+
+    return [
+      {
+        id: -1,
+        nomorLine: fallbackNomorLine,
+        company: "",
+        extension: 0,
+      },
+      ...options,
+    ];
+  }, [trunks, isEditing, trunk]);
+
+  const pstnOptions = useMemo(() => {
+    const options = pstns ?? [];
+    if (!isEditing || pstn === "") return options;
+
+    const hasCurrentValue = options.some(
+      (item) => buildPrefixedSelectValue("pstn", item.pstnCode) === pstn
+    );
+    if (hasCurrentValue) return options;
+
+    const fallbackPstnCode = parsePrefixedSelectValue("pstn", pstn);
+    if (fallbackPstnCode === null) return options;
+
+    return [
+      {
+        id: -1,
+        pstnCode: fallbackPstnCode,
+        pstnName: "",
+      },
+      ...options,
+    ];
+  }, [pstns, isEditing, pstn]);
 
   const mutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -226,13 +286,13 @@ export function BilingRecordForm({
     () =>
       Boolean(
         callDate &&
-          userId &&
-          extension &&
-          dial &&
-          duration &&
-          trunk &&
-          pstn &&
-          cost
+          userId !== null &&
+          extension.trim() !== "" &&
+          dial.trim() !== "" &&
+          duration.trim() !== "" &&
+          trunk !== "" &&
+          pstn !== "" &&
+          cost !== ""
       ),
     [callDate, userId, extension, dial, duration, trunk, pstn, cost]
   );
@@ -248,20 +308,27 @@ export function BilingRecordForm({
       return;
     }
 
-    if (!selectedTrunk || !selectedPstn) {
+    const hasValidTrunk = isEditing
+      ? parsePrefixedSelectValue("trunk", trunk) !== null
+      : Boolean(selectedTrunk);
+    const hasValidPstn = isEditing
+      ? parsePrefixedSelectValue("pstn", pstn) !== null
+      : Boolean(selectedPstn);
+
+    if (!hasValidTrunk || !hasValidPstn) {
       toast.warning("Please select valid Trunk and PSTN options.");
       return;
     }
 
     const extensionNumber = Number(extension);
-    const trunkNumber = Number(trunk);
-    const pstnNumber = Number(pstn);
+    const trunkNumber = parsePrefixedSelectValue("trunk", trunk);
+    const pstnNumber = parsePrefixedSelectValue("pstn", pstn);
     const costNumber = Number(cost);
 
     if (
       !Number.isFinite(extensionNumber) ||
-      !Number.isFinite(trunkNumber) ||
-      !Number.isFinite(pstnNumber) ||
+      trunkNumber === null ||
+      pstnNumber === null ||
       !Number.isFinite(costNumber)
     ) {
       toast.warning("EXT, TRUNK, PSTN, and COST must be valid numbers.");
@@ -389,13 +456,18 @@ export function BilingRecordForm({
 
           <div className="grid gap-2">
             <Label>TRUNK (Nomor Line)</Label>
-            <UiSelect value={trunk || undefined} onValueChange={setTrunk}>
+            <UiSelect value={trunk === "" ? undefined : trunk} onValueChange={setTrunk}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih nomor line trunk" />
+                <SelectValue placeholder="Pilih nomor line trunk">
+                  {parsePrefixedSelectValue("trunk", trunk) ?? ""}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {(trunks ?? []).map((item) => (
-                  <SelectItem key={item.id} value={String(item.nomorLine)}>
+                {trunkOptions.map((item) => (
+                  <SelectItem
+                    key={item.id}
+                    value={buildPrefixedSelectValue("trunk", item.nomorLine)}
+                  >
                     {item.nomorLine}
                   </SelectItem>
                 ))}
@@ -403,11 +475,11 @@ export function BilingRecordForm({
             </UiSelect>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Trunk Company</Label>
-              <Input value={selectedTrunk?.company ?? ""} disabled />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Trunk Company</Label>
+                <Input value={selectedTrunk?.company ?? ""} disabled />
+              </div>
             <div className="grid gap-2">
               <Label>Trunk Extension</Label>
               <Input value={selectedTrunk ? String(selectedTrunk.extension) : ""} disabled />
@@ -416,13 +488,18 @@ export function BilingRecordForm({
 
           <div className="grid gap-2">
             <Label>PSTN (Code)</Label>
-            <UiSelect value={pstn || undefined} onValueChange={setPstn}>
+            <UiSelect value={pstn === "" ? undefined : pstn} onValueChange={setPstn}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih PSTN code" />
+                <SelectValue placeholder="Pilih PSTN code">
+                  {parsePrefixedSelectValue("pstn", pstn) ?? ""}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {(pstns ?? []).map((item) => (
-                  <SelectItem key={item.id} value={String(item.pstnCode)}>
+                {pstnOptions.map((item) => (
+                  <SelectItem
+                    key={item.id}
+                    value={buildPrefixedSelectValue("pstn", item.pstnCode)}
+                  >
                     {item.pstnCode}
                   </SelectItem>
                 ))}

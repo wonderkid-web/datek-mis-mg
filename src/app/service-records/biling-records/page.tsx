@@ -233,7 +233,11 @@ export default function BilingRecordsPage() {
                   ].map((item) => (
                     <tr key={item.label} className="border-b last:border-b-0">
                       <td className="w-1/3 px-4 py-3 align-top font-semibold">{item.label}</td>
-                      <td className="px-4 py-3">{item.value || "-"}</td>
+                      <td className="px-4 py-3">
+                        {item.value === null || item.value === undefined || item.value === ""
+                          ? "-"
+                          : item.value}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
