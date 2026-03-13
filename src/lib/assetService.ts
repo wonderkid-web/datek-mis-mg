@@ -429,12 +429,7 @@ export async function updateAssetAndLaptopSpecs(
     throw error;
   }
 
-  // ----------------------------
 }
-
-// ... (Sisa function seperti getPaginatedAssets, deleteAsset, dll biarkan saja sama seperti sebelumnya)
-// Untuk brevity saya tidak copy ulang function yang tidak berubah di bawah ini, 
-// tapi pastikan kamu tidak menghapus function getPaginatedAssets, deleteAsset, getAssetTotal, dll yang sudah ada sebelumnya.
 
 export async function getPaginatedAssets({
   page = 1,
@@ -446,6 +441,8 @@ export async function getPaginatedAssets({
   categorySlug,
   osValue,
   idleOnly,
+  assignedOnly,
+  unassignedOnly,
 }: {
   page?: number;
   pageSize?: number;
@@ -456,6 +453,8 @@ export async function getPaginatedAssets({
   categorySlug?: string;
   osValue?: string;
   idleOnly?: boolean;
+  assignedOnly?: boolean;
+  unassignedOnly?: boolean;
 }) {
   const skip = (page - 1) * pageSize;
   const take = pageSize;
@@ -471,25 +470,20 @@ export async function getPaginatedAssets({
   if (lokasiFisik) {
     if (lokasiFisik === "PT Intan Sejati Andalan (Group)") {
       AND.push({
-        assignments: {
-          some: {
-            user: {
-              lokasiKantor: {
-                startsWith: "PT Intan Sejati Andalan",
-              },
-            },
-          },
+        lokasiFisik: {
+          startsWith: "PT Intan Sejati Andalan",
         },
+      });
+    } else if (lokasiFisik === "Unassigned" || lokasiFisik === "Tanpa Lokasi") {
+      AND.push({
+        OR: [
+          { lokasiFisik: null },
+          { lokasiFisik: "" },
+        ],
       });
     } else {
       AND.push({
-        assignments: {
-          some: {
-            user: {
-              lokasiKantor: lokasiFisik === "Unassigned" ? null : lokasiFisik,
-            },
-          },
-        },
+        lokasiFisik,
       });
     }
   }
@@ -515,6 +509,22 @@ export async function getPaginatedAssets({
         some: {
           user: { isActive: false },
         },
+      },
+    });
+  }
+
+  if (assignedOnly) {
+    AND.push({
+      assignments: {
+        some: {},
+      },
+    });
+  }
+
+  if (unassignedOnly) {
+    AND.push({
+      assignments: {
+        none: {},
       },
     });
   }

@@ -1,6 +1,5 @@
 // app/api/assets/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getPaginatedAssets } from "@/lib/assetService";
 
 export async function GET(request: NextRequest) {
@@ -23,10 +22,10 @@ export async function GET(request: NextRequest) {
 
     // OPTIONAL: dukung tipe berdasar adanya tabel spesifikasi
     // mis: 'laptop' | 'intel-nuc' | 'printer'
-    const specType = searchParams.get("specType") || undefined;
-
     const osValue    = searchParams.get("osValue") || undefined;
     const idleOnly   = searchParams.get("idleOnly") === "true" ? true : undefined;
+    const assignedOnly = searchParams.get("assignedOnly") === "true" ? true : undefined;
+    const unassignedOnly = searchParams.get("unassignedOnly") === "true" ? true : undefined;
 
     const result = await getPaginatedAssets({
       page,
@@ -38,6 +37,8 @@ export async function GET(request: NextRequest) {
       categorySlug,
       osValue,
       idleOnly,
+      assignedOnly,
+      unassignedOnly,
     });
 
     return NextResponse.json(result);
