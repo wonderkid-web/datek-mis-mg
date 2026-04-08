@@ -78,6 +78,7 @@ model Asset {
   category         AssetCategory     @relation(fields: [categoryId], references: [id])
   intelNucSpecs    IntelNucSpecs?
   laptopSpecs      LaptopSpecs?
+  pcSpecs          PcSpecs?
   printerSpecs     PrinterSpecs?
   cctvSpecs        CctvSpecs?
 
@@ -126,6 +127,7 @@ model LaptopRamOption {
   value         String          @unique @db.VarChar(50)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_ram_options")
 }
@@ -135,6 +137,7 @@ model LaptopProcessorOption {
   value         String          @unique @db.VarChar(100)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_processor_options")
 }
@@ -144,6 +147,7 @@ model LaptopStorageTypeOption {
   value         String          @unique @db.VarChar(50)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_storage_type_options")
 }
@@ -153,6 +157,7 @@ model LaptopOsOption {
   value         String          @unique @db.VarChar(100)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_os_options")
 }
@@ -162,6 +167,7 @@ model LaptopPowerOption {
   value         String          @unique @db.VarChar(100)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_power_options")
 }
@@ -181,6 +187,7 @@ model LaptopMicrosoftOfficeOption {
   value         String          @unique @db.VarChar(100)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_microsoft_office_options")
 }
@@ -190,6 +197,7 @@ model LaptopColorOption {
   value         String          @unique @db.VarChar(50)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_color_options")
 }
@@ -209,6 +217,7 @@ model LaptopLicenseOption {
   value         String          @unique @db.VarChar(50)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_licence_options")
 }
@@ -227,6 +236,7 @@ model LaptopGraphicOption {
   value         String          @unique @db.VarChar(100)
   IntelNucSpecs IntelNucSpecs[]
   laptopSpecs   LaptopSpecs[]
+  pcSpecs       PcSpecs[]
 
   @@map("laptop_graphic_options")
 }
@@ -354,6 +364,75 @@ model IntelNucSpecs {
   @@index([licenseKeyOptionId], map: "intel_nuc_specs_licenseKeyOptionId_fkey")
   @@index([licenseOptionId], map: "intel_nuc_specs_licenseOptionId_fkey")
   @@map("intel_nuc_specs")
+}
+
+model PcMonitorOption {
+  id      Int       @id @default(autoincrement())
+  value   String    @unique @db.VarChar(150)
+  pcSpecs PcSpecs[]
+
+  @@map("pc_monitor_options")
+}
+
+model PcMotherboardOption {
+  id      Int       @id @default(autoincrement())
+  value   String    @unique @db.VarChar(150)
+  pcSpecs PcSpecs[]
+
+  @@map("pc_motherboard_options")
+}
+
+model PcUpsOption {
+  id      Int       @id @default(autoincrement())
+  value   String    @unique @db.VarChar(150)
+  pcSpecs PcSpecs[]
+
+  @@map("pc_ups_options")
+}
+
+model PcSpecs {
+  assetId                 Int                          @id
+  processorOptionId       Int?
+  ramOptionId             Int?
+  storageTypeOptionId     Int?
+  licenseOptionId         Int?
+  osOptionId              Int?
+  powerOptionId           Int?
+  microsoftOfficeOptionId Int?
+  colorOptionId           Int?
+  graphicOptionId         Int?
+  monitorOptionId         Int?
+  motherboardOptionId     Int?
+  upsOptionId             Int?
+  macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
+  casing                  String?                      @db.VarChar(100)
+  asset                   Asset                        @relation(fields: [assetId], references: [id])
+  colorOption             LaptopColorOption?          @relation(fields: [colorOptionId], references: [id])
+  graphicOption           LaptopGraphicOption?        @relation(fields: [graphicOptionId], references: [id])
+  licenseOption           LaptopLicenseOption?        @relation(fields: [licenseOptionId], references: [id])
+  microsoftOfficeOption   LaptopMicrosoftOfficeOption? @relation(fields: [microsoftOfficeOptionId], references: [id])
+  monitorOption           PcMonitorOption?            @relation(fields: [monitorOptionId], references: [id])
+  motherboardOption       PcMotherboardOption?        @relation(fields: [motherboardOptionId], references: [id])
+  osOption                LaptopOsOption?             @relation(fields: [osOptionId], references: [id])
+  powerOption             LaptopPowerOption?          @relation(fields: [powerOptionId], references: [id])
+  processorOption         LaptopProcessorOption?      @relation(fields: [processorOptionId], references: [id])
+  ramOption               LaptopRamOption?            @relation(fields: [ramOptionId], references: [id])
+  storageTypeOption       LaptopStorageTypeOption?    @relation(fields: [storageTypeOptionId], references: [id])
+  upsOption               PcUpsOption?                @relation(fields: [upsOptionId], references: [id])
+
+  @@index([colorOptionId], map: "pc_specs_colorOptionId_fkey")
+  @@index([graphicOptionId], map: "pc_specs_graphicOptionId_fkey")
+  @@index([licenseOptionId], map: "pc_specs_licenseOptionId_fkey")
+  @@index([microsoftOfficeOptionId], map: "pc_specs_microsoftOfficeOptionId_fkey")
+  @@index([monitorOptionId], map: "pc_specs_monitorOptionId_fkey")
+  @@index([motherboardOptionId], map: "pc_specs_motherboardOptionId_fkey")
+  @@index([osOptionId], map: "pc_specs_osOptionId_fkey")
+  @@index([powerOptionId], map: "pc_specs_powerOptionId_fkey")
+  @@index([processorOptionId], map: "pc_specs_processorOptionId_fkey")
+  @@index([ramOptionId], map: "pc_specs_ramOptionId_fkey")
+  @@index([storageTypeOptionId], map: "pc_specs_storageTypeOptionId_fkey")
+  @@index([upsOptionId], map: "pc_specs_upsOptionId_fkey")
+  @@map("pc_specs")
 }
 
 model PrinterTypeOption {

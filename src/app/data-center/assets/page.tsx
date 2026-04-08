@@ -44,6 +44,12 @@ export default function AssetsPage() {
   const intelNucCategoryId = categories?.find(
     (cat) => cat.slug === "intel-nuc"
   )?.id;
+  const pcCategoryId = categories?.find(
+    (cat) =>
+      cat.slug === "pc" ||
+      cat.slug === "personal-computer" ||
+      cat.nama.toLowerCase() === "personal computer"
+  )?.id;
   const printerCategoryId = categories?.find(
     (cat) => cat.slug === "printer"
   )?.id;
@@ -67,6 +73,22 @@ export default function AssetsPage() {
       return Promise.resolve([]);
     },
     enabled: laptopCategoryId !== undefined && intelNucCategoryId !== undefined,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const {
+    data: pcAssets,
+    isLoading: isLoadingPcAssets,
+    isRefetching: isRefetchingPcAssets,
+  } = useQuery({
+    queryKey: ["pcAssets", pcCategoryId],
+    queryFn: () => {
+      if (pcCategoryId !== undefined) {
+        return getAssets(pcCategoryId);
+      }
+      return Promise.resolve([]);
+    },
+    enabled: pcCategoryId !== undefined,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -95,6 +117,9 @@ export default function AssetsPage() {
       await queryClient.cancelQueries({
         queryKey: ["printerAssets", printerCategoryId],
       });
+      await queryClient.cancelQueries({
+        queryKey: ["pcAssets", pcCategoryId],
+      });
 
       const previousAllAssets = queryClient.getQueryData<Asset[]>([
         "allAssets",
@@ -105,6 +130,10 @@ export default function AssetsPage() {
         "printerAssets",
         printerCategoryId,
       ]);
+      const previousPcAssets = queryClient.getQueryData<Asset[]>([
+        "pcAssets",
+        pcCategoryId,
+      ]);
 
       queryClient.setQueryData<Asset[]>(
         ["allAssets", laptopCategoryId, intelNucCategoryId],
@@ -114,8 +143,12 @@ export default function AssetsPage() {
         ["printerAssets", printerCategoryId],
         (old) => (old ? old.filter((asset) => asset.id !== idToDelete) : [])
       );
+      queryClient.setQueryData<Asset[]>(
+        ["pcAssets", pcCategoryId],
+        (old) => (old ? old.filter((asset) => asset.id !== idToDelete) : [])
+      );
 
-      return { previousAllAssets, previousPrinterAssets };
+      return { previousAllAssets, previousPrinterAssets, previousPcAssets };
     },
     onError: (err, idToDelete, context) => {
       queryClient.setQueryData(
@@ -126,6 +159,10 @@ export default function AssetsPage() {
         ["printerAssets", printerCategoryId],
         context?.previousPrinterAssets
       );
+      queryClient.setQueryData(
+        ["pcAssets", pcCategoryId],
+        context?.previousPcAssets
+      );
       console.error("Failed to delete asset:", err);
     },
     onSettled: () => {
@@ -134,6 +171,9 @@ export default function AssetsPage() {
       });
       queryClient.invalidateQueries({
         queryKey: ["printerAssets", printerCategoryId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["pcAssets", pcCategoryId],
       });
     },
   });
@@ -158,8 +198,12 @@ export default function AssetsPage() {
   };
 
   const isLoading =
-    isLoadingCategories || isLoadingAllAssets || isLoadingPrinterAssets;
-  const isRefetching = isRefetchingAllAssets || isRefetchingPrinterAssets;
+    isLoadingCategories ||
+    isLoadingAllAssets ||
+    isLoadingPcAssets ||
+    isLoadingPrinterAssets;
+  const isRefetching =
+    isRefetchingAllAssets || isRefetchingPcAssets || isRefetchingPrinterAssets;
 
   const exportColumns = [
     { header: "Asset Name", accessorKey: "namaAsset" },
@@ -183,16 +227,30 @@ export default function AssetsPage() {
       // Optional: Cari juga berdasarkan Brand jika ada di specs
       const inLaptopBrand = asset.laptopSpecs?.brandOption?.value?.toLowerCase().includes(lowerTerm);
       const inNucBrand = asset.intelNucSpecs?.brandOption?.value?.toLowerCase().includes(lowerTerm);
+      const inPcMonitor = asset.pcSpecs?.monitorOption?.value?.toLowerCase().includes(lowerTerm);
+      const inPcMotherboard = asset.pcSpecs?.motherboardOption?.value?.toLowerCase().includes(lowerTerm);
+      const inPcUps = asset.pcSpecs?.upsOption?.value?.toLowerCase().includes(lowerTerm);
+      const inPcCasing = asset.pcSpecs?.casing?.toLowerCase().includes(lowerTerm);
       const inPrinterBrand = asset.printerSpecs?.brandOption?.value?.toLowerCase().includes(lowerTerm);
 
-      return inName || inSerial || inCategory || inLaptopBrand || inNucBrand || inPrinterBrand;
+      return (
+        inName ||
+        inSerial ||
+        inCategory ||
+        inLaptopBrand ||
+        inNucBrand ||
+        inPcMonitor ||
+        inPcMotherboard ||
+        inPcUps ||
+        inPcCasing ||
+        inPrinterBrand
+      );
     });
   };
 
   // Terapkan filter ke data
-  // @ts-expect-error its okay
   const filteredAllAssets = filterData(allAssets as Asset[]);
-  // @ts-expect-error its okay
+  const filteredPcAssets = filterData(pcAssets as Asset[]);
   const filteredPrinterAssets = filterData(printerAssets as Asset[]);
   // -----------------------
 
@@ -219,7 +277,8 @@ export default function AssetsPage() {
 
       <Tabs defaultValue="all-assets" onValueChange={setCurrentTab}>
         <TabsList className="mb-4">
-          <TabsTrigger value="all-assets">Laptop, Intel NUC & PC</TabsTrigger>
+          <TabsTrigger value="all-assets">Laptop & Intel NUC</TabsTrigger>
+          <TabsTrigger value="pc-assets">PC Assets</TabsTrigger>
           <TabsTrigger value="printer-assets">Printer Assets</TabsTrigger>
         </TabsList>
 
@@ -257,12 +316,56 @@ export default function AssetsPage() {
               currentTab={currentTab}
               laptopCategoryId={laptopCategoryId || null}
               intelNucCategoryId={intelNucCategoryId || null}
+              pcCategoryId={pcCategoryId || null}
               printerCategoryId={printerCategoryId || null}
             />
           )}
           <DataTable
             columns={columns({ handleEdit, handleDelete, router })}
             data={filteredAllAssets} // Pass filtered data
+          />
+        </TabsContent>
+
+        <TabsContent value="pc-assets">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <Input
+              placeholder="Search by Name, SN, Monitor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full md:max-w-sm"
+            />
+            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+              <ExportActions
+                columns={exportColumns}
+                data={filteredPcAssets || []}
+                fileName="PC_Assets"
+              />
+              {isAdmin && (
+                <Button onClick={() => setIsAssignDialogOpen(true)}>
+                  Assign PC Asset
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {isAdmin && (
+            <AssignAssetDialog
+              isOpen={isAssignDialogOpen}
+              onClose={() => setIsAssignDialogOpen(false)}
+              onSave={() => {
+                setIsAssignDialogOpen(false);
+                queryClient.invalidateQueries({ queryKey: ["pcAssets"] });
+              }}
+              currentTab={currentTab}
+              laptopCategoryId={laptopCategoryId || null}
+              intelNucCategoryId={intelNucCategoryId || null}
+              pcCategoryId={pcCategoryId || null}
+              printerCategoryId={printerCategoryId || null}
+            />
+          )}
+          <DataTable
+            columns={columns({ handleEdit, handleDelete, router })}
+            data={filteredPcAssets}
           />
         </TabsContent>
 
@@ -300,6 +403,7 @@ export default function AssetsPage() {
               currentTab={currentTab}
               laptopCategoryId={laptopCategoryId || null}
               intelNucCategoryId={intelNucCategoryId || null}
+              pcCategoryId={pcCategoryId || null}
               printerCategoryId={printerCategoryId || null}
             />
           )}
@@ -317,6 +421,7 @@ export default function AssetsPage() {
           onSave={() => {
             setIsEditDialogOpen(false);
             queryClient.invalidateQueries({ queryKey: ["allAssets"] });
+            queryClient.invalidateQueries({ queryKey: ["pcAssets"] });
             queryClient.invalidateQueries({ queryKey: ["printerAssets"] });
           }}
           // @ts-expect-error its okay

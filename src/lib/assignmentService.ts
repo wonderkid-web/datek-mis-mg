@@ -10,6 +10,7 @@ export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
       user: true,
       asset: {
         include: {
+          category: true,
           officeAccount: true,
           laptopSpecs: {
             include: {
@@ -41,6 +42,22 @@ export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
               graphicOption: true,
               vgaOption: true,
               licenseOption: true,
+            },
+          },
+          pcSpecs: {
+            include: {
+              colorOption: true,
+              graphicOption: true,
+              licenseOption: true,
+              microsoftOfficeOption: true,
+              monitorOption: true,
+              motherboardOption: true,
+              osOption: true,
+              powerOption: true,
+              processorOption: true,
+              ramOption: true,
+              storageTypeOption: true,
+              upsOption: true,
             },
           },
           printerSpecs: {
@@ -90,6 +107,50 @@ export const getAssignmentById = async (
               graphicOption: { select: { value: true } },
               vgaOption: { select: { value: true } },
               licenseOption: { select: { value: true } },
+            },
+          },
+          intelNucSpecs: {
+            select: {
+              macWlan: true,
+              macLan: true,
+              brandOption: { select: { value: true } },
+              colorOption: { select: { value: true } },
+              microsoftOfficeOption: { select: { value: true } },
+              osOption: { select: { value: true } },
+              powerOption: { select: { value: true } },
+              processorOption: { select: { value: true } },
+              ramOption: { select: { value: true } },
+              storageTypeOption: { select: { value: true } },
+              typeOption: { select: { value: true } },
+              graphicOption: { select: { value: true } },
+              vgaOption: { select: { value: true } },
+              licenseOption: { select: { value: true } },
+            },
+          },
+          pcSpecs: {
+            select: {
+              casing: true,
+              macLan: true,
+              colorOption: { select: { value: true } },
+              graphicOption: { select: { value: true } },
+              licenseOption: { select: { value: true } },
+              microsoftOfficeOption: { select: { value: true } },
+              monitorOption: { select: { value: true } },
+              motherboardOption: { select: { value: true } },
+              osOption: { select: { value: true } },
+              powerOption: { select: { value: true } },
+              processorOption: { select: { value: true } },
+              ramOption: { select: { value: true } },
+              storageTypeOption: { select: { value: true } },
+              upsOption: { select: { value: true } },
+            },
+          },
+          officeAccount: {
+            select: {
+              email: true,
+              password: true,
+              licenseExpiry: true,
+              isActive: true,
             },
           },
         },

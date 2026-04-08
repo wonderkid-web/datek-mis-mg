@@ -28,6 +28,7 @@ interface AssignAssetDialogProps {
   currentTab: string;
   laptopCategoryId: number | null;
   intelNucCategoryId: number | null;
+  pcCategoryId: number | null;
   printerCategoryId: number | null;
 }
 
@@ -38,6 +39,7 @@ export function AssignAssetDialog({
   currentTab,
   laptopCategoryId,
   intelNucCategoryId,
+  pcCategoryId,
   printerCategoryId,
 }: AssignAssetDialogProps) {
   const queryClient = useQueryClient();
@@ -63,11 +65,14 @@ export function AssignAssetDialog({
           if (laptopCategoryId) allCategoryIds.push(laptopCategoryId);
           if (intelNucCategoryId) allCategoryIds.push(intelNucCategoryId);
 
-          // Fetch all assets and then filter by categoryId for laptop/intel-nuc
           const allFetchedAssets = await getAssets();
           fetchedAssets = allFetchedAssets.filter((asset) =>
             allCategoryIds.includes(asset.categoryId)
           );
+        } else if (currentTab === "pc-assets") {
+          if (pcCategoryId) {
+            fetchedAssets = await getAssets(pcCategoryId);
+          }
         } else if (currentTab === "printer-assets") {
           if (printerCategoryId) {
             fetchedAssets = await getAssets(printerCategoryId);
@@ -80,7 +85,13 @@ export function AssignAssetDialog({
       }
     };
     fetchData();
-  }, [currentTab, laptopCategoryId, intelNucCategoryId, printerCategoryId]);
+  }, [
+    currentTab,
+    laptopCategoryId,
+    intelNucCategoryId,
+    pcCategoryId,
+    printerCategoryId,
+  ]);
 
   const handleSubmit = async () => {
     try {
@@ -98,6 +109,7 @@ export function AssignAssetDialog({
       setNomorAsset("");
       setCatatan("");
       queryClient.invalidateQueries({ queryKey: ["allAssignments"] });
+      queryClient.invalidateQueries({ queryKey: ["pcAssignments"] });
       queryClient.invalidateQueries({ queryKey: ["printerAssignments"] });
       toast.success("Assignment created successfully!");
     } catch (error) {

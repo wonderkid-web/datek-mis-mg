@@ -43,6 +43,22 @@ export const getAssetAssignments = unstable_cache(
                   licenseOption: true,
                 },
               },
+              pcSpecs: {
+                include: {
+                  colorOption: true,
+                  graphicOption: true,
+                  licenseOption: true,
+                  microsoftOfficeOption: true,
+                  monitorOption: true,
+                  motherboardOption: true,
+                  osOption: true,
+                  powerOption: true,
+                  processorOption: true,
+                  ramOption: true,
+                  storageTypeOption: true,
+                  upsOption: true,
+                },
+              },
             },
           },
           user: true, // Include related User

@@ -18,7 +18,9 @@ import { ExportActions } from "@/components/ExportActions";
 
 
 export default function AssignedAssetsPage() {
-  const [activeTabs, setActiveTabs] = useState<"all-assigned-assets" | "printer-assigned-assets">("all-assigned-assets")
+  const [activeTabs, setActiveTabs] = useState<
+    "all-assigned-assets" | "pc-assigned-assets" | "printer-assigned-assets"
+  >("all-assigned-assets")
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -38,6 +40,12 @@ export default function AssignedAssetsPage() {
   )?.id;
   const printerCategoryId = categories?.find(
     (cat) => cat.slug === "printer"
+  )?.id;
+  const pcCategoryId = categories?.find(
+    (cat) =>
+      cat.slug === "pc" ||
+      cat.slug === "personal-computer" ||
+      cat.nama.toLowerCase() === "personal computer"
   )?.id;
 
   const {
@@ -59,6 +67,25 @@ export default function AssignedAssetsPage() {
     },
     enabled: laptopCategoryId !== undefined && intelNucCategoryId !== undefined,
     staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+  });
+
+  const {
+    data: pcAssignments,
+    isLoading: isLoadingPcAssignments,
+    isRefetching: isRefetchingPcAssignments,
+  } = useQuery({
+    queryKey: ["pcAssignments", pcCategoryId],
+    queryFn: async () => {
+      if (pcCategoryId !== undefined) {
+        const fetchedAssignments = await getAssignments();
+        return fetchedAssignments.filter(
+          (assignment) => assignment.asset.categoryId === pcCategoryId
+        );
+      }
+      return Promise.resolve([]);
+    },
+    enabled: pcCategoryId !== undefined,
+    staleTime: 5 * 60 * 1000,
   });
 
   const {
@@ -90,6 +117,9 @@ export default function AssignedAssetsPage() {
       await queryClient.cancelQueries({
         queryKey: ["printerAssignments", printerCategoryId],
       });
+      await queryClient.cancelQueries({
+        queryKey: ["pcAssignments", pcCategoryId],
+      });
 
       // Snapshot the previous values
       const previousAllAssignments = queryClient.getQueryData<
@@ -98,6 +128,9 @@ export default function AssignedAssetsPage() {
       const previousPrinterAssignments = queryClient.getQueryData<
         AssetAssignment[]
       >(["printerAssignments", printerCategoryId]);
+      const previousPcAssignments = queryClient.getQueryData<
+        AssetAssignment[]
+      >(["pcAssignments", pcCategoryId]);
 
       // Optimistically update to the new value
       queryClient.setQueryData<AssetAssignment[]>(
@@ -110,11 +143,21 @@ export default function AssignedAssetsPage() {
         (old) =>
           old ? old.filter((assignment) => assignment.id !== idToDelete) : []
       );
+      queryClient.setQueryData<AssetAssignment[]>(
+        ["pcAssignments", pcCategoryId],
+        (old) =>
+          old ? old.filter((assignment) => assignment.id !== idToDelete) : []
+      );
 
-      return { previousAllAssignments, previousPrinterAssignments };
+      return {
+        previousAllAssignments,
+        previousPrinterAssignments,
+        previousPcAssignments,
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allAssignments"] });
+      queryClient.invalidateQueries({ queryKey: ["pcAssignments"] });
       queryClient.invalidateQueries({ queryKey: ["printerAssignments"] });
       toast.success("Assignment deleted successfully!");
     },
@@ -128,6 +171,10 @@ export default function AssignedAssetsPage() {
         ["printerAssignments", printerCategoryId],
         context?.previousPrinterAssignments
       );
+      queryClient.setQueryData(
+        ["pcAssignments", pcCategoryId],
+        context?.previousPcAssignments
+      );
       console.error("Failed to delete assignment:", err);
       toast.error("Failed to delete assignment.");
     },
@@ -138,6 +185,9 @@ export default function AssignedAssetsPage() {
       });
       queryClient.invalidateQueries({
         queryKey: ["printerAssignments", printerCategoryId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["pcAssignments", pcCategoryId],
       });
     },
   });
@@ -166,9 +216,12 @@ export default function AssignedAssetsPage() {
   const isLoading =
     isLoadingCategories ||
     isLoadingAllAssignments ||
+    isLoadingPcAssignments ||
     isLoadingPrinterAssignments;
   const isRefetching =
-    isRefetchingAllAssignments || isRefetchingPrinterAssignments;
+    isRefetchingAllAssignments ||
+    isRefetchingPcAssignments ||
+    isRefetchingPrinterAssignments;
 
   const filteredAllAssignments =
     allAssignments?.filter(
@@ -200,6 +253,21 @@ export default function AssignedAssetsPage() {
         assignment.catatan?.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
+  const filteredPcAssignments =
+    pcAssignments?.filter(
+      (assignment) =>
+        assignment.nomorAsset
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        assignment.asset.namaAsset
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        assignment.user.namaLengkap
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        assignment.catatan?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+
 
   const exportColumns = [
     { header: "Asset Number", accessorKey: "nomorAsset" },
@@ -210,7 +278,9 @@ export default function AssignedAssetsPage() {
     { header: "Notes", accessorKey: "catatan" },
   ];
 
-  const onValueChange = (val: "all-assigned-assets" | "printer-assigned-assets") => {
+  const onValueChange = (
+    val: "all-assigned-assets" | "pc-assigned-assets" | "printer-assigned-assets"
+  ) => {
     setActiveTabs(val)
   }
 
@@ -249,6 +319,9 @@ export default function AssignedAssetsPage() {
             <TabsTrigger value="all-assigned-assets">
               Laptop & Intel NUC Assignments
             </TabsTrigger>
+            <TabsTrigger value="pc-assigned-assets">
+              PC Assignments
+            </TabsTrigger>
             <TabsTrigger value="printer-assigned-assets">
               Printer Assignments
             </TabsTrigger>
@@ -261,6 +334,14 @@ export default function AssignedAssetsPage() {
                     columns={exportColumns}
                     data={filteredAllAssignments}
                     fileName="Laptop_IntelNUC_Assignments"
+                  />
+                </div>
+                : activeTabs == "pc-assigned-assets" ?
+                <div className="flex justify-end mb-4">
+                  <ExportActions
+                    columns={exportColumns}
+                    data={filteredPcAssignments}
+                    fileName="PC_Assignments"
                   />
                 </div>
                 :
@@ -280,6 +361,12 @@ export default function AssignedAssetsPage() {
             data={filteredAllAssignments}
           />
         </TabsContent>
+        <TabsContent value="pc-assigned-assets">
+          <DataTable
+            columns={columns({ handleEdit, handleView, handleDelete })}
+            data={filteredPcAssignments}
+          />
+        </TabsContent>
         <TabsContent value="printer-assigned-assets">
           <DataTable
             columns={columns({ handleEdit, handleView, handleDelete })}
@@ -294,6 +381,7 @@ export default function AssignedAssetsPage() {
           onSave={() => {
             setIsEditDialogOpen(false);
             queryClient.invalidateQueries({ queryKey: ["allAssignments"] });
+            queryClient.invalidateQueries({ queryKey: ["pcAssignments"] });
             queryClient.invalidateQueries({ queryKey: ["printerAssignments"] });
           }}
           assignment={selectedAssignment}

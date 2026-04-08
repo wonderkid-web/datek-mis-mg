@@ -32,6 +32,11 @@ export const columns = ({
         category = "Laptop";
       } else if (row.original.category?.slug === "intel-nuc") {
         category = "Intel NUC";
+      } else if (
+        row.original.category?.slug === "pc" ||
+        row.original.category?.slug === "personal-computer"
+      ) {
+        category = "PC";
       } else if (row.original.category?.slug === "printer") {
         category = "Printer";
       }
@@ -45,6 +50,8 @@ export const columns = ({
       <p className="text-center">
         {row.original.laptopSpecs?.brandOption?.value ||
           row.original.intelNucSpecs?.brandOption?.value ||
+          row.original.pcSpecs?.motherboardOption?.value ||
+          row.original.pcSpecs?.casing ||
           row.original.printerSpecs?.brandOption?.value ||
           "N/A"}
       </p>
@@ -75,8 +82,10 @@ export const columns = ({
     cell: ({ row }) => {
       const asset = row.original;
       const model =
-        asset?.laptopSpecs?.brandOption?.value ||
-        asset?.intelNucSpecs?.brandOption?.value ||
+        asset?.laptopSpecs?.typeOption?.value ||
+        asset?.intelNucSpecs?.typeOption?.value ||
+        asset?.pcSpecs?.monitorOption?.value ||
+        asset?.pcSpecs?.motherboardOption?.value ||
         asset?.printerSpecs?.brandOption?.value ||
         "Unknown";
       return (
@@ -112,6 +121,10 @@ export const columns = ({
         router.push(`/items/printer/${asset.id}/edit`);
       };
 
+      const handleEditPcSpecs = () => {
+        router.push(`/items/pc/${asset.id}/edit`);
+      };
+
       return (
         <div className="flex items-center justify-center space-x-2">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(asset)}>
@@ -142,6 +155,13 @@ export const columns = ({
             >
               <Edit className="h-4 w-4" />
               <span className="sr-only">Edit Printer Specs</span>
+            </Button>
+          )}
+          {(asset.category?.slug.toLowerCase() === "pc" ||
+            asset.category?.slug.toLowerCase() === "personal-computer") && (
+            <Button variant="ghost" size="icon" onClick={handleEditPcSpecs}>
+              <Edit className="h-4 w-4" />
+              <span className="sr-only">Edit PC Specs</span>
             </Button>
           )}
           <Button

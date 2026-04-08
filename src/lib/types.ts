@@ -44,10 +44,12 @@ export interface Asset {
   statusAsset: string;
   createdAt: Date;
   updatedAt: Date;
+  lokasiFisik?: string | null;
   // Menambahkan relasi yang mungkin di-include
   category: AssetCategory;
   laptopSpecs?: LaptopSpecs;
   intelNucSpecs?: IntelNucSpecs;
+  pcSpecs?: PcSpecs;
   printerSpecs?: PrinterSpecs;
   cctvSpecs?: CctvSpecs;
   officeAccount?: OfficeAccount; // <-- TAMBAHKAN INI
@@ -132,6 +134,9 @@ export type LaptopTypeOption = MasterDataOption;
 export type LaptopGraphicOption = MasterDataOption;
 export type LaptopVgaOption = MasterDataOption;
 export type LaptopLicenseOption = MasterDataOption;
+export type PcMonitorOption = MasterDataOption;
+export type PcMotherboardOption = MasterDataOption;
+export type PcUpsOption = MasterDataOption;
 
 // Specific types for printer options
 export type PrinterTypeOption = MasterDataOption;
@@ -206,6 +211,36 @@ export interface IntelNucSpecs extends AssetSpecs {
   vgaOption?: LaptopVgaOption;
   brandOption?: LaptopBrandOption;
   typeOption?: LaptopTypeOption;
+}
+
+export interface PcSpecs {
+  assetId: number;
+  processorOptionId?: number | null;
+  ramOptionId?: number | null;
+  storageTypeOptionId?: number | null;
+  licenseOptionId?: number | null;
+  osOptionId?: number | null;
+  powerOptionId?: number | null;
+  microsoftOfficeOptionId?: number | null;
+  colorOptionId?: number | null;
+  graphicOptionId?: number | null;
+  monitorOptionId?: number | null;
+  motherboardOptionId?: number | null;
+  upsOptionId?: number | null;
+  casing?: string | null;
+  macLan?: string | null;
+  processorOption?: LaptopProcessorOption;
+  ramOption?: LaptopRamOption;
+  storageTypeOption?: LaptopStorageTypeOption;
+  licenseOption?: LaptopLicenseOption;
+  osOption?: LaptopOsOption;
+  powerOption?: LaptopPowerOption;
+  microsoftOfficeOption?: LaptopMicrosoftOfficeOption;
+  colorOption?: LaptopColorOption;
+  graphicOption?: LaptopGraphicOption;
+  monitorOption?: PcMonitorOption;
+  motherboardOption?: PcMotherboardOption;
+  upsOption?: PcUpsOption;
 }
 
 // Spesifikasi untuk Printer

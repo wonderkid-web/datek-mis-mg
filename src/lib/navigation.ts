@@ -40,7 +40,7 @@ export const navigationItems: NavigationItem[] = [
     name: "Master Data",
     icon: Database,
     children: [
-      { name: "Spesifikasi Laptop/Intel NUC", href: "/master-data/laptop" },
+      { name: "Spesifikasi Laptop/Intel NUC/PC", href: "/master-data/laptop" },
       { name: "Spesifikasi Printer", href: "/master-data/printer" },
       { name: "Spesifikasi CCTV", href: "/master-data/cctv" },
       { name: "Asset Categories", href: "/master-data/asset-categories" },
@@ -54,6 +54,7 @@ export const navigationItems: NavigationItem[] = [
     children: [
       { name: "Asset Laptop", href: "/items/laptop" },
       { name: "Asset Intel NUC", href: "/items/intel-nuc" },
+      { name: "Asset PC", href: "/items/pc" },
       { name: "Asset Printer", href: "/items/printer" },
       { name: "Asset CCTV", href: "/items/cctv" },
       { name: "Akun Telepon", href: "/items/akun-telepon" },

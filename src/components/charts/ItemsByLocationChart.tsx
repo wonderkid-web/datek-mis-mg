@@ -255,7 +255,9 @@ function ItemsByLocationChart({ data }: Props) {
                 <p className="mt-2 text-xl font-semibold text-emerald-950">
                   {formatCount(mappedLocations)}
                 </p>
-                <p className="mt-1 text-xs text-emerald-900/75">Lokasi selain {"Tanpa Lokasi"}.</p>
+                <p className="mt-1 text-xs text-emerald-900/75">
+                  Lokasi selain &quot;Tanpa Lokasi&quot;.
+                </p>
               </div>
               <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
@@ -264,7 +266,9 @@ function ItemsByLocationChart({ data }: Props) {
                 <p className="mt-2 text-xl font-semibold text-amber-950">
                   {formatCount(unmappedAssets)}
                 </p>
-                <p className="mt-1 text-xs text-amber-900/75">Aset masih berada di {"Tanpa Lokasi"}.</p>
+                <p className="mt-1 text-xs text-amber-900/75">
+                  Aset masih berada di &quot;Tanpa Lokasi&quot;.
+                </p>
               </div>
             </div>
           </div>

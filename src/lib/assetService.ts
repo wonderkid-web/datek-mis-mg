@@ -193,6 +193,22 @@ export async function getAssets(categoryId?: number): Promise<Asset[]> {
           licenseOption: true,
         },
       },
+      pcSpecs: {
+        include: {
+          colorOption: true,
+          graphicOption: true,
+          licenseOption: true,
+          microsoftOfficeOption: true,
+          monitorOption: true,
+          motherboardOption: true,
+          osOption: true,
+          powerOption: true,
+          processorOption: true,
+          ramOption: true,
+          storageTypeOption: true,
+          upsOption: true,
+        },
+      },
       printerSpecs: {
         include: {
           brandOption: true,
@@ -244,6 +260,22 @@ export async function getAssetById(id: number): Promise<Asset | null> {
           graphicOption: true,
           vgaOption: true,
           licenseOption: true,
+        },
+      },
+      pcSpecs: {
+        include: {
+          colorOption: true,
+          graphicOption: true,
+          licenseOption: true,
+          microsoftOfficeOption: true,
+          monitorOption: true,
+          motherboardOption: true,
+          osOption: true,
+          powerOption: true,
+          processorOption: true,
+          ramOption: true,
+          storageTypeOption: true,
+          upsOption: true,
         },
       },
       printerSpecs: {
@@ -499,6 +531,7 @@ export async function getPaginatedAssets({
       OR: [
         { laptopSpecs: { is: { osOption: { is: { value: osValue } } } } },
         { intelNucSpecs: { is: { osOption: { is: { value: osValue } } } } },
+        { pcSpecs: { is: { osOption: { is: { value: osValue } } } } },
       ],
     });
   }
@@ -541,6 +574,7 @@ export async function getPaginatedAssets({
         category: true,
         laptopSpecs: { select: { osOption: { select: { value: true } } } },
         intelNucSpecs: { select: { osOption: { select: { value: true } } } },
+        pcSpecs: { select: { osOption: { select: { value: true } } } },
         assignments: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -577,6 +611,8 @@ export async function deleteAsset(id: number): Promise<Asset> {
       await tx.laptopSpecs.deleteMany({ where: { assetId: id } });
     } else if (asset.category.slug === "intel-nuc") {
       await tx.intelNucSpecs.deleteMany({ where: { assetId: id } });
+    } else if (asset.category.slug === "pc" || asset.category.slug === "personal-computer") {
+      await tx.pcSpecs.deleteMany({ where: { assetId: id } });
     } else if (asset.category.slug === "printer") {
       await tx.printerSpecs.deleteMany({ where: { assetId: id } });
     }
@@ -651,6 +687,13 @@ export async function getOperatingSystemBreakdown() {
     },
   });
 
+  const pcCounts = await prisma.pcSpecs.groupBy({
+    by: ["osOptionId"],
+    _count: {
+      assetId: true,
+    },
+  });
+
   const mergedCounts: Record<number, number> = {};
 
   laptopCounts.forEach((item) => {
@@ -661,6 +704,13 @@ export async function getOperatingSystemBreakdown() {
   });
 
   nucCounts.forEach((item) => {
+    if (item.osOptionId) {
+      mergedCounts[item.osOptionId] =
+        (mergedCounts[item.osOptionId] || 0) + item._count.assetId;
+    }
+  });
+
+  pcCounts.forEach((item) => {
     if (item.osOptionId) {
       mergedCounts[item.osOptionId] =
         (mergedCounts[item.osOptionId] || 0) + item._count.assetId;

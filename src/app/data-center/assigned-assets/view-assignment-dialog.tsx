@@ -53,6 +53,7 @@ export function ViewAssignmentDialog({
   const laptopSpecs = asset?.laptopSpecs;
   const printerSpecs = asset?.printerSpecs;
   const intelNucSpecs = asset?.intelNucSpecs;
+  const pcSpecs = asset?.pcSpecs;
   const officeAccount = asset?.officeAccount; // <-- Variable for easier access
 
   const calculateDaysRemaining = (dateVal: Date | string) => {
@@ -116,13 +117,13 @@ export function ViewAssignmentDialog({
               <TableRow>
                 <TableCell className="font-medium">Brand</TableCell>
                 <TableCell>
-                  {printerSpecs?.brandOption?.value || laptopSpecs?.brandOption?.value || intelNucSpecs?.brandOption?.value || "-"}
+                  {printerSpecs?.brandOption?.value || laptopSpecs?.brandOption?.value || intelNucSpecs?.brandOption?.value || pcSpecs?.motherboardOption?.value || pcSpecs?.casing || "-"}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">Color</TableCell>
                 <TableCell>
-                  {printerSpecs?.colorOption?.value || laptopSpecs?.colorOption?.value || intelNucSpecs?.colorOption?.value || "-"}
+                  {printerSpecs?.colorOption?.value || laptopSpecs?.colorOption?.value || intelNucSpecs?.colorOption?.value || pcSpecs?.colorOption?.value || "-"}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -155,60 +156,82 @@ export function ViewAssignmentDialog({
               </TableRow>
 
               {/* Specifications */}
-              {(laptopSpecs || intelNucSpecs) && (
+              {(laptopSpecs || intelNucSpecs || pcSpecs) && (
                 <>
+                  {pcSpecs && (
+                    <>
+                      <TableRow>
+                        <TableCell className="font-medium">Monitor</TableCell>
+                        <TableCell>{pcSpecs.monitorOption?.value || "-"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">UPS</TableCell>
+                        <TableCell>{pcSpecs.upsOption?.value || "-"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Casing</TableCell>
+                        <TableCell>{pcSpecs.casing || "-"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Mother Board</TableCell>
+                        <TableCell>{pcSpecs.motherboardOption?.value || "-"}</TableCell>
+                      </TableRow>
+                    </>
+                  )}
                   <TableRow>
                     <TableCell className="font-medium">Processor</TableCell>
                     <TableCell>
-                      {laptopSpecs?.processorOption?.value || intelNucSpecs?.processorOption?.value || "-"}
+                      {laptopSpecs?.processorOption?.value || intelNucSpecs?.processorOption?.value || pcSpecs?.processorOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">RAM</TableCell>
                     <TableCell>
-                      {laptopSpecs?.ramOption?.value || intelNucSpecs?.ramOption?.value || "-"}
+                      {laptopSpecs?.ramOption?.value || intelNucSpecs?.ramOption?.value || pcSpecs?.ramOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Storage Type</TableCell>
                     <TableCell>
-                      {laptopSpecs?.storageTypeOption?.value || intelNucSpecs?.storageTypeOption?.value || "-"}
+                      {laptopSpecs?.storageTypeOption?.value || intelNucSpecs?.storageTypeOption?.value || pcSpecs?.storageTypeOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Graphic</TableCell>
                     <TableCell>
-                      {laptopSpecs?.graphicOption?.value || intelNucSpecs?.graphicOption?.value || "-"}
+                      {laptopSpecs?.graphicOption?.value || intelNucSpecs?.graphicOption?.value || pcSpecs?.graphicOption?.value || "-"}
                     </TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">MAC WLAN</TableCell>
-                    <TableCell>{laptopSpecs?.macWlan || intelNucSpecs?.macWlan || "-"}</TableCell>
-                  </TableRow>
+                  {!pcSpecs && (
+                    <TableRow>
+                      <TableCell className="font-medium">MAC WLAN</TableCell>
+                      <TableCell>{laptopSpecs?.macWlan || intelNucSpecs?.macWlan || "-"}</TableCell>
+                    </TableRow>
+                  )}
                   <TableRow>
                     <TableCell className="font-medium">MAC LAN</TableCell>
-                    <TableCell>{laptopSpecs?.macLan || intelNucSpecs?.macLan || "-"}</TableCell>
+                    <TableCell>{laptopSpecs?.macLan || intelNucSpecs?.macLan || pcSpecs?.macLan || "-"}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium">Power</TableCell>
+                    <TableCell className="font-medium">{pcSpecs ? "Power Supply" : "Power"}</TableCell>
                     <TableCell>
-                      {laptopSpecs?.powerOption?.value || intelNucSpecs?.powerOption?.value || "-"}
+                      {laptopSpecs?.powerOption?.value || intelNucSpecs?.powerOption?.value || pcSpecs?.powerOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">OS</TableCell>
-                    <TableCell>{laptopSpecs?.osOption?.value || intelNucSpecs?.osOption?.value || "-"}</TableCell>
+                    <TableCell>{laptopSpecs?.osOption?.value || intelNucSpecs?.osOption?.value || pcSpecs?.osOption?.value || "-"}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">License</TableCell>
                     <TableCell>
-                      {laptopSpecs?.licenseOption?.value || intelNucSpecs?.licenseOption?.value || "-"}
+                      {laptopSpecs?.licenseOption?.value || intelNucSpecs?.licenseOption?.value || pcSpecs?.licenseOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Microsoft Office</TableCell>
                     <TableCell>
-                      {laptopSpecs?.microsoftOfficeOption?.value || intelNucSpecs?.microsoftOfficeOption?.value || "-"}
+                      {laptopSpecs?.microsoftOfficeOption?.value || intelNucSpecs?.microsoftOfficeOption?.value || pcSpecs?.microsoftOfficeOption?.value || "-"}
                     </TableCell>
                   </TableRow>
                 </>

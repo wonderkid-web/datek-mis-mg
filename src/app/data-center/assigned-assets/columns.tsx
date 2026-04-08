@@ -62,10 +62,12 @@ export const columns = ({
     accessorKey: "asset.category.nama",
     header: "Kategori",
     cell: ({ row }) => {
-      const categoryId = row.original.asset.categoryId;
-      if (categoryId == 1) return "Laptop";
-      else if (categoryId == 2) return "Intel NUC";
-      else if (categoryId == 3) return "Printer";
+      const slug = row.original.asset.category?.slug;
+      if (slug === "laptop") return "Laptop";
+      if (slug === "intel-nuc") return "Intel NUC";
+      if (slug === "pc" || slug === "personal-computer") return "PC";
+      if (slug === "printer") return "Printer";
+      return row.original.asset.category?.nama || "-";
     },
   },
   {
@@ -84,6 +86,8 @@ export const columns = ({
       const brand =
         asset.laptopSpecs?.brandOption?.value ||
         asset.intelNucSpecs?.brandOption?.value ||
+        asset.pcSpecs?.motherboardOption?.value ||
+        asset.pcSpecs?.casing ||
         asset.printerSpecs?.brandOption?.value ||
         "Unknown";
       return (

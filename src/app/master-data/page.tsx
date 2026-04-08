@@ -23,7 +23,7 @@ export default function MasterDataPage() {
         <Tabs defaultValue="asset-categories" className="w-full mb-8">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger className="shrink-0" value="asset-categories">Asset Categories</TabsTrigger>
-            <TabsTrigger className="shrink-0" value="laptop">Laptop Options</TabsTrigger>
+            <TabsTrigger className="shrink-0" value="laptop">Laptop, Intel NUC & PC Options</TabsTrigger>
             <TabsTrigger className="shrink-0" value="printer">Printer Options</TabsTrigger>
             <TabsTrigger className="shrink-0" value="call-outgoing-co-group">Callout Going & PSTN & Trunk</TabsTrigger>
           </TabsList>

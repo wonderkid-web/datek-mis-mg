@@ -2,12 +2,15 @@ import BrandOptionsPage from "./brand-options/page";
 import ColorOptionsPage from "./color-options/page";
 import GraphicOptionsPage from "./graphic-options/page";
 import MicrosoftOfficeOptionsPage from "./microsoft-office-options/page";
+import MonitorOptionsPage from "./monitor-options/page";
+import MotherboardOptionsPage from "./motherboard-options/page";
 import OsOptionsPage from "./os-options/page";
 import PowerOptionsPage from "./power-options/page";
 import ProcessorOptionsPage from "./processor-options/page";
 import RamOptionsPage from "./ram-options/page";
 import StorageOptionsPage from "./storage-options/page";
 import TypeOptionsPage from "./type-options/page";
+import UpsOptionsPage from "./ups-options/page";
 import VgaOptionsPage from "./vga-options/page";
 import LicenseOptionsPage from "./license-options/page";
 import {
@@ -24,10 +27,10 @@ export default function MasterDataLaptopPage() {
     <div className="container mx-auto py-10">
       <Card>
         <CardHeader>
-          <CardTitle>Master Data Laptop</CardTitle>
+          <CardTitle>Master Data Laptop, Intel NUC & PC</CardTitle>
           <CardDescription>
-            Kelola semua data master yang berkaitan dengan aset laptop. Pilih
-            salah satu tab untuk melihat dan mengelola opsi.
+            Kelola semua data master yang dipakai oleh aset laptop, Intel NUC,
+            dan PC. Pilih tab yang sesuai untuk memperbarui opsi input.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -40,6 +43,9 @@ export default function MasterDataLaptopPage() {
               <TabsTrigger value="storage">Storage</TabsTrigger>
               <TabsTrigger value="graphic">Graphic</TabsTrigger>
               <TabsTrigger value="power">Power Adaptor</TabsTrigger>
+              <TabsTrigger value="monitor">Monitor</TabsTrigger>
+              <TabsTrigger value="motherboard">Mother Board</TabsTrigger>
+              <TabsTrigger value="ups">UPS</TabsTrigger>
               {/* <TabsTrigger value="vga">VGA</TabsTrigger> */}
               <TabsTrigger value="colors">Color</TabsTrigger>
               <TabsTrigger value="os">Operation Systems</TabsTrigger>
@@ -78,6 +84,15 @@ export default function MasterDataLaptopPage() {
             <TabsContent value="power">
               <PowerOptionsPage />
             </TabsContent>
+            <TabsContent value="monitor">
+              <MonitorOptionsPage />
+            </TabsContent>
+            <TabsContent value="motherboard">
+              <MotherboardOptionsPage />
+            </TabsContent>
+            <TabsContent value="ups">
+              <UpsOptionsPage />
+            </TabsContent>
             <TabsContent value="office">
               <MicrosoftOfficeOptionsPage />
             </TabsContent>
@@ -90,4 +105,3 @@ export default function MasterDataLaptopPage() {
     </div>
   );
 }
-
