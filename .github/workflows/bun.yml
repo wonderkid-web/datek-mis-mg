@@ -7,41 +7,36 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-  
+    defaults:
+      run:
+        working-directory: /home/wonderkid/datek-mis-mg
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Pull newest update from git
-        run: |
-          cd /home/wonderkid/datek-mis-mg
-          git pull origin main
+        run: git pull origin main
 
       - name: Install unzip
         run: sudo apt-get update && sudo apt-get install -y unzip
 
-      # Ganti setup-node dengan setup-bun
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
-        # Anda bisa menambahkan 'with: { bun-version: "1.0.0" }'
-        # jika ingin versi spesifik, tapi default-nya (latest) sudah bagus.
 
-      # Ganti 'npm ci' dengan 'bun install'
       - name: Install dependencies
-        run: bun install
-        working-directory: /home/wonderkid/datek-mis-mg
+        run: bun install --frozen-lockfile
 
       - name: Initiate Prisma
-        run: bun prisma generate
-        working-directory: /home/wonderkid/datek-mis-mg
+        run: bunx prisma generate
 
-      # Ganti 'npm run build' dengan 'bun run build'
-      - name: Build project
-        run: bun run build
-        working-directory: /home/wonderkid/datek-mis-mg
+      - name: Build standalone project
+        run: bun run build:standalone
 
-      - name: Reload project
-        run: pm2 reload datek
-        working-directory: /home/wonderkid/datek-mis-mg
-
-
-        # test
+      - name: Reload standalone project
+        run: |
+          if pm2 describe datek >/dev/null 2>&1; then
+            pm2 reload ecosystem.config.cjs --only datek --update-env
+          else
+            pm2 start ecosystem.config.cjs --only datek
+          fi
+          pm2 save
