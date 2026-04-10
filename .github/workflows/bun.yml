@@ -65,14 +65,32 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.bun/bin:$PATH"
+            if [ -s "$HOME/.nvm/nvm.sh" ]; then
+              . "$HOME/.nvm/nvm.sh"
+            fi
+            if [ -f "$HOME/.profile" ]; then
+              . "$HOME/.profile"
+            fi
+            if [ -f "$HOME/.bashrc" ]; then
+              . "$HOME/.bashrc"
+            fi
+            if [ -f "$HOME/.zshrc" ]; then
+              . "$HOME/.zshrc"
+            fi
+            PM2_BIN="$(command -v pm2 || true)"
+            if [ -z "$PM2_BIN" ]; then
+              echo "pm2 not found on VPS PATH"
+              exit 1
+            fi
             mkdir -p /home/wonderkid/datek-mis-mg
             rm -rf /home/wonderkid/datek-mis-mg/.next
             tar -xzf /tmp/release.tar.gz -C /home/wonderkid/datek-mis-mg
             rm -f /tmp/release.tar.gz
             cd /home/wonderkid/datek-mis-mg
-            if pm2 describe datek >/dev/null 2>&1; then
-              pm2 reload ecosystem.config.cjs --only datek --update-env
+            if "$PM2_BIN" describe datek >/dev/null 2>&1; then
+              "$PM2_BIN" reload ecosystem.config.cjs --only datek --update-env
             else
-              pm2 start ecosystem.config.cjs --only datek
+              "$PM2_BIN" start ecosystem.config.cjs --only datek
             fi
-            pm2 save
+            "$PM2_BIN" save
