@@ -52,7 +52,6 @@ interface PcAssetFormValues {
   monitorOptionId: number | null;
   motherboardOptionId: number | null;
   upsOptionId: number | null;
-  casing: string;
   macLan: string;
   hasOfficeAccount: boolean;
   officeEmail: string;
@@ -96,7 +95,6 @@ const emptyFormValues: PcAssetFormValues = {
   monitorOptionId: null,
   motherboardOptionId: null,
   upsOptionId: null,
-  casing: "",
   macLan: "",
   hasOfficeAccount: false,
   officeEmail: "",
@@ -220,7 +218,6 @@ export function PcAssetForm({
       monitorOptionId: initialAsset.pcSpecs?.monitorOptionId ?? null,
       motherboardOptionId: initialAsset.pcSpecs?.motherboardOptionId ?? null,
       upsOptionId: initialAsset.pcSpecs?.upsOptionId ?? null,
-      casing: initialAsset.pcSpecs?.casing || "",
       macLan: initialAsset.pcSpecs?.macLan || "",
       hasOfficeAccount: Boolean(initialAsset.officeAccount),
       officeEmail: initialAsset.officeAccount?.email || "",
@@ -387,7 +384,7 @@ export function PcAssetForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className={rowClass}>
-            <Label htmlFor="brand">Brand</Label>
+            <Label htmlFor="brand">Brand Casing</Label>
             <div>
               <Select
                 inputId="brand"
@@ -468,20 +465,6 @@ export function PcAssetForm({
                 isClearable
               />
             </div>
-          </div>
-          <div className={rowClass}>
-            <Label htmlFor="casing">Casing</Label>
-            <Input
-              id="casing"
-              value={formValues.casing}
-              onChange={(event) =>
-                setFormValues((current) => ({
-                  ...current,
-                  casing: event.target.value,
-                }))
-              }
-              placeholder="Power UP"
-            />
           </div>
           <div className={rowClass}>
             <Label>Processor</Label>

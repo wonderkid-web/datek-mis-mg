@@ -41,7 +41,6 @@ export default function AddPcAssetPage() {
               monitorOptionId: values.monitorOptionId,
               motherboardOptionId: values.motherboardOptionId,
               upsOptionId: values.upsOptionId,
-              casing: values.casing,
               macLan: values.macLan,
             },
             values.hasOfficeAccount
