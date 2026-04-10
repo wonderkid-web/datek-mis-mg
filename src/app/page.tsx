@@ -6,6 +6,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import Image from "next/image";
 import logo from "../../public/logo.png"
 
+export const dynamic = "force-dynamic";
+
 const features = [
   {
     title: "Centralized Asset Tracking",
