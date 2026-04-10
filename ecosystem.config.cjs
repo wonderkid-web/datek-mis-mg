@@ -2,7 +2,8 @@ module.exports = {
   apps: [
     {
       name: "datek",
-      script: ".next/standalone/server.js",
+      script: "node_modules/next/dist/bin/next",
+      args: "start -p 3001",
       cwd: "/home/wonderkid/datek-mis-mg",
       instances: 1,
       exec_mode: "fork",
@@ -11,7 +12,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         HOSTNAME: "0.0.0.0",
-        PORT: 3001,
+        PORT: "3001",
       },
     },
   ],

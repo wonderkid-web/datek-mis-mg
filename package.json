@@ -6,9 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "NODE_OPTIONS=--max-old-space-size=2048 next build",
     "build:vps": "NODE_OPTIONS=--max-old-space-size=1024 next build",
-    "build:standalone": "NODE_OPTIONS=--max-old-space-size=1024 next build && mkdir -p .next/standalone/.next .next/standalone/public && cp -R .next/static .next/standalone/.next/static && cp -R public/. .next/standalone/public",
     "start": "next start -p 3001",
-    "start:standalone": "PORT=3001 HOSTNAME=0.0.0.0 node .next/standalone/server.js",
     "lint": "next lint"
   },
   "dependencies": {
