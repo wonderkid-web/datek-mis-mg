@@ -83,13 +83,18 @@ export const columns = ({
     ),
     cell: ({ row }) => {
       const asset = row.original.asset;
-      const brand =
-        asset.laptopSpecs?.brandOption?.value ||
-        asset.intelNucSpecs?.brandOption?.value ||
-        asset.pcSpecs?.motherboardOption?.value ||
-        asset.pcSpecs?.casing ||
-        asset.printerSpecs?.brandOption?.value ||
-        "Unknown";
+      let brand = "Unknown";
+
+      if (asset.pcSpecs) {
+        brand = asset.namaAsset || "Unknown";
+      } else if (asset.laptopSpecs) {
+        brand = asset.laptopSpecs.brandOption?.value || "Unknown";
+      } else if (asset.intelNucSpecs) {
+        brand = asset.intelNucSpecs.brandOption?.value || "Unknown";
+      } else if (asset.printerSpecs) {
+        brand = asset.printerSpecs.brandOption?.value || "Unknown";
+      }
+
       return (
         <p className="text-center">
           {brand}
