@@ -19,6 +19,7 @@ export default function ServiceRecordsLayout({
     { href: '/service-records/isp', label: 'ISP History' },
     { href: '/service-records/biling-records', label: 'Biling Records' },
     { href: '/service-records/problem-sequence', label: 'Problem Sequence' },
+    { href: '/service-records/sparepart-tracker', label: 'Sparepart Tracker' },
 
   ];
 

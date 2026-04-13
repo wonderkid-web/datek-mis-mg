@@ -4,6 +4,58 @@ import { prisma } from "./prisma";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { AssetAssignment, Prisma } from "@prisma/client";
 
+const TRACKER_PATHS = [
+  "/tracker/laptop",
+  "/tracker/intel-nuc",
+  "/tracker/pc",
+  "/tracker/sparepart",
+];
+
+const revalidateAssignmentViews = () => {
+  revalidateTag("asset-assignments");
+  revalidateTag("asset-assignment-histories");
+  revalidatePath("/data-center/assigned-assets");
+  revalidatePath("/data-center/assets");
+  TRACKER_PATHS.forEach((path) => revalidatePath(path));
+};
+
+const closeActiveAssignmentHistory = async (
+  tx: Prisma.TransactionClient,
+  assetId: number,
+  endedAt: Date
+) => {
+  await tx.assetAssignmentHistory.updateMany({
+    where: {
+      assetId,
+      endedAt: null,
+    },
+    data: {
+      endedAt,
+    },
+  });
+};
+
+const createAssignmentHistory = async (
+  tx: Prisma.TransactionClient,
+  data: {
+    assetId: number;
+    userId: number;
+    nomorAsset?: string | null;
+    catatan?: string | null;
+    startedAt: Date;
+  }
+) => {
+  await tx.assetAssignmentHistory.create({
+    data: {
+      assetId: data.assetId,
+      userId: data.userId,
+      nomorAsset: data.nomorAsset ?? null,
+      catatan: data.catatan ?? null,
+      startedAt: data.startedAt,
+    },
+  });
+};
+
 export const getAssignments = async (): Promise<AssignmentWithRelations[]> => {
   return prisma.assetAssignment.findMany({
     include: {
@@ -175,23 +227,35 @@ export const createAssignment = async (data: {
   nomorAsset?: string | null;
 }): Promise<AssetAssignment> => {
   const { assetId, userId, catatan, nomorAsset } = data;
-  // HAPUS CACHE LAMA
-  revalidateTag("asset-assignments");          // <--- Reset cache query unstable_cache
-  revalidatePath("/data-center/assigned-assets"); // <--- Reset halaman assigned-assets
-  revalidatePath("/data-center/assets");          // <--- Reset halaman assets (karena status asset berubah jadi 'Used')
-  return await prisma.assetAssignment.create({
-    data: {
-      catatan,
+  const timestamp = new Date();
+
+  const assignment = await prisma.$transaction(async (tx) => {
+    const createdAssignment = await tx.assetAssignment.create({
+      data: {
+        catatan,
+        nomorAsset,
+        asset: {
+          connect: { id: assetId },
+        },
+        user: {
+          connect: { id: userId },
+        },
+      },
+    });
+
+    await createAssignmentHistory(tx, {
+      assetId,
+      userId,
       nomorAsset,
-      asset: {
-        connect: { id: assetId },
-      },
-      user: {
-        connect: { id: userId },
-      },
-    },
+      catatan,
+      startedAt: timestamp,
+    });
+
+    return createdAssignment;
   });
 
+  revalidateAssignmentViews();
+  return assignment;
 };
 
 export const updateAssignment = async (
@@ -214,24 +278,73 @@ export const updateAssignment = async (
     updateData.user = { connect: { id: userId } };
   }
 
+  const timestamp = new Date();
 
-  await prisma.assetAssignment.update({
-    where: { id },
-    data: updateData,
+  const updatedAssignment = await prisma.$transaction(async (tx) => {
+    const existing = await tx.assetAssignment.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new Error("Assignment not found.");
+    }
+
+    const nextAssignment = await tx.assetAssignment.update({
+      where: { id },
+      data: updateData,
+    });
+
+    const identityChanged =
+      nextAssignment.assetId !== existing.assetId ||
+      nextAssignment.userId !== existing.userId;
+
+    if (identityChanged) {
+      await closeActiveAssignmentHistory(tx, existing.assetId, timestamp);
+      await createAssignmentHistory(tx, {
+        assetId: nextAssignment.assetId,
+        userId: nextAssignment.userId,
+        nomorAsset: nextAssignment.nomorAsset,
+        catatan: nextAssignment.catatan,
+        startedAt: timestamp,
+      });
+    } else {
+      await tx.assetAssignmentHistory.updateMany({
+        where: {
+          assetId: nextAssignment.assetId,
+          endedAt: null,
+        },
+        data: {
+          userId: nextAssignment.userId,
+          nomorAsset: nextAssignment.nomorAsset,
+          catatan: nextAssignment.catatan,
+        },
+      });
+    }
+
+    return nextAssignment;
   });
-  // HAPUS CACHE LAMA
-  revalidateTag("asset-assignments");          // <--- Reset cache query unstable_cache
-  revalidatePath("/data-center/assigned-assets"); // <--- Reset halaman assigned-assets
-  revalidatePath("/data-center/assets");          // <--- Reset halaman assets (karena status asset berubah jadi 'Used')
+
+  revalidateAssignmentViews();
+  return updatedAssignment;
 };
 
 export const deleteAssignment = async (id: number): Promise<void> => {
+  const timestamp = new Date();
 
-  await prisma.assetAssignment.delete({
-    where: { id },
+  await prisma.$transaction(async (tx) => {
+    const existing = await tx.assetAssignment.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return;
+    }
+
+    await closeActiveAssignmentHistory(tx, existing.assetId, timestamp);
+    await tx.assetAssignment.delete({
+      where: { id },
+    });
   });
-  // HAPUS CACHE LAMA
-  revalidateTag("asset-assignments");          // <--- Reset cache query unstable_cache
-  revalidatePath("/data-center/assigned-assets"); // <--- Reset halaman assigned-assets
-  revalidatePath("/data-center/assets");          // <--- Reset halaman assets (karena status asset berubah jadi 'Used')
+
+  revalidateAssignmentViews();
 };

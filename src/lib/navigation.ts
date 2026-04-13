@@ -6,6 +6,7 @@ import {
   ToolCaseIcon,
   Database,
   LayoutGrid,
+  History as HistoryIcon,
 } from "lucide-react";
 
 interface ChildNavigationItem {
@@ -70,6 +71,16 @@ export const navigationItems: NavigationItem[] = [
     ],
   },
   {
+    name: "Tracker",
+    icon: HistoryIcon,
+    children: [
+      { name: "Tracker Laptop", href: "/tracker/laptop" },
+      { name: "Tracker Intel NUC", href: "/tracker/intel-nuc" },
+      { name: "Tracker PC", href: "/tracker/pc" },
+      { name: "Tracker Sparepart", href: "/tracker/sparepart" },
+    ],
+  },
+  {
     name: "Service Records",
     icon: ToolCaseIcon,
     children: [
@@ -83,6 +94,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "ISP Speed Test", href: "/service-records/isp" },
       { name: "Biling Records", href: "/service-records/biling-records" },
       { name: "Problem Sequence", href: "/service-records/problem-sequence" },
+      { name: "Sparepart Tracker", href: "/service-records/sparepart-tracker" },
     ],
   },
 ];

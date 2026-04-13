@@ -53,6 +53,7 @@ export interface Asset {
   printerSpecs?: PrinterSpecs;
   cctvSpecs?: CctvSpecs;
   officeAccount?: OfficeAccount; // <-- TAMBAHKAN INI
+  assignmentHistories?: AssetAssignmentHistory[];
 }
 
 export interface AssetAssignment {
@@ -107,6 +108,26 @@ export interface ServiceRecord {
 export interface AssetAssignmentWithDetails extends AssetAssignment {
   asset: Asset;
   user: User;
+}
+
+export interface AssetAssignmentHistory {
+  id: number;
+  assetId: number;
+  userId: number | null;
+  nomorAsset: string | null;
+  catatan: string | null;
+  startedAt: Date;
+  endedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  asset?: Asset;
+  user?: User | null;
+}
+
+export type TrackerDeviceFamily = "LAPTOP" | "INTEL_NUC" | "PC";
+
+export interface TrackedAsset extends Asset {
+  assignmentHistories: AssetAssignmentHistory[];
 }
 
 export interface ServiceRecordWithDetails extends ServiceRecord {
@@ -315,6 +336,46 @@ export interface ProblemSequenceWithIsp extends ProblemSequence {
     hpNoc: string;
     picNoc: string;
   };
+}
+
+export type SparepartDeviceFamily = "LAPTOP" | "INTEL_NUC" | "PC";
+export type SparepartPartType =
+  | "BRAND"
+  | "TYPE"
+  | "PROCESSOR"
+  | "RAM"
+  | "STORAGE"
+  | "OS"
+  | "POWER"
+  | "LICENSE"
+  | "MICROSOFT_OFFICE"
+  | "COLOR"
+  | "GRAPHIC"
+  | "VGA"
+  | "MONITOR"
+  | "MOTHERBOARD"
+  | "UPS";
+export type SparepartMovementType = "MASUK" | "PAKAI" | "ADJUSTMENT";
+export type SparepartAdjustmentDirection = "INCREASE" | "DECREASE";
+
+export interface SparepartMovement {
+  id: number;
+  deviceFamily: SparepartDeviceFamily;
+  partType: SparepartPartType;
+  sourceOptionId: number;
+  sourceOptionValue: string;
+  movementType: SparepartMovementType;
+  adjustmentDirection?: SparepartAdjustmentDirection | null;
+  quantity: number;
+  movedAt: Date;
+  userId?: number | null;
+  notes?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SparepartMovementWithUser extends SparepartMovement {
+  user?: User | null;
 }
 
 export interface BilingRecord {

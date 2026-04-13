@@ -55,6 +55,14 @@ export function ViewAssignmentDialog({
   const intelNucSpecs = asset?.intelNucSpecs;
   const pcSpecs = asset?.pcSpecs;
   const officeAccount = asset?.officeAccount; // <-- Variable for easier access
+  const primaryAssetLabel = pcSpecs ? "Motherboard" : "Brand";
+  const primaryAssetValue = pcSpecs
+    ? pcSpecs.motherboardOption?.value || "-"
+    : printerSpecs?.brandOption?.value ||
+    laptopSpecs?.brandOption?.value ||
+    intelNucSpecs?.brandOption?.value ||
+    "-";
+  const secondaryAssetLabel = pcSpecs ? "Brand" : "Asset Name";
 
   const calculateDaysRemaining = (dateVal: Date | string) => {
     const today = new Date();
@@ -93,6 +101,10 @@ export function ViewAssignmentDialog({
                 <TableCell>{assignment.user.namaLengkap}</TableCell>
               </TableRow>
               <TableRow>
+                <TableCell className="font-medium">{secondaryAssetLabel}</TableCell>
+                <TableCell>{asset.namaAsset}</TableCell>
+              </TableRow>
+              <TableRow>
                 <TableCell className="font-medium">Department</TableCell>
                 <TableCell>{assignment.user.departemen || "-"}</TableCell>
               </TableRow>
@@ -115,20 +127,14 @@ export function ViewAssignmentDialog({
                 <TableCell>{asset.category?.nama || "Laptop"}</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="font-medium">Brand</TableCell>
-                <TableCell>
-                  {printerSpecs?.brandOption?.value || laptopSpecs?.brandOption?.value || intelNucSpecs?.brandOption?.value || pcSpecs?.motherboardOption?.value || pcSpecs?.casing || "-"}
-                </TableCell>
+                <TableCell className="font-medium">{primaryAssetLabel}</TableCell>
+                <TableCell>{primaryAssetValue}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">Color</TableCell>
                 <TableCell>
                   {printerSpecs?.colorOption?.value || laptopSpecs?.colorOption?.value || intelNucSpecs?.colorOption?.value || pcSpecs?.colorOption?.value || "-"}
                 </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-medium">Asset Name</TableCell>
-                <TableCell>{asset.namaAsset}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">Serial Number</TableCell>
@@ -168,14 +174,10 @@ export function ViewAssignmentDialog({
                         <TableCell className="font-medium">UPS</TableCell>
                         <TableCell>{pcSpecs.upsOption?.value || "-"}</TableCell>
                       </TableRow>
-                      <TableRow>
+                      {/* <TableRow>
                         <TableCell className="font-medium">Casing</TableCell>
                         <TableCell>{pcSpecs.casing || "-"}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Mother Board</TableCell>
-                        <TableCell>{pcSpecs.motherboardOption?.value || "-"}</TableCell>
-                      </TableRow>
+                      </TableRow> */}
                     </>
                   )}
                   <TableRow>
