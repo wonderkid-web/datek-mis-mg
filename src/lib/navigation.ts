@@ -53,6 +53,7 @@ export const navigationItems: NavigationItem[] = [
     name: "Asset",
     icon: Package,
     children: [
+      { name: "Import Asset", href: "/items/import" },
       { name: "Asset Laptop", href: "/items/laptop" },
       { name: "Asset Intel NUC", href: "/items/intel-nuc" },
       { name: "Asset PC", href: "/items/pc" },

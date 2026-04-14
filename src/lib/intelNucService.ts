@@ -177,6 +177,14 @@ export async function updateAssetAndIntelNucSpecs(
   officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
   const intelNucSpecsUpdateData: any = {};
+  const existingAsset = await prisma.asset.findUnique({
+    where: { id },
+    include: { officeAccount: true },
+  });
+
+  if (!existingAsset) {
+    throw new Error("Asset not found");
+  }
 
   if (intelNucSpecsDataInput.macWlan !== undefined) {
     intelNucSpecsUpdateData.macWlan = intelNucSpecsDataInput.macWlan;
@@ -248,7 +256,7 @@ export async function updateAssetAndIntelNucSpecs(
         },
       },
     };
-  } else if (officeAccountData === null) {
+  } else if (officeAccountData === null && existingAsset.officeAccount) {
     officeAccountUpdateLogic = { delete: true };
   }
 
@@ -259,7 +267,7 @@ export async function updateAssetAndIntelNucSpecs(
       intelNucSpecs: {
         update: intelNucSpecsUpdateData,
       },
-      officeAccount: officeAccountData ? officeAccountUpdateLogic : (officeAccountData === null ? { delete: true } : undefined),
+      officeAccount: officeAccountUpdateLogic,
     },
     include: {
       intelNucSpecs: true,
