@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 import { ExportActions } from "@/components/ExportActions";
+import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +81,131 @@ const buildStockMap = (rows: SparepartMovementWithUser[]) => {
   }, {});
 };
 
+type OwnerOption = {
+  value: string;
+  label: string;
+  userId: number | null;
+};
+
+type RecipientSummary = {
+  key: string;
+  userName: string;
+  quantity: number;
+  lastMovedAt: Date;
+};
+
+type SparepartVisualizationItem = {
+  key: string;
+  deviceFamily: SparepartMovementWithUser["deviceFamily"];
+  partType: SparepartMovementWithUser["partType"];
+  sourceOptionId: number;
+  sourceOptionValue: string;
+  stockOwnerUserId: number | null;
+  totalMasuk: number;
+  totalTransferred: number;
+  currentStock: number;
+  totalMovements: number;
+  lastMovedAt: Date;
+  recipients: RecipientSummary[];
+  history: SparepartMovementWithUser[];
+};
+
+const GENERAL_POOL_KEY = "general";
+const GENERAL_POOL_LABEL = "General Pool";
+
+const getOwnerSelectionKey = (userId?: number | null) =>
+  userId === null || userId === undefined ? GENERAL_POOL_KEY : `user:${userId}`;
+
+const buildVisualizationItems = (rows: SparepartMovementWithUser[]) => {
+  const itemMap = new Map<
+    string,
+    {
+      item: SparepartVisualizationItem;
+      recipientsMap: Map<string, RecipientSummary>;
+    }
+  >();
+
+  rows.forEach((row) => {
+    const itemKey = getSparepartItemKey(
+      row.deviceFamily,
+      row.partType,
+      row.sourceOptionId,
+      row.stockOwnerUserId
+    );
+
+    const existing =
+      itemMap.get(itemKey) ??
+      {
+        item: {
+          key: itemKey,
+          deviceFamily: row.deviceFamily,
+          partType: row.partType,
+          sourceOptionId: row.sourceOptionId,
+          sourceOptionValue: row.sourceOptionValue,
+          stockOwnerUserId: row.stockOwnerUserId ?? null,
+          totalMasuk: 0,
+          totalTransferred: 0,
+          currentStock: 0,
+          totalMovements: 0,
+          lastMovedAt: new Date(row.movedAt),
+          recipients: [],
+          history: [],
+        },
+        recipientsMap: new Map<string, RecipientSummary>(),
+      };
+
+    existing.item.totalMovements += 1;
+    existing.item.currentStock += getStockDelta(row);
+    existing.item.history.push(row);
+
+    const movedAt = new Date(row.movedAt);
+    if (movedAt.getTime() > existing.item.lastMovedAt.getTime()) {
+      existing.item.lastMovedAt = movedAt;
+    }
+
+    if (row.movementType === "MASUK") {
+      existing.item.totalMasuk += row.quantity;
+    }
+
+    if (row.movementType === "PAKAI") {
+      existing.item.totalTransferred += row.quantity;
+      const recipientKey = row.userId ? `user:${row.userId}` : "unknown";
+      const currentRecipient =
+        existing.recipientsMap.get(recipientKey) ?? {
+          key: recipientKey,
+          userName: row.user?.namaLengkap ?? "Unknown User",
+          quantity: 0,
+          lastMovedAt: movedAt,
+        };
+
+      currentRecipient.quantity += row.quantity;
+      if (movedAt.getTime() > currentRecipient.lastMovedAt.getTime()) {
+        currentRecipient.lastMovedAt = movedAt;
+      }
+      existing.recipientsMap.set(recipientKey, currentRecipient);
+    }
+
+    itemMap.set(itemKey, existing);
+  });
+
+  return Array.from(itemMap.values())
+    .map(({ item, recipientsMap }) => ({
+      ...item,
+      history: [...item.history].sort(
+        (left, right) =>
+          new Date(right.movedAt).getTime() - new Date(left.movedAt).getTime()
+      ),
+      recipients: Array.from(recipientsMap.values()).sort(
+        (left, right) => right.quantity - left.quantity
+      ),
+    }))
+    .sort(
+      (left, right) =>
+        right.lastMovedAt.getTime() - left.lastMovedAt.getTime() ||
+        left.sourceOptionValue.localeCompare(right.sourceOptionValue, "id")
+    );
+};
+
 const exportColumns = [
   { header: "Device", accessorKey: "deviceFamily" },
   { header: "Jenis Sparepart", accessorKey: "partType" },
@@ -125,8 +251,183 @@ export default function SparepartTrackerPage() {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedFamily, setSelectedFamily] = useState("all");
   const [selectedMovementType, setSelectedMovementType] = useState("all");
+  const [selectedOwnerKey, setSelectedOwnerKey] = useState("");
+  const [selectedVisualizationFamily, setSelectedVisualizationFamily] = useState("");
+  const [selectedVisualizationPartType, setSelectedVisualizationPartType] = useState("");
+  const [selectedVisualizationItemKey, setSelectedVisualizationItemKey] = useState("");
 
   const stockByItemKey = useMemo(() => buildStockMap(data ?? []), [data]);
+
+  const ownerOptions = useMemo<OwnerOption[]>(() => {
+    const ownerMap = new Map<string, OwnerOption>();
+
+    (data ?? []).forEach((record) => {
+      const key = getOwnerSelectionKey(record.stockOwnerUserId);
+      if (ownerMap.has(key)) {
+        return;
+      }
+
+      ownerMap.set(key, {
+        value: key,
+        label: record.stockOwner?.namaLengkap ?? GENERAL_POOL_LABEL,
+        userId: record.stockOwnerUserId ?? null,
+      });
+    });
+
+    return Array.from(ownerMap.values()).sort((left, right) => {
+      if (left.value === GENERAL_POOL_KEY) return 1;
+      if (right.value === GENERAL_POOL_KEY) return -1;
+      return left.label.localeCompare(right.label, "id");
+    });
+  }, [data]);
+
+  useEffect(() => {
+    if (!ownerOptions.length) {
+      if (selectedOwnerKey) {
+        setSelectedOwnerKey("");
+      }
+      return;
+    }
+
+    const isCurrentOwnerStillValid = ownerOptions.some(
+      (option) => option.value === selectedOwnerKey
+    );
+    if (!selectedOwnerKey || !isCurrentOwnerStillValid) {
+      setSelectedOwnerKey(ownerOptions[0].value);
+    }
+  }, [ownerOptions, selectedOwnerKey]);
+
+  const ownerMovements = useMemo(
+    () =>
+      (data ?? []).filter(
+        (record) => getOwnerSelectionKey(record.stockOwnerUserId) === selectedOwnerKey
+      ),
+    [data, selectedOwnerKey]
+  );
+
+  const visualizationItems = useMemo(
+    () => buildVisualizationItems(ownerMovements),
+    [ownerMovements]
+  );
+
+  const visualizationFamilies = useMemo(() => {
+    const familyMap = new Map<
+      string,
+      { family: string; totalAvailable: number; totalTransferred: number; totalItems: number }
+    >();
+
+    visualizationItems.forEach((item) => {
+      const current =
+        familyMap.get(item.deviceFamily) ??
+        {
+          family: item.deviceFamily,
+          totalAvailable: 0,
+          totalTransferred: 0,
+          totalItems: 0,
+        };
+
+      current.totalAvailable += item.currentStock;
+      current.totalTransferred += item.totalTransferred;
+      current.totalItems += 1;
+      familyMap.set(item.deviceFamily, current);
+    });
+
+    return Array.from(familyMap.values());
+  }, [visualizationItems]);
+
+  useEffect(() => {
+    if (!visualizationFamilies.length) {
+      if (selectedVisualizationFamily) {
+        setSelectedVisualizationFamily("");
+      }
+      return;
+    }
+
+    const isCurrentFamilyStillValid = visualizationFamilies.some(
+      (family) => family.family === selectedVisualizationFamily
+    );
+    if (!selectedVisualizationFamily || !isCurrentFamilyStillValid) {
+      setSelectedVisualizationFamily(visualizationFamilies[0].family);
+    }
+  }, [selectedVisualizationFamily, visualizationFamilies]);
+
+  const visualizationPartTypes = useMemo(() => {
+    const filteredByFamily = visualizationItems.filter(
+      (item) => item.deviceFamily === selectedVisualizationFamily
+    );
+
+    return Array.from(new Set(filteredByFamily.map((item) => item.partType)));
+  }, [selectedVisualizationFamily, visualizationItems]);
+
+  useEffect(() => {
+    if (!visualizationPartTypes.length) {
+      if (selectedVisualizationPartType) {
+        setSelectedVisualizationPartType("");
+      }
+      return;
+    }
+
+    if (
+      !selectedVisualizationPartType ||
+      !visualizationPartTypes.includes(
+        selectedVisualizationPartType as SparepartMovementWithUser["partType"]
+      )
+    ) {
+      setSelectedVisualizationPartType(visualizationPartTypes[0]);
+    }
+  }, [selectedVisualizationPartType, visualizationPartTypes]);
+
+  const filteredVisualizationItems = useMemo(
+    () =>
+      visualizationItems.filter(
+        (item) =>
+          item.deviceFamily === selectedVisualizationFamily &&
+          item.partType === selectedVisualizationPartType
+      ),
+    [selectedVisualizationFamily, selectedVisualizationPartType, visualizationItems]
+  );
+
+  useEffect(() => {
+    if (!filteredVisualizationItems.length) {
+      if (selectedVisualizationItemKey) {
+        setSelectedVisualizationItemKey("");
+      }
+      return;
+    }
+
+    const isCurrentItemStillValid = filteredVisualizationItems.some(
+      (item) => item.key === selectedVisualizationItemKey
+    );
+    if (!selectedVisualizationItemKey || !isCurrentItemStillValid) {
+      setSelectedVisualizationItemKey(filteredVisualizationItems[0].key);
+    }
+  }, [filteredVisualizationItems, selectedVisualizationItemKey]);
+
+  const selectedVisualizationItem = useMemo(
+    () =>
+      filteredVisualizationItems.find(
+        (item) => item.key === selectedVisualizationItemKey
+      ) ?? null,
+    [filteredVisualizationItems, selectedVisualizationItemKey]
+  );
+
+  const visualizationSummaryCards = useMemo(() => {
+    const totalAvailable = visualizationItems.reduce(
+      (total, item) => total + item.currentStock,
+      0
+    );
+    const totalTransferred = visualizationItems.reduce(
+      (total, item) => total + item.totalTransferred,
+      0
+    );
+
+    return [
+      { label: "Pool Aktif", value: visualizationItems.length },
+      { label: "Family Aktif", value: visualizationFamilies.length },
+      { label: "Stock Tersedia", value: totalAvailable },
+      { label: "Sudah Di-over", value: totalTransferred },
+    ];
+  }, [visualizationFamilies.length, visualizationItems]);
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -417,6 +718,284 @@ export default function SparepartTrackerPage() {
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <CardTitle>Visualisasi Pemilik Sparepart</CardTitle>
+            <CardDescription>
+              Pilih pemilik stok, lalu drill down ke family dan jenis sparepart untuk lihat stock tersedia dan riwayat over ke user lain.
+            </CardDescription>
+          </div>
+          <div className="w-full sm:w-72">
+            <UiSelect
+              value={selectedOwnerKey || undefined}
+              onValueChange={setSelectedOwnerKey}
+              disabled={!ownerOptions.length}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih pemilik stok" />
+              </SelectTrigger>
+              <SelectContent>
+                {ownerOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </UiSelect>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {!ownerOptions.length ? (
+            <div className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+              Belum ada sparepart movement yang punya pemilik stok.
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {visualizationSummaryCards.map((card) => (
+                  <div key={card.label} className="rounded-xl border bg-muted/20 p-4">
+                    <div className="text-sm text-muted-foreground">{card.label}</div>
+                    <div className="mt-2 text-2xl font-semibold">
+                      {card.value.toLocaleString("id-ID")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Pilih Family</div>
+                <div className="flex flex-wrap gap-2">
+                  {visualizationFamilies.map((family) => {
+                    const isActive = family.family === selectedVisualizationFamily;
+                    const label =
+                      SPAREPART_DEVICE_FAMILY_OPTIONS.find(
+                        (option) => option.value === family.family
+                      )?.label ?? family.family;
+
+                    return (
+                      <Button
+                        key={family.family}
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedVisualizationFamily(family.family)}
+                      >
+                        {label} · {family.totalItems}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {visualizationPartTypes.length ? (
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Pilih Jenis Sparepart</div>
+                  <div className="flex flex-wrap gap-2">
+                    {visualizationPartTypes.map((partType) => (
+                      <Button
+                        key={partType}
+                        variant={
+                          partType === selectedVisualizationPartType
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => setSelectedVisualizationPartType(partType)}
+                      >
+                        {SPAREPART_PART_TYPE_LABELS[partType]}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Pool Sparepart</div>
+                  {filteredVisualizationItems.length ? (
+                    <div className="grid gap-3">
+                      {filteredVisualizationItems.map((item) => {
+                        const isActive = item.key === selectedVisualizationItemKey;
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => setSelectedVisualizationItemKey(item.key)}
+                            className={`rounded-xl border p-4 text-left transition ${
+                              isActive
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-border bg-background hover:border-primary/40"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <div className="font-semibold">{item.sourceOptionValue}</div>
+                                <div className="mt-1 text-sm text-muted-foreground">
+                                  {SPAREPART_PART_TYPE_LABELS[item.partType]} ·{" "}
+                                  {SPAREPART_DEVICE_FAMILY_OPTIONS.find(
+                                    (option) => option.value === item.deviceFamily
+                                  )?.label ?? item.deviceFamily}
+                                </div>
+                              </div>
+                              <Badge variant={item.currentStock > 0 ? "default" : "secondary"}>
+                                Tersedia {item.currentStock.toLocaleString("id-ID")}
+                              </Badge>
+                            </div>
+                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                              <div>
+                                <div className="text-xs text-muted-foreground">Total Masuk</div>
+                                <div className="text-lg font-semibold">
+                                  {item.totalMasuk.toLocaleString("id-ID")}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">Sudah Di-over</div>
+                                <div className="text-lg font-semibold">
+                                  {item.totalTransferred.toLocaleString("id-ID")}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">Penerima</div>
+                                <div className="text-lg font-semibold">
+                                  {item.recipients.length.toLocaleString("id-ID")}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+                      Tidak ada sparepart untuk family dan jenis yang dipilih.
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Detail Visualisasi</div>
+                  {selectedVisualizationItem ? (
+                    <div className="space-y-4 rounded-xl border p-4">
+                      <div>
+                        <div className="text-xl font-semibold">
+                          {selectedVisualizationItem.sourceOptionValue}
+                        </div>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          Pemilik stok:{" "}
+                          {ownerOptions.find(
+                            (option) => option.value === selectedOwnerKey
+                          )?.label ?? GENERAL_POOL_LABEL}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <div className="text-xs text-muted-foreground">
+                            Qty Tersedia
+                          </div>
+                          <div className="text-2xl font-semibold">
+                            {selectedVisualizationItem.currentStock.toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <div className="text-xs text-muted-foreground">
+                            Qty Sudah Di-over
+                          </div>
+                          <div className="text-2xl font-semibold">
+                            {selectedVisualizationItem.totalTransferred.toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <div className="text-xs text-muted-foreground">
+                            Total Masuk
+                          </div>
+                          <div className="text-2xl font-semibold">
+                            {selectedVisualizationItem.totalMasuk.toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <div className="text-xs text-muted-foreground">
+                            Update Terakhir
+                          </div>
+                          <div className="text-sm font-medium">
+                            {selectedVisualizationItem.lastMovedAt.toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium">
+                          Sudah Di-over ke Siapa Saja
+                        </div>
+                        {selectedVisualizationItem.recipients.length ? (
+                          <div className="space-y-2">
+                            {selectedVisualizationItem.recipients.map((recipient) => (
+                              <div
+                                key={recipient.key}
+                                className="flex items-center justify-between rounded-lg border px-3 py-2"
+                              >
+                                <div>
+                                  <div className="font-medium">{recipient.userName}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Terakhir:{" "}
+                                    {recipient.lastMovedAt.toLocaleString("id-ID")}
+                                  </div>
+                                </div>
+                                <Badge variant="outline">
+                                  {recipient.quantity.toLocaleString("id-ID")} qty
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                            Belum pernah diover ke user lain.
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium">Riwayat Mutasi</div>
+                        <div className="overflow-x-auto rounded-lg border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Waktu</TableHead>
+                                <TableHead>Mutasi</TableHead>
+                                <TableHead className="text-center">Qty</TableHead>
+                                <TableHead>User Tujuan</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {selectedVisualizationItem.history.map((record) => (
+                                <TableRow key={record.id}>
+                                  <TableCell>
+                                    {new Date(record.movedAt).toLocaleString("id-ID")}
+                                  </TableCell>
+                                  <TableCell>{getMovementLabel(record)}</TableCell>
+                                  <TableCell className="text-center">
+                                    {record.quantity.toLocaleString("id-ID")}
+                                  </TableCell>
+                                  <TableCell>{record.user?.namaLengkap ?? "-"}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+                      Pilih salah satu sparepart untuk lihat visualisasi detail.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-4">
