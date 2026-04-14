@@ -72,7 +72,8 @@ const buildStockMap = (rows: SparepartMovementWithUser[]) => {
     const key = getSparepartItemKey(
       row.deviceFamily,
       row.partType,
-      row.sourceOptionId
+      row.sourceOptionId,
+      row.stockOwnerUserId
     );
     accumulator[key] = (accumulator[key] ?? 0) + getStockDelta(row);
     return accumulator;
@@ -86,6 +87,7 @@ const exportColumns = [
   { header: "Mutasi", accessorKey: "movementType" },
   { header: "Qty", accessorKey: "quantity" },
   { header: "Waktu Pindah", accessorKey: "movedAt" },
+  { header: "Pemilik Stok", accessorKey: "stockOwner.namaLengkap" },
   { header: "User Pakai", accessorKey: "user.namaLengkap" },
   { header: "Notes", accessorKey: "notes" },
 ];
@@ -164,6 +166,7 @@ export default function SparepartTrackerPage() {
         record.sourceOptionValue,
         SPAREPART_PART_TYPE_LABELS[record.partType],
         record.deviceFamily,
+        record.stockOwner?.namaLengkap ?? "",
         record.user?.namaLengkap ?? "",
         record.notes ?? "",
       ]
@@ -203,7 +206,8 @@ export default function SparepartTrackerPage() {
           getSparepartItemKey(
             record.deviceFamily,
             record.partType,
-            record.sourceOptionId
+            record.sourceOptionId,
+            record.stockOwnerUserId
           ) === detailKey
       )
       .sort(
@@ -224,6 +228,7 @@ export default function SparepartTrackerPage() {
       sourceOptionValue: detailMovements[0].sourceOptionValue,
       deviceFamily: detailMovements[0].deviceFamily,
       partType: detailMovements[0].partType,
+      stockOwner: detailMovements[0].stockOwner?.namaLengkap ?? "General Pool",
       currentStock: stockByItemKey[detailKey] ?? 0,
       totalMovements: detailMovements.length,
       totalUsage,
@@ -244,7 +249,7 @@ export default function SparepartTrackerPage() {
 
     return [
       { label: "Total Mutasi", value: (data ?? []).length },
-      { label: "Jenis Sparepart", value: distinctItems },
+      { label: "Pool Sparepart", value: distinctItems },
       { label: "Total Stock", value: totalStock },
       { label: "Total Usage", value: totalUsage },
     ];
@@ -333,6 +338,10 @@ export default function SparepartTrackerPage() {
                         value: SPAREPART_PART_TYPE_LABELS[detailSummary.partType],
                       },
                       {
+                        label: "Pemilik Stok",
+                        value: detailSummary.stockOwner,
+                      },
+                      {
                         label: "Current Stock",
                         value: detailSummary.currentStock.toLocaleString("id-ID"),
                       },
@@ -368,6 +377,7 @@ export default function SparepartTrackerPage() {
                       <TableHead>Waktu</TableHead>
                       <TableHead>Mutasi</TableHead>
                       <TableHead className="text-center">Qty</TableHead>
+                      <TableHead>Pemilik Stok</TableHead>
                       <TableHead>User</TableHead>
                       <TableHead>Notes</TableHead>
                     </TableRow>
@@ -382,6 +392,7 @@ export default function SparepartTrackerPage() {
                         <TableCell className="text-center">
                           {record.quantity.toLocaleString("id-ID")}
                         </TableCell>
+                        <TableCell>{record.stockOwner?.namaLengkap ?? "General Pool"}</TableCell>
                         <TableCell>{record.user?.namaLengkap ?? "-"}</TableCell>
                         <TableCell>{record.notes || "-"}</TableCell>
                       </TableRow>
@@ -502,7 +513,8 @@ export default function SparepartTrackerPage() {
                     getSparepartItemKey(
                       record.deviceFamily,
                       record.partType,
-                      record.sourceOptionId
+                      record.sourceOptionId,
+                      record.stockOwnerUserId
                     )
                   )
                 }

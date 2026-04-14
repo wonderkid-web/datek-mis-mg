@@ -111,6 +111,6 @@ export const SPAREPART_ADJUSTMENT_DIRECTION_OPTIONS: OptionLike<SparepartAdjustm
 export const getSparepartItemKey = (
   deviceFamily: SparepartDeviceFamily,
   partType: SparepartPartType,
-  sourceOptionId: number
-) => `${deviceFamily}:${partType}:${sourceOptionId}`;
-
+  sourceOptionId: number,
+  stockOwnerUserId?: number | null
+) => `${deviceFamily}:${partType}:${sourceOptionId}:${stockOwnerUserId ?? "general"}`;

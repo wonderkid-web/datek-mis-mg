@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { ASSET_IMPORT_CONFIG, AssetImportFamily, ParsedAssetImportRow } from "@/lib/assetImportConfig";
-import { importAssetRows, previewAssetImport, AssetImportPreviewResult } from "@/lib/assetBulkImportService";
+import {
+  createMissingAssetImportMasterData,
+  importAssetRows,
+  previewAssetImport,
+  AssetImportMissingMasterDataGroup,
+  AssetImportPreviewResult,
+} from "@/lib/assetBulkImportService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +39,7 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
   const [preview, setPreview] = useState<AssetImportPreviewResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isCreatingMasterData, setIsCreatingMasterData] = useState(false);
 
   const headerAliasMap = useMemo(() => {
     const entries = new Map<string, keyof ParsedAssetImportRow>();
@@ -177,6 +184,50 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
     }
   };
 
+  const handleCreateMissingMasterData = async () => {
+    if (!parsedRows.length) {
+      toast.error("Pilih file import dulu.");
+      return;
+    }
+
+    if (!preview?.missingMasterData.length) {
+      toast.error("Tidak ada master data yang perlu dibuat.");
+      return;
+    }
+
+    setIsCreatingMasterData(true);
+
+    try {
+      const result = await createMissingAssetImportMasterData(family, parsedRows);
+      const refreshedPreview = await previewAssetImport(family, parsedRows);
+      setPreview(refreshedPreview);
+
+      toast.success(
+        `${result.createdItems} master data dibuat dari ${result.groups.length} kategori.`
+      );
+    } catch (error) {
+      console.error("Failed to create missing master data:", error);
+      toast.error("Gagal membuat master data yang belum ada.");
+    } finally {
+      setIsCreatingMasterData(false);
+    }
+  };
+
+  const handleCopyMissingSql = async () => {
+    if (!preview?.missingMasterDataSql) {
+      toast.error("Tidak ada SQL yang bisa disalin.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(preview.missingMasterDataSql);
+      toast.success("SQL master data berhasil disalin.");
+    } catch (error) {
+      console.error("Failed to copy SQL:", error);
+      toast.error("Gagal menyalin SQL.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -244,6 +295,42 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
         </div>
       ) : null}
 
+      {preview?.missingMasterData.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Master Data Belum Ada</CardTitle>
+            <CardDescription>
+              Ini daftar value master data yang bikin import invalid. Bisa dibuat otomatis, atau copy SQL jika mau inject manual.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {preview.missingMasterData.map((group) => (
+                <MissingMasterDataGroupCard key={group.key} group={group} />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                onClick={handleCreateMissingMasterData}
+                disabled={isCreatingMasterData}
+              >
+                {isCreatingMasterData
+                  ? "Creating Master Data..."
+                  : "Create Master Data yang Belum Ada"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyMissingSql}
+              >
+                Copy SQL
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {preview ? (
         <Card>
           <CardHeader>
@@ -288,6 +375,28 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
           </CardContent>
         </Card>
       ) : null}
+    </div>
+  );
+}
+
+function MissingMasterDataGroupCard({
+  group,
+}: {
+  group: AssetImportMissingMasterDataGroup;
+}) {
+  return (
+    <div className="rounded-lg border p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="font-medium">{group.label}</div>
+        <Badge variant="secondary">{group.items.length}</Badge>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {group.items.map((item) => (
+          <Badge key={item} variant="outline">
+            {item}
+          </Badge>
+        ))}
+      </div>
     </div>
   );
 }

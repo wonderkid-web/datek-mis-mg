@@ -26,6 +26,27 @@ type LookupOption = {
 };
 
 type LookupMap = Map<string, LookupOption>;
+type MissingMasterDataKey =
+  | "brand"
+  | "type"
+  | "processor"
+  | "ram"
+  | "storageType"
+  | "os"
+  | "power"
+  | "microsoftOffice"
+  | "color"
+  | "graphic"
+  | "license"
+  | "monitor"
+  | "motherboard"
+  | "ups";
+
+interface MissingMasterDataEntry {
+  key: MissingMasterDataKey;
+  label: string;
+  value: string;
+}
 
 interface PreparedImportRow {
   rowNumber: number;
@@ -33,6 +54,7 @@ interface PreparedImportRow {
   serialNumber: string;
   statusAsset: string;
   errors: string[];
+  missingMasterData: MissingMasterDataEntry[];
   assetData?: {
     namaAsset: string;
     categoryId?: number;
@@ -66,6 +88,20 @@ export interface AssetImportPreviewResult {
   validRows: number;
   invalidRows: number;
   rows: AssetImportPreviewRow[];
+  missingMasterData: AssetImportMissingMasterDataGroup[];
+  missingMasterDataSql: string | null;
+}
+
+export interface AssetImportMissingMasterDataGroup {
+  key: MissingMasterDataKey;
+  label: string;
+  items: string[];
+}
+
+export interface AssetImportCreateMissingMasterDataResult {
+  family: AssetImportFamily;
+  createdItems: number;
+  groups: AssetImportMissingMasterDataGroup[];
 }
 
 export interface AssetImportCommitResult {
@@ -107,6 +143,10 @@ function readString(value: unknown) {
 function toNullableString(value: unknown) {
   const text = readString(value);
   return text ? text : null;
+}
+
+function escapeSqlValue(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 function parseStatusAsset(value: unknown) {
@@ -210,7 +250,9 @@ function resolveOptionId(
   value: unknown,
   label: string,
   lookupMap: LookupMap,
-  errors: string[]
+  errors: string[],
+  missingEntries?: MissingMasterDataEntry[],
+  missingKey?: MissingMasterDataKey
 ) {
   const rawValue = readString(value);
   if (!rawValue) {
@@ -220,10 +262,140 @@ function resolveOptionId(
   const option = lookupMap.get(normalizeLookupValue(rawValue));
   if (!option) {
     errors.push(`${label} "${rawValue}" tidak ditemukan di master data.`);
+    if (missingEntries && missingKey) {
+      missingEntries.push({
+        key: missingKey,
+        label,
+        value: rawValue,
+      });
+    }
     return null;
   }
 
   return option;
+}
+
+function collectMissingMasterData(
+  preparedRows: PreparedImportRow[]
+): AssetImportMissingMasterDataGroup[] {
+  const grouped = new Map<MissingMasterDataKey, { label: string; values: Map<string, string> }>();
+
+  preparedRows.forEach((row) => {
+    row.missingMasterData.forEach((entry) => {
+      const currentGroup =
+        grouped.get(entry.key) ??
+        { label: entry.label, values: new Map<string, string>() };
+
+      currentGroup.values.set(normalizeLookupValue(entry.value), entry.value);
+      grouped.set(entry.key, currentGroup);
+    });
+  });
+
+  return Array.from(grouped.entries())
+    .map(([key, group]) => ({
+      key,
+      label: group.label,
+      items: Array.from(group.values.values()).sort((left, right) =>
+        left.localeCompare(right, "id")
+      ),
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label, "id"));
+}
+
+function buildMissingMasterDataSql(groups: AssetImportMissingMasterDataGroup[]) {
+  if (!groups.length) {
+    return null;
+  }
+
+  const tableMap: Record<MissingMasterDataKey, string> = {
+    brand: "laptop_brand_options",
+    type: "laptop_type_options",
+    processor: "laptop_processor_options",
+    ram: "laptop_ram_options",
+    storageType: "laptop_storage_type_options",
+    os: "laptop_os_options",
+    power: "laptop_power_options",
+    microsoftOffice: "laptop_microsoft_office_options",
+    color: "laptop_color_options",
+    graphic: "laptop_graphic_options",
+    license: "laptop_licence_options",
+    monitor: "pc_monitor_options",
+    motherboard: "pc_motherboard_options",
+    ups: "pc_ups_options",
+  };
+
+  return groups
+    .map((group) => {
+      const values = group.items
+        .map((item) => `('${escapeSqlValue(item)}')`)
+        .join(",\n  ");
+
+      return `INSERT IGNORE INTO \`${tableMap[group.key]}\` (\`value\`) VALUES\n  ${values};`;
+    })
+    .join("\n\n");
+}
+
+async function createMissingMasterDataGroups(
+  groups: AssetImportMissingMasterDataGroup[]
+) {
+  let createdItems = 0;
+
+  for (const group of groups) {
+    if (!group.items.length) {
+      continue;
+    }
+
+    const data = group.items.map((value) => ({ value }));
+
+    switch (group.key) {
+      case "brand":
+        createdItems += (await prisma.laptopBrandOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "type":
+        createdItems += (await prisma.laptopTypeOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "processor":
+        createdItems += (await prisma.laptopProcessorOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "ram":
+        createdItems += (await prisma.laptopRamOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "storageType":
+        createdItems += (await prisma.laptopStorageTypeOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "os":
+        createdItems += (await prisma.laptopOsOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "power":
+        createdItems += (await prisma.laptopPowerOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "microsoftOffice":
+        createdItems += (await prisma.laptopMicrosoftOfficeOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "color":
+        createdItems += (await prisma.laptopColorOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "graphic":
+        createdItems += (await prisma.laptopGraphicOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "license":
+        createdItems += (await prisma.laptopLicenseOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "monitor":
+        createdItems += (await prisma.pcMonitorOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "motherboard":
+        createdItems += (await prisma.pcMotherboardOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      case "ups":
+        createdItems += (await prisma.pcUpsOption.createMany({ data, skipDuplicates: true })).count;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return createdItems;
 }
 
 async function loadLookups() {
@@ -323,6 +495,7 @@ async function prepareRows(
 
   return rows.map((row, index) => {
     const errors: string[] = [];
+    const missingMasterData: MissingMasterDataEntry[] = [];
     const rowNumber = index + 2;
     const serialNumber = readString(row.serialNumber).toUpperCase();
     const statusAsset = parseStatusAsset(row.statusAsset);
@@ -349,15 +522,29 @@ async function prepareRows(
     const macLan = formatMacAddress(row.macLan, "MAC LAN", errors);
     const macWlan = formatMacAddress(row.macWlan, "MAC WLAN", errors);
 
-    const processor = resolveOptionId(row.processor, "Processor", lookups.processor, errors);
-    const ram = resolveOptionId(row.ram, "RAM", lookups.ram, errors);
-    const storageType = resolveOptionId(row.storageType, "Storage Type", lookups.storageType, errors);
-    const os = resolveOptionId(row.os, "Operating System", lookups.os, errors);
-    const power = resolveOptionId(row.power, family === "PC" ? "Power Supply" : "Power", lookups.power, errors);
-    const microsoftOffice = resolveOptionId(row.microsoftOffice, "Microsoft Office", lookups.microsoftOffice, errors);
-    const color = resolveOptionId(row.color, "Color", lookups.color, errors);
-    const graphic = resolveOptionId(row.graphic, "Graphic", lookups.graphic, errors);
-    const license = resolveOptionId(row.license, "License", lookups.license, errors);
+    const processor = resolveOptionId(row.processor, "Processor", lookups.processor, errors, missingMasterData, "processor");
+    const ram = resolveOptionId(row.ram, "RAM", lookups.ram, errors, missingMasterData, "ram");
+    const storageType = resolveOptionId(row.storageType, "Storage Type", lookups.storageType, errors, missingMasterData, "storageType");
+    const os = resolveOptionId(row.os, "Operating System", lookups.os, errors, missingMasterData, "os");
+    const power = resolveOptionId(
+      row.power,
+      family === "PC" ? "Power Supply" : "Power",
+      lookups.power,
+      errors,
+      missingMasterData,
+      "power"
+    );
+    const microsoftOffice = resolveOptionId(
+      row.microsoftOffice,
+      "Microsoft Office",
+      lookups.microsoftOffice,
+      errors,
+      missingMasterData,
+      "microsoftOffice"
+    );
+    const color = resolveOptionId(row.color, "Color", lookups.color, errors, missingMasterData, "color");
+    const graphic = resolveOptionId(row.graphic, "Graphic", lookups.graphic, errors, missingMasterData, "graphic");
+    const license = resolveOptionId(row.license, "License", lookups.license, errors, missingMasterData, "license");
 
     let summary = readString(row.namaAsset || row.brand) || `Row ${rowNumber}`;
 
@@ -400,8 +587,22 @@ async function prepareRows(
         errors.push("Model wajib diisi.");
       }
 
-      const model = resolveOptionId(namaAssetValue, "Model", lookups.type, errors);
-      const brand = resolveOptionId(row.brand, "Brand", lookups.brand, errors);
+      const model = resolveOptionId(
+        namaAssetValue,
+        "Model",
+        lookups.type,
+        errors,
+        missingMasterData,
+        "type"
+      );
+      const brand = resolveOptionId(
+        row.brand,
+        "Brand",
+        lookups.brand,
+        errors,
+        missingMasterData,
+        "brand"
+      );
 
       summary = namaAssetValue || summary;
 
@@ -411,6 +612,7 @@ async function prepareRows(
         serialNumber,
         statusAsset: statusAsset || "GOOD",
         errors,
+        missingMasterData,
         assetData: {
           namaAsset: model?.value || namaAssetValue,
           categoryId: family === "LAPTOP" ? 1 : 2,
@@ -440,15 +642,31 @@ async function prepareRows(
       };
     }
 
-    const brand = resolveOptionId(row.brand, "Brand", lookups.brand, errors);
-    const monitor = resolveOptionId(row.monitor, "Monitor", lookups.monitor, errors);
+    const brand = resolveOptionId(
+      row.brand,
+      "Brand",
+      lookups.brand,
+      errors,
+      missingMasterData,
+      "brand"
+    );
+    const monitor = resolveOptionId(
+      row.monitor,
+      "Monitor",
+      lookups.monitor,
+      errors,
+      missingMasterData,
+      "monitor"
+    );
     const motherboard = resolveOptionId(
       row.motherboard,
       "Motherboard",
       lookups.motherboard,
-      errors
+      errors,
+      missingMasterData,
+      "motherboard"
     );
-    const ups = resolveOptionId(row.ups, "UPS", lookups.ups, errors);
+    const ups = resolveOptionId(row.ups, "UPS", lookups.ups, errors, missingMasterData, "ups");
 
     if (!brand?.value) {
       errors.push("Brand wajib diisi.");
@@ -462,6 +680,7 @@ async function prepareRows(
       serialNumber,
       statusAsset: statusAsset || "GOOD",
       errors,
+      missingMasterData,
       assetData: {
         namaAsset: brand?.value || "",
         nomorSeri: serialNumber,
@@ -496,6 +715,7 @@ export async function previewAssetImport(
   rows: ParsedAssetImportRow[]
 ): Promise<AssetImportPreviewResult> {
   const preparedRows = await prepareRows(family, rows);
+  const missingMasterData = collectMissingMasterData(preparedRows);
   const previewRows: AssetImportPreviewRow[] = preparedRows.map((row) => ({
     rowNumber: row.rowNumber,
     summary: row.summary,
@@ -511,6 +731,32 @@ export async function previewAssetImport(
     validRows: previewRows.filter((row) => row.isValid).length,
     invalidRows: previewRows.filter((row) => !row.isValid).length,
     rows: previewRows,
+    missingMasterData,
+    missingMasterDataSql: buildMissingMasterDataSql(missingMasterData),
+  };
+}
+
+export async function createMissingAssetImportMasterData(
+  family: AssetImportFamily,
+  rows: ParsedAssetImportRow[]
+): Promise<AssetImportCreateMissingMasterDataResult> {
+  const preparedRows = await prepareRows(family, rows);
+  const missingMasterData = collectMissingMasterData(preparedRows);
+
+  if (!missingMasterData.length) {
+    return {
+      family,
+      createdItems: 0,
+      groups: [],
+    };
+  }
+
+  const createdItems = await createMissingMasterDataGroups(missingMasterData);
+
+  return {
+    family,
+    createdItems,
+    groups: missingMasterData,
   };
 }
 

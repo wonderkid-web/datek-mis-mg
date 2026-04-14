@@ -90,6 +90,7 @@ export function SparepartTrackerForm({
   const [quantity, setQuantity] = useState("");
   const [movedAt, setMovedAt] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
+  const [stockOwnerUserId, setStockOwnerUserId] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
 
   const { data: users } = useQuery({
@@ -133,6 +134,7 @@ export function SparepartTrackerForm({
       setQuantity("");
       setMovedAt(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
       setUserId(null);
+      setStockOwnerUserId(null);
       setNotes("");
       return;
     }
@@ -146,6 +148,7 @@ export function SparepartTrackerForm({
     setQuantity(String(defaultValue.quantity));
     setMovedAt(format(new Date(defaultValue.movedAt), "yyyy-MM-dd'T'HH:mm"));
     setUserId(defaultValue.userId ?? null);
+    setStockOwnerUserId(defaultValue.stockOwnerUserId ?? null);
     setNotes(defaultValue.notes ?? "");
   }, [defaultValue, open]);
 
@@ -167,6 +170,9 @@ export function SparepartTrackerForm({
   const selectedUserOption =
     activeUsers.find((option) => Number(option.value) === userId) ?? null;
 
+  const selectedStockOwnerOption =
+    activeUsers.find((option) => Number(option.value) === stockOwnerUserId) ?? null;
+
   const currentStock = useMemo(() => {
     if (!deviceFamily || !partType || sourceOptionId === null) {
       return 0;
@@ -178,11 +184,18 @@ export function SparepartTrackerForm({
           getSparepartItemKey(
             record.deviceFamily,
             record.partType,
-            record.sourceOptionId
-          ) === getSparepartItemKey(deviceFamily, partType, sourceOptionId)
+            record.sourceOptionId,
+            record.stockOwnerUserId
+          ) ===
+          getSparepartItemKey(
+            deviceFamily,
+            partType,
+            sourceOptionId,
+            stockOwnerUserId
+          )
       )
       .reduce((total, record) => total + getStockDelta(record), 0);
-  }, [deviceFamily, movements, partType, sourceOptionId]);
+  }, [deviceFamily, movements, partType, sourceOptionId, stockOwnerUserId]);
 
   const canSubmit = useMemo(() => {
     const parsedQuantity = Number(quantity);
@@ -196,6 +209,7 @@ export function SparepartTrackerForm({
         movedAt &&
         Number.isFinite(parsedQuantity) &&
         parsedQuantity > 0 &&
+        (movementType === "ADJUSTMENT" || stockOwnerUserId) &&
         (movementType !== "PAKAI" || userId) &&
         (movementType !== "ADJUSTMENT" || adjustmentDirection)
     );
@@ -208,6 +222,7 @@ export function SparepartTrackerForm({
     quantity,
     sourceOptionId,
     sourceOptionValue,
+    stockOwnerUserId,
     userId,
   ]);
 
@@ -226,6 +241,8 @@ export function SparepartTrackerForm({
         quantity: Number(quantity),
         movedAt: new Date(movedAt).toISOString(),
         userId: movementType === "PAKAI" ? userId : null,
+        stockOwnerUserId,
+        sourceAssignmentId: null,
         notes,
       };
 
@@ -400,6 +417,25 @@ export function SparepartTrackerForm({
               value={movedAt}
               onChange={(event) => setMovedAt(event.target.value)}
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>
+              {movementType === "MASUK" ? "User Awal / Pemilik Stok" : "Stok Milik User"}
+            </Label>
+            <Select
+              styles={selectStyles}
+              value={selectedStockOwnerOption}
+              onChange={(option) =>
+                setStockOwnerUserId(option ? Number(option.value) : null)
+              }
+              options={activeUsers}
+              placeholder="Pilih user pemilik stok sparepart"
+              isClearable={movementType === "ADJUSTMENT"}
+            />
+            <p className="text-xs text-muted-foreground">
+              Dipakai untuk mencatat sparepart ini berasal dari stok user siapa.
+            </p>
           </div>
 
           <div className="grid gap-2">

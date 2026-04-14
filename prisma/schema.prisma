@@ -81,11 +81,12 @@ model User {
   updatedAt        DateTime          @updatedAt @map("updated_at")
   password         String?           @db.VarChar(100)
   role             String?           @db.VarChar(15)
-  assetAssignments AssetAssignment[] @relation("UserAssetAssignments")
-  IpAddress        IpAddress[]
-  phoneAccounts    PhoneAccount[]
-  bilingRecords    BilingRecord[]
-  sparepartMovements SparepartMovement[]
+  assetAssignments         AssetAssignment[]        @relation("UserAssetAssignments")
+  IpAddress                IpAddress[]
+  phoneAccounts            PhoneAccount[]
+  bilingRecords            BilingRecord[]
+  sparepartMovements       SparepartMovement[]
+  sparepartOwnedMovements  SparepartMovement[]      @relation("SparepartStockOwner")
   assetAssignmentHistories AssetAssignmentHistory[] @relation("UserAssetAssignmentHistories")
 
   @@map("users")
@@ -139,6 +140,7 @@ model AssetAssignment {
   serviceRecords       ServiceRecord[]
   computerMaintenances ComputerMaintenance[]
   IpAddress            IpAddress[]
+  sparepartMovements   SparepartMovement[]
 
   @@index([assetId], map: "asset_assignments_assetId_fkey")
   @@index([userId], map: "asset_assignments_userId_fkey")
@@ -781,16 +783,22 @@ model SparepartMovement {
   quantity            Int
   movedAt             DateTime                    @map("moved_at")
   userId              Int?                        @map("user_id")
+  stockOwnerUserId    Int?                        @map("stock_owner_user_id")
+  sourceAssignmentId  Int?                        @map("source_assignment_id")
   notes               String?                     @db.Text
   createdAt           DateTime                    @default(now()) @map("created_at")
   updatedAt           DateTime                    @updatedAt @map("updated_at")
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  stockOwner       User?            @relation("SparepartStockOwner", fields: [stockOwnerUserId], references: [id], onDelete: SetNull)
+  sourceAssignment AssetAssignment? @relation(fields: [sourceAssignmentId], references: [id], onDelete: SetNull)
 
   @@index([deviceFamily, partType, sourceOptionId], map: "sparepart_movements_item_lookup_idx")
   @@index([movedAt], map: "sparepart_movements_moved_at_idx")
   @@index([movementType], map: "sparepart_movements_movement_type_idx")
   @@index([userId], map: "sparepart_movements_userId_fkey")
+  @@index([stockOwnerUserId], map: "sparepart_movements_stock_owner_user_id_fkey")
+  @@index([sourceAssignmentId], map: "sparepart_movements_source_assignment_id_fkey")
   @@map("sparepart_movements")
 }
 

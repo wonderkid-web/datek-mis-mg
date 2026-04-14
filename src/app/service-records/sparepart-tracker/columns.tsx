@@ -97,7 +97,8 @@ export const getColumns = ({
       const itemKey = getSparepartItemKey(
         row.original.deviceFamily,
         row.original.partType,
-        row.original.sourceOptionId
+        row.original.sourceOptionId,
+        row.original.stockOwnerUserId
       );
       return (
         <div className="text-center">
@@ -105,6 +106,11 @@ export const getColumns = ({
         </div>
       );
     },
+  },
+  {
+    id: "stockOwner",
+    header: "Pemilik Stok",
+    cell: ({ row }) => row.original.stockOwner?.namaLengkap ?? "General Pool",
   },
   {
     id: "user",

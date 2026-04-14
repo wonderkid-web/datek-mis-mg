@@ -372,13 +372,37 @@ export interface SparepartMovement {
   quantity: number;
   movedAt: Date;
   userId?: number | null;
+  stockOwnerUserId?: number | null;
+  sourceAssignmentId?: number | null;
   notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface SparepartSourceAssignment {
+  id: number;
+  nomorAsset: string;
+  userId: number;
+  assetId: number;
+  user?: Pick<User, "id" | "namaLengkap"> | null;
+  asset?: Pick<Asset, "id" | "namaAsset" | "nomorSeri"> | null;
+}
+
 export interface SparepartMovementWithUser extends SparepartMovement {
   user?: User | null;
+  stockOwner?: Pick<User, "id" | "namaLengkap"> | null;
+  sourceAssignment?: SparepartSourceAssignment | null;
+}
+
+export interface SparepartSourceAssignmentOption {
+  id: number;
+  userId: number;
+  userName: string;
+  assetId: number;
+  assetName: string;
+  serialNumber: string;
+  nomorAsset: string;
+  label: string;
 }
 
 export interface BilingRecord {

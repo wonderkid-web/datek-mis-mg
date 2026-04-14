@@ -10,6 +10,7 @@ import type {
   SparepartDeviceFamily,
   SparepartMovementType,
   SparepartPartType,
+  SparepartSourceAssignmentOption,
 } from "@/lib/types";
 import { SPAREPART_PART_TYPE_OPTIONS } from "@/lib/sparepartTrackerConfig";
 
@@ -90,7 +91,33 @@ type SparepartMovementInput = {
   quantity: number;
   movedAt: string | Date;
   userId?: number | null;
+  stockOwnerUserId?: number | null;
+  sourceAssignmentId?: number | null;
   notes?: string | null;
+};
+
+const assignmentFamilyWhere: Record<SparepartDeviceFamily, Prisma.AssetAssignmentWhereInput> = {
+  LAPTOP: {
+    asset: {
+      laptopSpecs: {
+        isNot: null,
+      },
+    },
+  },
+  INTEL_NUC: {
+    asset: {
+      intelNucSpecs: {
+        isNot: null,
+      },
+    },
+  },
+  PC: {
+    asset: {
+      pcSpecs: {
+        isNot: null,
+      },
+    },
+  },
 };
 
 const normalizeMovedAt = (value: string | Date) => {
@@ -117,8 +144,16 @@ const validateInput = (data: SparepartMovementInput) => {
     throw new Error("User is required for usage tracking.");
   }
 
+  if ((data.movementType === "MASUK" || data.movementType === "PAKAI") && !data.stockOwnerUserId) {
+    throw new Error("Stock owner is required for incoming and usage tracking.");
+  }
+
   if (data.movementType !== "PAKAI") {
     data.userId = null;
+  }
+
+  if (data.movementType !== "MASUK") {
+    data.sourceAssignmentId = null;
   }
 
   if (data.movementType === "ADJUSTMENT" && !data.adjustmentDirection) {
@@ -142,6 +177,44 @@ export async function getSparepartSourceOptions(
   return loader();
 }
 
+export async function getSparepartSourceAssignments(
+  deviceFamily: SparepartDeviceFamily
+): Promise<SparepartSourceAssignmentOption[]> {
+  const rows = await prisma.assetAssignment.findMany({
+    where: assignmentFamilyWhere[deviceFamily],
+    include: {
+      user: {
+        select: {
+          id: true,
+          namaLengkap: true,
+        },
+      },
+      asset: {
+        select: {
+          id: true,
+          namaAsset: true,
+          nomorSeri: true,
+        },
+      },
+    },
+    orderBy: [
+      { user: { namaLengkap: "asc" } },
+      { nomorAsset: "asc" },
+    ],
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    userId: row.userId,
+    userName: row.user.namaLengkap,
+    assetId: row.assetId,
+    assetName: row.asset.namaAsset,
+    serialNumber: row.asset.nomorSeri,
+    nomorAsset: row.nomorAsset,
+    label: `${row.user.namaLengkap} - ${row.asset.namaAsset} (${row.nomorAsset})`,
+  }));
+}
+
 export const getSparepartMovements = unstable_cache(
   async (options: Prisma.SparepartMovementFindManyArgs = {}) => {
     try {
@@ -150,6 +223,33 @@ export const getSparepartMovements = unstable_cache(
         ...rest,
         include: {
           user: true,
+          stockOwner: {
+            select: {
+              id: true,
+              namaLengkap: true,
+            },
+          },
+          sourceAssignment: {
+            select: {
+              id: true,
+              nomorAsset: true,
+              userId: true,
+              assetId: true,
+              user: {
+                select: {
+                  id: true,
+                  namaLengkap: true,
+                },
+              },
+              asset: {
+                select: {
+                  id: true,
+                  namaAsset: true,
+                  nomorSeri: true,
+                },
+              },
+            },
+          },
           ...(include ?? {}),
         },
         orderBy: orderBy ?? { movedAt: "desc" },
@@ -177,10 +277,39 @@ export async function createSparepartMovement(data: SparepartMovementInput) {
         quantity: data.quantity,
         movedAt: normalizeMovedAt(data.movedAt),
         userId: data.userId ?? null,
+        stockOwnerUserId: data.stockOwnerUserId ?? null,
         notes: data.notes?.trim() || null,
+        sourceAssignmentId: data.sourceAssignmentId ?? null,
       },
       include: {
         user: true,
+        stockOwner: {
+          select: {
+            id: true,
+            namaLengkap: true,
+          },
+        },
+        sourceAssignment: {
+          select: {
+            id: true,
+            nomorAsset: true,
+            userId: true,
+            assetId: true,
+            user: {
+              select: {
+                id: true,
+                namaLengkap: true,
+              },
+            },
+            asset: {
+              select: {
+                id: true,
+                namaAsset: true,
+                nomorSeri: true,
+              },
+            },
+          },
+        },
       },
     });
     revalidateTag(REVALIDATE_TAG);
@@ -216,6 +345,14 @@ export async function updateSparepartMovement(
       quantity: data.quantity ?? existing.quantity,
       movedAt: data.movedAt ?? existing.movedAt,
       userId: data.userId !== undefined ? data.userId : existing.userId,
+      stockOwnerUserId:
+        data.stockOwnerUserId !== undefined
+          ? data.stockOwnerUserId
+          : existing.stockOwnerUserId,
+      sourceAssignmentId:
+        data.sourceAssignmentId !== undefined
+          ? data.sourceAssignmentId
+          : existing.sourceAssignmentId,
       notes: data.notes !== undefined ? data.notes : existing.notes,
     };
 
@@ -233,10 +370,39 @@ export async function updateSparepartMovement(
         quantity: payload.quantity,
         movedAt: normalizeMovedAt(payload.movedAt),
         userId: payload.userId ?? null,
+        stockOwnerUserId: payload.stockOwnerUserId ?? null,
+        sourceAssignmentId: payload.sourceAssignmentId ?? null,
         notes: payload.notes?.trim() || null,
       },
       include: {
         user: true,
+        stockOwner: {
+          select: {
+            id: true,
+            namaLengkap: true,
+          },
+        },
+        sourceAssignment: {
+          select: {
+            id: true,
+            nomorAsset: true,
+            userId: true,
+            assetId: true,
+            user: {
+              select: {
+                id: true,
+                namaLengkap: true,
+              },
+            },
+            asset: {
+              select: {
+                id: true,
+                namaAsset: true,
+                nomorSeri: true,
+              },
+            },
+          },
+        },
       },
     });
     revalidateTag(REVALIDATE_TAG);
