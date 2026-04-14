@@ -115,6 +115,10 @@ export async function createAssetAndIntelNucSpecs(
       connect: { id: intelNucSpecsDataInput.licenseOptionId },
     };
   }
+  if (intelNucSpecsDataInput.licenseKey !== undefined) {
+    intelNucSpecsCreateData.licenseKey =
+      intelNucSpecsDataInput.licenseKey || null;
+  }
 
   const newAsset = await prisma.asset.create({
     data: {
@@ -163,6 +167,7 @@ interface UpdateIntelNucSpecsDataInput {
   graphicOptionId?: number | null;
   vgaOptionId?: number | null;
   licenseOptionId?: number | null;
+  licenseKey?: string | null;
 }
 
 export async function updateAssetAndIntelNucSpecs(
@@ -178,6 +183,10 @@ export async function updateAssetAndIntelNucSpecs(
   }
   if (intelNucSpecsDataInput.macLan !== undefined) {
     intelNucSpecsUpdateData.macLan = intelNucSpecsDataInput.macLan;
+  }
+  if (intelNucSpecsDataInput.licenseKey !== undefined) {
+    intelNucSpecsUpdateData.licenseKey =
+      intelNucSpecsDataInput.licenseKey || null;
   }
 
   if (intelNucSpecsDataInput.processorOptionId !== undefined) {

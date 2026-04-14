@@ -454,6 +454,7 @@ model PcSpecs {
   ramOptionId             Int?
   storageTypeOptionId     Int?
   licenseOptionId         Int?
+  licenseKey              String?                      @map("license_key") @db.VarChar(30)
   osOptionId              Int?
   powerOptionId           Int?
   microsoftOfficeOptionId Int?

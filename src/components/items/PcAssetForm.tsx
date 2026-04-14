@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Select from "react-select";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ interface PcAssetFormValues {
   ramOptionId: number | null;
   storageTypeOptionId: number | null;
   licenseOptionId: number | null;
+  licenseKey: string;
   osOptionId: number | null;
   powerOptionId: number | null;
   microsoftOfficeOptionId: number | null;
@@ -87,6 +88,7 @@ const emptyFormValues: PcAssetFormValues = {
   ramOptionId: null,
   storageTypeOptionId: null,
   licenseOptionId: null,
+  licenseKey: "",
   osOptionId: null,
   powerOptionId: null,
   microsoftOfficeOptionId: null,
@@ -128,6 +130,7 @@ export function PcAssetForm({
   const [formValues, setFormValues] =
     useState<PcAssetFormValues>(emptyFormValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
   const [brandOptions, setBrandOptions] = useState<Option[]>([]);
   const [processorOptions, setProcessorOptions] = useState<Option[]>([]);
   const [ramOptions, setRamOptions] = useState<Option[]>([]);
@@ -209,6 +212,7 @@ export function PcAssetForm({
       ramOptionId: initialAsset.pcSpecs?.ramOptionId ?? null,
       storageTypeOptionId: initialAsset.pcSpecs?.storageTypeOptionId ?? null,
       licenseOptionId: initialAsset.pcSpecs?.licenseOptionId ?? null,
+      licenseKey: initialAsset.pcSpecs?.licenseKey || "",
       osOptionId: initialAsset.pcSpecs?.osOptionId ?? null,
       powerOptionId: initialAsset.pcSpecs?.powerOptionId ?? null,
       microsoftOfficeOptionId:
@@ -336,6 +340,23 @@ export function PcAssetForm({
     }));
   };
 
+  const handleLicenseKeyChange = (value: string) => {
+    const normalizedValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    let formattedValue = "";
+
+    for (let index = 0; index < normalizedValue.length; index += 1) {
+      if (index > 0 && index % 5 === 0) {
+        formattedValue += "-";
+      }
+      formattedValue += normalizedValue[index];
+    }
+
+    setFormValues((current) => ({
+      ...current,
+      licenseKey: formattedValue.slice(0, 29),
+    }));
+  };
+
   const getSelectedOption = (
     options: SelectOption[],
     value: number | null
@@ -358,12 +379,16 @@ export function PcAssetForm({
 
   const submitForm = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (submitLockRef.current) {
+      return;
+    }
 
     if (!formValues.namaAsset.trim()) {
       toast.error("Brand wajib dipilih.");
       return;
     }
 
+    submitLockRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -372,6 +397,7 @@ export function PcAssetForm({
         namaAsset: formValues.namaAsset.trim(),
       });
     } finally {
+      submitLockRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -597,6 +623,16 @@ export function PcAssetForm({
                 isClearable
               />
             </div>
+          </div>
+          <div className={rowClass}>
+            <Label htmlFor="licenseKey">License Key</Label>
+            <Input
+              id="licenseKey"
+              maxLength={29}
+              value={formValues.licenseKey}
+              onChange={(event) => handleLicenseKeyChange(event.target.value)}
+              placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+            />
           </div>
 
           <div

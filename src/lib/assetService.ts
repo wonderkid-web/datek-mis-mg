@@ -118,8 +118,6 @@ export async function createAssetAndLaptopSpecs(
     };
   }
 
-  console.log('KEY', laptopSpecsDataInput.licenseKey)
-
   // Logic simpan asset + specs + akun office (UPDATED)
   const newAsset = await prisma.asset.create({
     data: {

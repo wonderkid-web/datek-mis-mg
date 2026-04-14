@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,8 @@ export default function EditIntelNucAssetPage() {
   const router = useRouter();
   const params = useParams();
   const intelNucId = params.intelNucId as string;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
@@ -169,6 +171,11 @@ export default function EditIntelNucAssetPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitLockRef.current) {
+      return;
+    }
+    submitLockRef.current = true;
+    setIsSubmitting(true);
 
     const assetData = {
       namaAsset: namaAsset || "",
@@ -213,6 +220,9 @@ export default function EditIntelNucAssetPage() {
     } catch (error) {
       console.error("Failed to update Intel NUC asset:", error);
       toast.error("Failed to update Intel NUC asset.");
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -473,8 +483,10 @@ export default function EditIntelNucAssetPage() {
         </Card>
 
         <div className="md:col-span-2 flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit">Update Intel NUC Asset</Button>
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Updating..." : "Update Intel NUC Asset"}
+          </Button>
         </div>
       </form>
     </div>

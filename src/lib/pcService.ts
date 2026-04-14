@@ -18,6 +18,7 @@ interface PcSpecsInput {
   ramOptionId?: number | null;
   storageTypeOptionId?: number | null;
   licenseOptionId?: number | null;
+  licenseKey?: string | null;
   osOptionId?: number | null;
   powerOptionId?: number | null;
   microsoftOfficeOptionId?: number | null;
@@ -68,6 +69,7 @@ function buildPcSpecsCreateData(input: PcSpecsInput) {
   const data: Record<string, unknown> = {
     casing: input.casing || null,
     macLan: input.macLan || null,
+    licenseKey: input.licenseKey || null,
   };
 
   const relationFields: Array<[keyof PcSpecsInput, string]> = [
@@ -105,6 +107,9 @@ function buildPcSpecsUpdateData(input: PcSpecsInput) {
   }
   if (input.macLan !== undefined) {
     data.macLan = input.macLan || null;
+  }
+  if (input.licenseKey !== undefined) {
+    data.licenseKey = input.licenseKey || null;
   }
 
   const relationFields: Array<[keyof PcSpecsInput, string]> = [

@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,8 @@ export default function EditPrinterAssetPage() {
   const router = useRouter();
   const params = useParams();
   const printerId = params.printerId as string;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   // Common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
@@ -109,6 +111,11 @@ export default function EditPrinterAssetPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitLockRef.current) {
+      return;
+    }
+    submitLockRef.current = true;
+    setIsSubmitting(true);
     try {
       const assetData = {
         namaAsset: namaAsset || "",
@@ -131,6 +138,9 @@ export default function EditPrinterAssetPage() {
     } catch (error) {
       console.error("Failed to update printer asset:", error);
       toast.error("Failed to update printer asset.");
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -206,8 +216,10 @@ export default function EditPrinterAssetPage() {
         </Card>
 
         <div className="md:col-span-2 flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit">Update Printer Asset</Button>
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Updating..." : "Update Printer Asset"}
+          </Button>
         </div>
       </form>
     </div>

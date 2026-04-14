@@ -202,6 +202,7 @@ export interface AssetSpecs {
 
 // Spesifikasi untuk Laptop
 export interface LaptopSpecs extends AssetSpecs {
+  licenseKey?: string | null;
   // Properti relasi
   processorOption?: LaptopProcessorOption;
   ramOption?: LaptopRamOption;
@@ -219,6 +220,7 @@ export interface LaptopSpecs extends AssetSpecs {
 
 // Spesifikasi untuk Intel NUC
 export interface IntelNucSpecs extends AssetSpecs {
+  licenseKey?: string | null;
   // Properti relasi
   processorOption?: LaptopProcessorOption;
   ramOption?: LaptopRamOption;
@@ -240,6 +242,7 @@ export interface PcSpecs {
   ramOptionId?: number | null;
   storageTypeOptionId?: number | null;
   licenseOptionId?: number | null;
+  licenseKey?: string | null;
   osOptionId?: number | null;
   powerOptionId?: number | null;
   microsoftOfficeOptionId?: number | null;

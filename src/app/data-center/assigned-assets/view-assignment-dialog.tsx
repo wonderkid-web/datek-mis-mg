@@ -231,6 +231,12 @@ export function ViewAssignmentDialog({
                     </TableCell>
                   </TableRow>
                   <TableRow>
+                    <TableCell className="font-medium">License Key</TableCell>
+                    <TableCell>
+                      {laptopSpecs?.licenseKey || intelNucSpecs?.licenseKey || pcSpecs?.licenseKey || "-"}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell className="font-medium">Microsoft Office</TableCell>
                     <TableCell>
                       {laptopSpecs?.microsoftOfficeOption?.value || intelNucSpecs?.microsoftOfficeOption?.value || pcSpecs?.microsoftOfficeOption?.value || "-"}

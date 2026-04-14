@@ -33,6 +33,7 @@ export default function AddPcAssetPage() {
               ramOptionId: values.ramOptionId,
               storageTypeOptionId: values.storageTypeOptionId,
               licenseOptionId: values.licenseOptionId,
+              licenseKey: values.licenseKey,
               osOptionId: values.osOptionId,
               powerOptionId: values.powerOptionId,
               microsoftOfficeOptionId: values.microsoftOfficeOptionId,

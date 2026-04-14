@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,8 @@ export default function EditLaptopAssetPage() {
   const laptopId = params.laptopId as string;
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
@@ -95,6 +97,11 @@ export default function EditLaptopAssetPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitLockRef.current) {
+      return;
+    }
+    submitLockRef.current = true;
+    setIsSubmitting(true);
 
     const assetData = {
       namaAsset: namaAsset || "",
@@ -144,6 +151,9 @@ export default function EditLaptopAssetPage() {
     } catch (error) {
       console.error("Failed to update laptop asset:", error);
       toast.error("Failed to update laptop asset.");
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -506,8 +516,10 @@ export default function EditLaptopAssetPage() {
         </Card>
 
         <div className="md:col-span-2 flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit">Update Laptop Asset</Button>
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Updating..." : "Update Laptop Asset"}
+          </Button>
         </div>
       </form>
     </div>
