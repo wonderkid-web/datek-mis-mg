@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { AddUserDialog } from "./add-user-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
 import { getUsers, deleteUser } from "@/lib/userService";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import {
@@ -23,16 +25,16 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExportActions } from "@/components/ExportActions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { UserWithAssetStatus } from "@/lib/userService";
 
-interface User {
-  id: number;
-  namaLengkap: string;
-  email: string | null;
-  departemen: string | null;
-  jabatan: string | null;
-  lokasiKantor: string | null;
-  isActive: boolean;
-}
+type User = UserWithAssetStatus;
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
@@ -41,6 +43,7 @@ export default function UsersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [assetFilter, setAssetFilter] = useState("all");
   const router = useRouter();
 
   const { data: users, isLoading } = useQuery({
@@ -109,11 +112,20 @@ export default function UsersPage() {
 
   const filteredData =
     users?.filter(
-      (user) =>
-        user.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.departemen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.jabatan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lokasiKantor?.toLowerCase().includes(searchTerm.toLowerCase())
+      (user) => {
+        const matchesSearch =
+          user.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.departemen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.jabatan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.lokasiKantor?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesAssetFilter =
+          assetFilter === "all" ||
+          (assetFilter === "with-asset" && user.hasAssignedAsset) ||
+          (assetFilter === "without-asset" && !user.hasAssignedAsset);
+
+        return matchesSearch && matchesAssetFilter;
+      }
     ) || [];
 
   const exportColumns = [
@@ -148,24 +160,37 @@ export default function UsersPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="max-w-sm"
           />
+          <Select value={assetFilter} onValueChange={setAssetFilter}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Filter status asset" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua User</SelectItem>
+              <SelectItem value="with-asset">Sudah Ada Asset</SelectItem>
+              <SelectItem value="without-asset">Belum Ada Asset</SelectItem>
+            </SelectContent>
+          </Select>
           <ExportActions
             columns={exportColumns}
             data={filteredData}
             fileName="Daftar_Karyawan"
           />
         </div>
-        <AddUserDialog
-          onSave={() => {
-            queryClient.invalidateQueries({ queryKey: ["users"] });
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/employee/import">Import Employee</Link>
+          </Button>
+          <AddUserDialog
+            onSave={() => {
+              queryClient.invalidateQueries({ queryKey: ["users"] });
+            }}
+          />
+        </div>
       </div>
       <DataTable
         columns={columns({
           handleDelete: openDeleteDialog,
           handleEdit,
-          // @ts-expect-error its okay
-          handleView,
         })}
         data={filteredData}
         totalCount={filteredData.length}

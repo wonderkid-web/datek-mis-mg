@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const namaAsset   = searchParams.get("namaAsset")   || undefined;
     const statusAsset = searchParams.get("statusAsset") || undefined;
     const lokasiFisik = searchParams.get("lokasiFisik") || undefined;
+    const company = searchParams.get("company") || undefined;
+    const homebase = searchParams.get("homebase") || undefined;
 
     const categoryId   = searchParams.get("categoryId")
       ? parseInt(searchParams.get("categoryId")!, 10)
@@ -33,6 +35,8 @@ export async function GET(request: NextRequest) {
       namaAsset,
       statusAsset,
       lokasiFisik,
+      company,
+      homebase,
       categoryId,
       categorySlug,
       osValue,

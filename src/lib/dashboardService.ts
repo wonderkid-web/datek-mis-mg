@@ -3,7 +3,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { prisma } from "./prisma";
 
-const UNKNOWN_LOCATION = "Tanpa Lokasi";
+const UNKNOWN_LOCATION = "Tanpa Company";
 
 const normalizeLocation = (value: string | null | undefined) => {
   const trimmed = value?.trim();
@@ -54,10 +54,10 @@ export async function getDashboardData() {
     totalPhoneAccounts,
     categoryCounts,
     categories,
-    assetLocationCounts,
-    assetLocationCategoryCounts,
+    assignedAssetLocations,
     ipLocationCounts,
     activeUserLocationCounts,
+    activeUserLocationHomebaseCounts,
     laptopOsCounts,
     intelNucOsCounts,
     osOptions,
@@ -109,16 +109,23 @@ export async function getDashboardData() {
         nama: true,
       },
     }),
-    prisma.asset.groupBy({
-      by: ["lokasiFisik"],
-      _count: {
-        _all: true,
+    prisma.assetAssignment.findMany({
+      orderBy: {
+        updatedAt: "desc",
       },
-    }),
-    prisma.asset.groupBy({
-      by: ["lokasiFisik", "categoryId"],
-      _count: {
-        _all: true,
+      select: {
+        assetId: true,
+        user: {
+          select: {
+            lokasiKantor: true,
+            jabatan: true,
+          },
+        },
+        asset: {
+          select: {
+            categoryId: true,
+          },
+        },
       },
     }),
     prisma.ipAddress.groupBy({
@@ -129,6 +136,15 @@ export async function getDashboardData() {
     }),
     prisma.user.groupBy({
       by: ["lokasiKantor"],
+      where: {
+        isActive: true,
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+    prisma.user.groupBy({
+      by: ["lokasiKantor", "jabatan"],
       where: {
         isActive: true,
       },
@@ -315,27 +331,55 @@ export async function getDashboardData() {
     }))
     .sort((left, right) => right.total - left.total);
 
-  const locationCategoryMap = new Map<
+  const assignmentLocationCategoryMap = new Map<
     string,
     {
+      id: number;
       name: string;
       total: number;
     }[]
   >();
+  const assignedAssetCountByLocation = new Map<string, number>();
+  const processedAssignedAssetIds = new Set<number>();
+  const homebasesByLocation = new Map<string, Set<string>>();
 
-  for (const row of assetLocationCategoryCounts) {
-    const location = normalizeLocation(row.lokasiFisik);
-    const bucket = locationCategoryMap.get(location) ?? [];
-    bucket.push({
-      name: categoryNameById.get(row.categoryId) ?? `Kategori ${row.categoryId}`,
-      total: row._count._all,
-    });
-    locationCategoryMap.set(location, bucket);
+  for (const row of assignedAssetLocations) {
+    if (processedAssignedAssetIds.has(row.assetId)) {
+      continue;
+    }
+
+    processedAssignedAssetIds.add(row.assetId);
+
+    const location = normalizeLocation(row.user.lokasiKantor);
+    assignedAssetCountByLocation.set(
+      location,
+      (assignedAssetCountByLocation.get(location) ?? 0) + 1
+    );
+
+    const bucket = assignmentLocationCategoryMap.get(location) ?? [];
+    const homebase = row.user.jabatan?.trim();
+    const homebaseBucket = homebasesByLocation.get(location) ?? new Set<string>();
+    if (homebase) {
+      homebaseBucket.add(homebase);
+      homebasesByLocation.set(location, homebaseBucket);
+    }
+    const categoryName =
+      categoryNameById.get(row.asset.categoryId) ?? `Kategori ${row.asset.categoryId}`;
+    const existingCategory = bucket.find((category) => category.id === row.asset.categoryId);
+
+    if (existingCategory) {
+      existingCategory.total += 1;
+    } else {
+      bucket.push({
+        id: row.asset.categoryId,
+        name: categoryName,
+        total: 1,
+      });
+    }
+
+    assignmentLocationCategoryMap.set(location, bucket);
   }
 
-  const assetCountByLocation = new Map(
-    assetLocationCounts.map((row) => [normalizeLocation(row.lokasiFisik), row._count._all])
-  );
   const ipCountByLocation = new Map(
     ipLocationCounts.map((row) => [normalizeLocation(row.company), row._count._all])
   );
@@ -343,15 +387,27 @@ export async function getDashboardData() {
     activeUserLocationCounts.map((row) => [normalizeLocation(row.lokasiKantor), row._count._all])
   );
 
+  for (const row of activeUserLocationHomebaseCounts) {
+    const location = normalizeLocation(row.lokasiKantor);
+    const homebase = row.jabatan?.trim();
+    if (!homebase) {
+      continue;
+    }
+
+    const bucket = homebasesByLocation.get(location) ?? new Set<string>();
+    bucket.add(homebase);
+    homebasesByLocation.set(location, bucket);
+  }
+
   const locationKeys = new Set([
-    ...assetCountByLocation.keys(),
+    ...assignedAssetCountByLocation.keys(),
     ...ipCountByLocation.keys(),
     ...activeUserCountByLocation.keys(),
   ]);
 
   const locationSummary = Array.from(locationKeys)
     .map((location) => {
-      const categoriesAtLocation = locationCategoryMap.get(location) ?? [];
+      const categoriesAtLocation = assignmentLocationCategoryMap.get(location) ?? [];
       let topCategory = "-";
       let topCategoryCount = 0;
 
@@ -364,21 +420,25 @@ export async function getDashboardData() {
 
       return {
         location,
-        totalAssets: assetCountByLocation.get(location) ?? 0,
+        totalAssets: assignedAssetCountByLocation.get(location) ?? 0,
         totalIpAddresses: ipCountByLocation.get(location) ?? 0,
         activeUsers: activeUserCountByLocation.get(location) ?? 0,
         topCategory,
         topCategoryCount,
+        homebases: Array.from(homebasesByLocation.get(location) ?? []).sort(),
+        categoryIds: categoriesAtLocation.map((category) => category.id),
+        categories: categoriesAtLocation.map((category) => category.name),
       };
     })
     .sort((left, right) => right.totalAssets - left.totalAssets || right.totalIpAddresses - left.totalIpAddresses);
 
-  const assetDistributionByLocation = locationSummary
-    .filter((item) => item.totalAssets > 0)
-    .map((item) => ({
-      location: item.location,
-      total: item.totalAssets,
-    }));
+  const assetDistributionByLocation = Array.from(assignedAssetCountByLocation.entries())
+    .map(([location, total]) => ({
+      location,
+      total,
+    }))
+    .filter((item) => item.total > 0)
+    .sort((left, right) => right.total - left.total);
 
   const operatingSystemTotals = new Map<number, number>();
 
@@ -534,6 +594,15 @@ export async function getDashboardData() {
     assetDistributionByLocation,
     operatingSystemDistribution,
     locationSummary: locationSummary.slice(0, 10),
+    locationSummaryFilters: {
+      homebases: ["HOLDING", "SBU"],
+      categories: categories
+        .map((category) => ({
+          id: category.id,
+          name: category.nama,
+        }))
+        .sort((left, right) => left.name.localeCompare(right.name)),
+    },
     topBillingUsers,
     recentActivity,
     recentProblemSequences: recentProblemSequences.map((record) => ({

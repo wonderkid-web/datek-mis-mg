@@ -49,6 +49,16 @@ const toInputDate = (value?: Date | string | null) => {
   return date.toISOString().split("T")[0];
 };
 
+const parseDateInput = (value: string) => {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) return null;
+
+  const parsedDate = new Date(`${normalizedValue}T00:00:00`);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
 export function EditRecordDialog({
   record,
   assetAssignments,
@@ -132,8 +142,23 @@ export function EditRecordDialog({
 
     setIsSubmitting(true);
     try {
+      const parsedPeriode = parseDateInput(periode);
+      const parsedWindowsUpdate = windowsUpdate
+        ? parseDateInput(windowsUpdate)
+        : null;
+
+      if (!parsedPeriode) {
+        toast.warning("Period date is not valid.");
+        return;
+      }
+
+      if (windowsUpdate && !parsedWindowsUpdate) {
+        toast.warning("Windows update date is not valid.");
+        return;
+      }
+
       await updateComputerMaintenance(record.id, {
-        periode: new Date(periode),
+        periode: parsedPeriode,
         assetAssignmentId,
         connection,
         storageSystemC: storageSystemC || null,
@@ -141,7 +166,7 @@ export function EditRecordDialog({
         health: health || null,
         cpuFan: cpuFan || null,
         temperature: temperature ? parseFloat(temperature) : null,
-        windowsUpdate: windowsUpdate ? new Date(windowsUpdate) : null,
+        windowsUpdate: parsedWindowsUpdate,
         remarks: remarks || null,
       });
       toast.success("Maintenance record updated successfully!");

@@ -293,7 +293,7 @@ export function PcAssetForm({
       : "space-y-2";
   const formClass =
     mode === "create"
-      ? "space-y-6 md:mx-auto md:max-w-3xl"
+      ? "flex min-h-full flex-1 flex-col space-y-6 md:mx-auto md:max-w-3xl"
       : "grid grid-cols-1 gap-6 md:grid-cols-2";
   const specsClass =
     mode === "create"
@@ -302,7 +302,7 @@ export function PcAssetForm({
   const bottomCardClass = mode === "create" ? undefined : "md:col-span-2";
   const actionClass =
     mode === "create"
-      ? "flex justify-end gap-3"
+      ? "mt-auto flex justify-end gap-3 pt-2"
       : "flex justify-end gap-3 md:col-span-2";
 
   const handleMacAddressChange = (value: string) => {

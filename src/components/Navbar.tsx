@@ -25,16 +25,24 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const [cachedSession, setCachedSession] = useState<typeof session | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const handleLogout = async () => {
+    setCachedSession(null);
     await signOut({ callbackUrl: "/login" });
   };
 
   const closeSheet = () => setIsSheetOpen(false);
+
+  useEffect(() => {
+    if (session) {
+      setCachedSession(session);
+    }
+  }, [session]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -59,7 +67,9 @@ export default function Navbar() {
     };
   }, [openDropdown]);
 
-  const isAdmin = (session?.user as any)?.role === "administrator";
+  const activeSession = session ?? cachedSession;
+  const showAuthenticatedUi = status === "authenticated" || Boolean(activeSession);
+  const isAdmin = (activeSession?.user as any)?.role === "administrator";
   const navItems = navigationItems.filter((item) => isAdmin || item.name !== "Asset");
 
   return (
@@ -73,7 +83,7 @@ export default function Navbar() {
         </Link>
 
         {/* Loading Skeleton */}
-        {status === "loading" && (
+        {status === "loading" && !showAuthenticatedUi && (
           <div className="hidden md:flex items-center space-x-4">
             <Skeleton className="h-8 w-24" />
             <Skeleton className="h-8 w-24" />
@@ -83,7 +93,7 @@ export default function Navbar() {
         )}
 
         {/* Desktop Menu */}
-        {status === "authenticated" && (
+        {showAuthenticatedUi && (
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle className="text-primary-foreground hover:bg-primary/90" />
             {navItems.map((item) =>
@@ -135,9 +145,9 @@ export default function Navbar() {
             )}
             <Link href="/profile" className="group flex items-center space-x-3 border-l border-green-400 pl-4 ml-4 hover:opacity-90">
               <div className="h-8 w-8 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold">
-                {session.user?.name?.charAt(0)?.toUpperCase()}
+                {activeSession?.user?.name?.charAt(0)?.toUpperCase()}
               </div>
-              <span className="font-semibold">{session.user?.name?.split(" ")[0]}</span>
+              <span className="font-semibold">{activeSession?.user?.name?.split(" ")[0]}</span>
             </Link>
             <Button
               onClick={handleLogout}
@@ -150,7 +160,7 @@ export default function Navbar() {
         )}
 
         {/* Mobile Menu */}
-        {status === "authenticated" && (
+        {showAuthenticatedUi && (
           <div className="md:hidden">
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
@@ -169,9 +179,9 @@ export default function Navbar() {
                 </SheetHeader>
                 <div className="mt-4 flex items-center space-x-3 rounded-md bg-green-700 p-3">
                   <div className="h-9 w-9 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold">
-                    {session.user?.name?.charAt(0)?.toUpperCase()}
+                    {activeSession?.user?.name?.charAt(0)?.toUpperCase()}
                   </div>
-                  <span className="truncate font-semibold">{session.user?.name}</span>
+                  <span className="truncate font-semibold">{activeSession?.user?.name}</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between rounded-md border border-primary-foreground/20 px-3 py-2">
                   <span className="text-sm">Tema</span>

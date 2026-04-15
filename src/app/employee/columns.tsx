@@ -3,32 +3,17 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, ArrowUpDown, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { UserWithAssetStatus } from "@/lib/userService";
 
 interface ColumnsProps {
   handleDelete: (id: string) => void;
-  handleEdit: (user: {
-    id: number;
-    namaLengkap: string;
-    email: string | null;
-    departemen: string | null;
-    jabatan: string | null;
-    lokasiKantor: string | null;
-    isActive: boolean;
-  }) => void;
+  handleEdit: (user: UserWithAssetStatus) => void;
 }
 
 export const columns = ({
   handleDelete,
   handleEdit,
-}: ColumnsProps): ColumnDef<{
-  id: number;
-  namaLengkap: string;
-  email: string | null;
-  departemen: string | null;
-  jabatan: string | null;
-  lokasiKantor: string | null;
-  isActive: boolean;
-}>[] => [
+}: ColumnsProps): ColumnDef<UserWithAssetStatus>[] => [
   {
     accessorKey: "id",
     header: () => <div className="text-center">No</div>,

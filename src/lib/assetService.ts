@@ -467,6 +467,8 @@ export async function getPaginatedAssets({
   namaAsset,
   statusAsset,
   lokasiFisik,
+  company,
+  homebase,
   categoryId,
   categorySlug,
   osValue,
@@ -479,6 +481,8 @@ export async function getPaginatedAssets({
   namaAsset?: string;
   statusAsset?: string;
   lokasiFisik?: string;
+  company?: string;
+  homebase?: string;
   categoryId?: number;
   categorySlug?: string;
   osValue?: string;
@@ -516,6 +520,61 @@ export async function getPaginatedAssets({
         lokasiFisik,
       });
     }
+  }
+  if (company) {
+    if (company === "PT Intan Sejati Andalan (Group)") {
+      AND.push({
+        assignments: {
+          some: {
+            user: {
+              lokasiKantor: {
+                startsWith: "PT Intan Sejati Andalan",
+              },
+            },
+          },
+        },
+      });
+    } else if (company === "Unassigned" || company === "Tanpa Lokasi") {
+      AND.push({
+        OR: [
+          {
+            assignments: {
+              none: {},
+            },
+          },
+          {
+            assignments: {
+              some: {
+                user: {
+                  OR: [{ lokasiKantor: null }, { lokasiKantor: "" }],
+                },
+              },
+            },
+          },
+        ],
+      });
+    } else {
+      AND.push({
+        assignments: {
+          some: {
+            user: {
+              lokasiKantor: company,
+            },
+          },
+        },
+      });
+    }
+  }
+  if (homebase) {
+    AND.push({
+      assignments: {
+        some: {
+          user: {
+            jabatan: homebase,
+          },
+        },
+      },
+    });
   }
   if (typeof categoryId === "number") {
     AND.push({ categoryId });

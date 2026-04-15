@@ -64,6 +64,21 @@ const connectionOptions = [
   { value: "ETHERNET", label: "ETHERNET" },
 ];
 
+function parseDateInput(value: string) {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+    return null;
+  }
+
+  const parsedDate = new Date(`${normalizedValue}T00:00:00`);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
 const exportColumns = [
   { header: "Period", accessorKey: "periode" },
   { header: "No Asset", accessorKey: "assetAssignment.nomorAsset" },
@@ -186,8 +201,23 @@ export default function ComputerMaintenancePage() {
 
     setIsSubmitting(true);
     try {
+      const parsedPeriode = parseDateInput(periode);
+      const parsedWindowsUpdate = windowsUpdate
+        ? parseDateInput(windowsUpdate)
+        : null;
+
+      if (!parsedPeriode) {
+        toast.warning("Maintenance period is not valid.");
+        return;
+      }
+
+      if (windowsUpdate && !parsedWindowsUpdate) {
+        toast.warning("Windows update date is not valid.");
+        return;
+      }
+
       await createComputerMaintenance({
-        periode: new Date(periode),
+        periode: parsedPeriode,
         assetAssignmentId,
         connection,
         storageSystemC: storageSystemC || null,
@@ -195,7 +225,7 @@ export default function ComputerMaintenancePage() {
         health: health || null,
         cpuFan: cpuFan || null,
         temperature: temperature ? parseFloat(temperature) : null,
-        windowsUpdate: windowsUpdate ? new Date(windowsUpdate) : null,
+        windowsUpdate: parsedWindowsUpdate,
         remarks: remarks || null,
       });
       toast.success("Maintenance record created successfully!");

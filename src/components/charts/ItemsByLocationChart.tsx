@@ -44,7 +44,7 @@ function LocationTooltip({ active, payload }: LocationTooltipProps) {
   return (
     <div className="rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-        Lokasi
+        Company
       </p>
       <p className="mt-1 text-sm font-semibold text-slate-950">{item.location}</p>
       <p className="mt-2 text-sm text-slate-600">
@@ -58,17 +58,20 @@ function ItemsByLocationChart({ data }: Props) {
   if (!data.length) {
     return (
       <div className="flex h-[350px] items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/70">
-        <p className="text-sm text-slate-500">Data lokasi aset belum tersedia.</p>
+        <p className="text-sm text-slate-500">Data company aset belum tersedia.</p>
+        
       </div>
     );
   }
 
+  const chartData = data.slice(0, 8);
+  const chartHeight = Math.min(Math.max(chartData.length * 48, 260), 420);
   const totalAssets = data.reduce((sum, item) => sum + item.total, 0);
   const topLocation = data[0];
   const averageAssetsPerLocation = totalAssets / data.length;
-  const unmappedAssets = data.find((item) => item.location === "Tanpa Lokasi")?.total ?? 0;
+  const unmappedAssets = data.find((item) => item.location === "Tanpa Company")?.total ?? 0;
   const mappedAssets = Math.max(totalAssets - unmappedAssets, 0);
-  const mappedLocations = data.filter((item) => item.location !== "Tanpa Lokasi").length;
+  const mappedLocations = data.filter((item) => item.location !== "Tanpa Company").length;
   const averageMappedAssetsPerLocation = mappedLocations > 0 ? mappedAssets / mappedLocations : 0;
   const mappedPercentage = totalAssets ? (mappedAssets / totalAssets) * 100 : 0;
   const topLocationShare = totalAssets ? (topLocation.total / totalAssets) * 100 : 0;
@@ -77,20 +80,20 @@ function ItemsByLocationChart({ data }: Props) {
   const showLocationChart = mappedLocations > 0;
   const locationStatus =
     unmappedAssets === totalAssets
-      ? "Distribusi lokasi belum representatif karena semua aset masih belum punya mapping lokasi."
+      ? "Distribusi company belum representatif karena semua aset masih belum punya company assignment."
       : unmappedAssets > 0
-        ? `${formatCount(unmappedAssets)} aset masih perlu dipetakan ke lokasi fisik yang valid.`
-        : "Semua aset sudah punya lokasi fisik, distribusi saat ini bisa dibaca sebagai kondisi aktual.";
+        ? `${formatCount(unmappedAssets)} aset masih belum punya company assignment yang valid.`
+        : "Semua aset sudah punya company assignment, distribusi saat ini bisa dibaca sebagai kondisi aktual.";
   const locationActions = [
     unmappedAssets > 0
-      ? `Prioritaskan update field lokasiFisik untuk ${formatCount(unmappedAssets)} aset yang masih "Tanpa Lokasi".`
-      : "Pertahankan kualitas input lokasiFisik agar distribusi tetap akurat.",
+      ? `Lengkapi company assignment untuk ${formatCount(unmappedAssets)} aset yang masih "Tanpa Company".`
+      : "Pertahankan kualitas assignment company agar distribusi tetap akurat.",
     mappedLocations <= 1
-      ? "Standarisasi penamaan lokasi agar aset tidak terus menumpuk di bucket yang terlalu umum."
-      : "Review penamaan lokasi yang mirip agar tidak terpecah jadi beberapa bucket berbeda.",
+      ? "Standarisasi penamaan company agar aset tidak terus menumpuk di bucket yang terlalu umum."
+      : "Review penamaan company yang mirip agar tidak terpecah jadi beberapa bucket berbeda.",
     topLocationShare >= 60
       ? `${topLocation.location} menampung ${topLocationShare.toFixed(1)}% aset. Validasi apakah konsentrasi ini memang wajar.`
-      : "Sebaran aset mulai lebih merata; fokus berikutnya adalah menjaga konsistensi mapping lokasi baru.",
+      : "Sebaran aset mulai lebih merata; fokus berikutnya adalah menjaga konsistensi assignment company baru.",
   ];
   const rankingNarrative =
     data.length === 1
@@ -101,10 +104,10 @@ function ItemsByLocationChart({ data }: Props) {
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-            Total Lokasi
+            Total Company
           </p>
           <p className="mt-2 text-2xl font-semibold text-emerald-950">{formatCount(data.length)}</p>
-          <p className="mt-1 text-sm text-emerald-900/75">Lokasi fisik dengan aset tercatat.</p>
+          <p className="mt-1 text-sm text-emerald-900/75">Company dengan aset assigned tercatat.</p>
         </div>
         <div className="rounded-2xl border border-sky-100 bg-sky-50/80 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
@@ -112,12 +115,12 @@ function ItemsByLocationChart({ data }: Props) {
           </p>
           <p className="mt-2 text-2xl font-semibold text-sky-950">{formatCount(totalAssets)}</p>
           <p className="mt-1 text-sm text-sky-900/75">
-            Rata-rata {averageAssetsPerLocation.toFixed(1)} aset per lokasi.
+            Rata-rata {averageAssetsPerLocation.toFixed(1)} aset per company.
           </p>
         </div>
         <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-            Lokasi Terpadat
+            Company Dominan
           </p>
           <p className="mt-2 line-clamp-1 text-lg font-semibold text-amber-950">
             {topLocation.location}
@@ -131,10 +134,10 @@ function ItemsByLocationChart({ data }: Props) {
       <div className={showLocationChart ? "grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_320px]" : "grid gap-4 xl:grid-cols-2"}>
         {showLocationChart ? (
           <div className="rounded-3xl border border-emerald-100/80 bg-[linear-gradient(180deg,#fbfffc_0%,#f1fbf4_100%)] p-3 sm:p-4">
-            <div className="h-[260px] sm:h-[300px]">
+            <div style={{ height: `${chartHeight}px` }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={data}
+                  data={chartData}
                   layout="vertical"
                   margin={{ top: 4, right: 30, left: 8, bottom: 4 }}
                   barCategoryGap={14}
@@ -191,8 +194,8 @@ function ItemsByLocationChart({ data }: Props) {
           <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-950">Coverage lokasi aset</p>
-                <p className="text-sm text-slate-500">Porsi aset yang sudah punya lokasi fisik.</p>
+                <p className="text-sm font-semibold text-slate-950">Coverage company aset</p>
+                <p className="text-sm text-slate-500">Porsi aset yang sudah punya company assignment.</p>
               </div>
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                 {mappedPercentage.toFixed(1)}%
@@ -203,8 +206,8 @@ function ItemsByLocationChart({ data }: Props) {
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-950">Aset terlokasi</p>
-                    <p className="text-xs text-slate-500">Sudah punya `lokasiFisik` yang valid.</p>
+                    <p className="text-sm font-semibold text-slate-950">Aset ber-company</p>
+                    <p className="text-xs text-slate-500">Sudah punya company assignment yang valid.</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-semibold text-emerald-700">{formatCount(mappedAssets)}</p>
@@ -222,8 +225,8 @@ function ItemsByLocationChart({ data }: Props) {
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-950">Aset tanpa lokasi</p>
-                    <p className="text-xs text-slate-500">Masih perlu mapping ke lokasi fisik.</p>
+                    <p className="text-sm font-semibold text-slate-950">Aset tanpa company</p>
+                    <p className="text-xs text-slate-500">Masih perlu assignment company.</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-semibold text-amber-700">{formatCount(unmappedAssets)}</p>
@@ -241,8 +244,8 @@ function ItemsByLocationChart({ data }: Props) {
               <div className="rounded-2xl border border-slate-200 bg-white/90 p-3">
                 <p className="text-sm text-slate-600">
                   {mappedAssets > 0
-                    ? `${formatCount(mappedAssets)} aset sudah bisa dibaca pada distribusi lokasi.`
-                    : "Belum ada aset yang bisa dibaca pada distribusi lokasi karena semua data masih Tanpa Lokasi."}
+                    ? `${formatCount(mappedAssets)} aset sudah bisa dibaca pada distribusi company.`
+                    : "Belum ada aset yang bisa dibaca pada distribusi company karena semua data masih Tanpa Company."}
                 </p>
               </div>
             </div>
@@ -250,24 +253,24 @@ function ItemsByLocationChart({ data }: Props) {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                  Lokasi Terdeteksi
+                  Company Terdeteksi
                 </p>
                 <p className="mt-2 text-xl font-semibold text-emerald-950">
                   {formatCount(mappedLocations)}
                 </p>
                 <p className="mt-1 text-xs text-emerald-900/75">
-                  Lokasi selain &quot;Tanpa Lokasi&quot;.
+                  Company selain &quot;Tanpa Company&quot;.
                 </p>
               </div>
               <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-                  Belum Terpetakan
+                  Belum Punya Company
                 </p>
                 <p className="mt-2 text-xl font-semibold text-amber-950">
                   {formatCount(unmappedAssets)}
                 </p>
                 <p className="mt-1 text-xs text-amber-900/75">
-                  Aset masih berada di &quot;Tanpa Lokasi&quot;.
+                  Aset masih berada di &quot;Tanpa Company&quot;.
                 </p>
               </div>
             </div>
@@ -276,18 +279,18 @@ function ItemsByLocationChart({ data }: Props) {
           <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-950">Ranking lokasi</p>
-                <p className="text-sm text-slate-500">Urutan kontribusi aset per lokasi.</p>
+                <p className="text-sm font-semibold text-slate-950">Ranking company</p>
+                <p className="text-sm text-slate-500">Urutan kontribusi aset per company.</p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                {formatCount(data.length)} lokasi
+                {formatCount(data.length)} company
               </span>
             </div>
 
-            <div className="mt-4 space-y-3">
-              {data.map((item, index) => {
+            <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-1">
+              {chartData.map((item, index) => {
                 const percentage = totalAssets ? (item.total / totalAssets) * 100 : 0;
-                const isUnmapped = item.location === "Tanpa Lokasi";
+                const isUnmapped = item.location === "Tanpa Company";
 
                 return (
                   <div
@@ -331,47 +334,47 @@ function ItemsByLocationChart({ data }: Props) {
                 );
               })}
             </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                  Lokasi Paling Dominan
-                </p>
-                <p className="mt-2 text-lg font-semibold text-emerald-950">{topLocation.location}</p>
-                <p className="mt-1 text-xs text-emerald-900/75">
-                  Menguasai {topLocationShare.toFixed(1)}% dari total aset.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
-                  Gap Posisi Berikutnya
-                </p>
-                <p className="mt-2 text-lg font-semibold text-sky-950">
-                  {secondLocation ? formatCount(topLocationGap) : "Belum ada"}
-                </p>
-                <p className="mt-1 text-xs text-sky-900/75">
-                  {secondLocation
-                    ? `${formatCount(topLocationGap)} aset lebih banyak dari ${secondLocation.location}.`
-                    : "Tambahkan mapping lokasi valid agar ranking punya pembanding."}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-sm text-slate-600">{rankingNarrative}</p>
-            </div>
           </div>
         </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+            Company Paling Dominan
+          </p>
+          <p className="mt-2 text-lg font-semibold text-emerald-950">{topLocation.location}</p>
+          <p className="mt-1 text-sm text-emerald-900/75">
+            Menguasai {topLocationShare.toFixed(1)}% dari total aset.
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-sky-100 bg-sky-50/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+            Gap Posisi Berikutnya
+          </p>
+          <p className="mt-2 text-lg font-semibold text-sky-950">
+            {secondLocation ? formatCount(topLocationGap) : "Belum ada"}
+          </p>
+          <p className="mt-1 text-sm text-sky-900/75">
+            {secondLocation
+              ? `${formatCount(topLocationGap)} aset lebih banyak dari ${secondLocation.location}.`
+              : "Lengkapi company assignment agar ranking punya pembanding."}
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4">
+        <p className="text-sm text-slate-600">{rankingNarrative}</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-950">Status kualitas lokasi</p>
+              <p className="text-sm font-semibold text-slate-950">Status kualitas company</p>
               <p className="text-sm text-slate-500">
-                Baca distribusi ini bersama kualitas input data lokasi.
+                Baca distribusi ini bersama kualitas input data company.
               </p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -388,8 +391,8 @@ function ItemsByLocationChart({ data }: Props) {
 
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                Aset Terlokasi
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                Aset Ber-Company
               </p>
               <p className="mt-2 text-xl font-semibold text-emerald-950">
                 {formatCount(mappedAssets)}
@@ -397,19 +400,19 @@ function ItemsByLocationChart({ data }: Props) {
               <p className="mt-1 text-xs text-emerald-900/75">{mappedPercentage.toFixed(1)}% dari total aset.</p>
             </div>
             <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
-                Avg Per Lokasi
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+                Avg Per Company
               </p>
               <p className="mt-2 text-xl font-semibold text-sky-950">
                 {averageMappedAssetsPerLocation.toFixed(1)}
               </p>
               <p className="mt-1 text-xs text-sky-900/75">
-                Rata-rata aset untuk tiap lokasi yang terdeteksi.
+                Rata-rata aset untuk tiap company yang terdeteksi.
               </p>
             </div>
             <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-                Dominasi Lokasi
+                Dominasi Company
               </p>
               <p className="mt-2 text-xl font-semibold text-amber-950">{topLocationShare.toFixed(1)}%</p>
               <p className="mt-1 text-xs text-amber-900/75">

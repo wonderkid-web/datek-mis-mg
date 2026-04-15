@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ColumnDef,
@@ -30,6 +30,13 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Asset } from "@/lib/types";
 import { ArrowUpDown } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
@@ -82,20 +89,51 @@ const columns: ColumnDef<Asset>[] = [
 
 interface AssetTableProps {
   filters: Record<string, any>;
+  categoryOptions: Array<{ id: number; name: string }>;
+  homebaseOptions: string[];
 }
 
-function AssetTable({ filters }: AssetTableProps) {
+function AssetTable({
+  filters,
+  categoryOptions,
+  homebaseOptions,
+}: AssetTableProps) {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  
   const [globalFilter, setGlobalFilter] = useState("");
+  const [selectedHomebase, setSelectedHomebase] = useState(
+    filters.homebase ? String(filters.homebase) : "all"
+  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    filters.categoryId ? String(filters.categoryId) : "all"
+  );
+
+  useEffect(() => {
+    setSelectedHomebase(filters.homebase ? String(filters.homebase) : "all");
+    setSelectedCategoryId(filters.categoryId ? String(filters.categoryId) : "all");
+  }, [filters.categoryId, filters.homebase]);
+
+  useEffect(() => {
+    setPagination((current) => ({ ...current, pageIndex: 0 }));
+  }, [globalFilter, selectedCategoryId, selectedHomebase]);
+
+  const requestFilters = useMemo(
+    () => ({
+      ...filters,
+      ...(selectedHomebase !== "all" ? { homebase: selectedHomebase } : {}),
+      ...(selectedCategoryId !== "all"
+        ? { categoryId: selectedCategoryId }
+        : {}),
+    }),
+    [filters, selectedCategoryId, selectedHomebase]
+  );
 
   const queryParams = new URLSearchParams({
     page: (pagination.pageIndex + 1).toString(),
     pageSize: pagination.pageSize.toString(),
     namaAsset: globalFilter,
-    ...filters,
+    ...requestFilters,
   });
 
   const { data, isLoading, isError,  } = useQuery({
@@ -170,13 +208,41 @@ function AssetTable({ filters }: AssetTableProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between py-4">
-        <Input
-          placeholder="Filter by asset name..."
-          value={globalFilter ?? ""}
-          onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm"
-        />
+      <div className="flex flex-wrap items-start justify-between gap-3 py-4">
+        <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_220px]">
+          <Input
+            placeholder="Filter by asset name..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+            className="max-w-sm xl:max-w-none"
+          />
+          <Select value={selectedHomebase} onValueChange={setSelectedHomebase}>
+            <SelectTrigger>
+              <SelectValue placeholder="Semua Homebase" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Homebase</SelectItem>
+              {homebaseOptions.map((homebase) => (
+                <SelectItem key={homebase} value={homebase}>
+                  {homebase}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Semua Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Category</SelectItem>
+              {categoryOptions.map((category) => (
+                <SelectItem key={category.id} value={String(category.id)}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <ExportActions
         // @ts-expect-error its okay
           columns={exportColumns}
@@ -296,6 +362,8 @@ interface AssetsDetailDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   title: string;
   filters?: Record<string, any>;
+  categoryOptions?: Array<{ id: number; name: string }>;
+  homebaseOptions?: string[];
 }
 
 export function AssetsDetailDialog({
@@ -303,6 +371,8 @@ export function AssetsDetailDialog({
   onOpenChange,
   title,
   filters = {},
+  categoryOptions = [],
+  homebaseOptions = ["HOLDING", "SBU"],
 }: AssetsDetailDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -310,7 +380,11 @@ export function AssetsDetailDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <AssetTable filters={filters} />
+        <AssetTable
+          filters={filters}
+          categoryOptions={categoryOptions}
+          homebaseOptions={homebaseOptions}
+        />
       </DialogContent>
     </Dialog>
   );

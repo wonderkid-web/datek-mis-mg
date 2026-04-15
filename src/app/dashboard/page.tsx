@@ -443,17 +443,17 @@ function DashboardPage() {
         <section className="grid gap-6 xl:grid-cols-2">
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
-              <CardTitle>Distribusi aset per lokasi fisik</CardTitle>
+              <CardTitle>Distribusi aset per company</CardTitle>
               <CardDescription>
-                Lokasi sekarang dihitung dari field `lokasiFisik`, bukan dari user assignment.
+                Company dihitung dari assignment aktif asset.
               </CardDescription>
             </CardHeader>
             <CardContent className="h-full">
               {data.assetDistributionByLocation.length ? (
-                <ItemsByLocationChart data={data.assetDistributionByLocation.slice(0, 8)} />
+                <ItemsByLocationChart data={data.assetDistributionByLocation} />
               ) : (
                 <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                  Data lokasi aset belum tersedia.
+                  Data company aset belum tersedia.
                 </div>
               )}
             </CardContent>
@@ -481,9 +481,9 @@ function DashboardPage() {
         <section className="grid gap-6 xl:grid-cols-2">
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
-              <CardTitle>Ringkasan lokasi</CardTitle>
+              <CardTitle>Ringkasan company</CardTitle>
               <CardDescription>
-                Gabungan aset, IP, user aktif, dan kategori dominan per lokasi.
+                Gabungan aset assigned, IP, user aktif, dan kategori dominan per company.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -491,7 +491,7 @@ function DashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Lokasi</TableHead>
+                      <TableHead>Company</TableHead>
                       <TableHead className="text-right">Aset</TableHead>
                       <TableHead className="text-right">IP</TableHead>
                       <TableHead className="text-right">User Aktif</TableHead>
@@ -508,7 +508,7 @@ function DashboardPage() {
                               className="text-left text-emerald-700 hover:text-emerald-900"
                               onClick={() =>
                                 openAssetDialog(`Aset di ${row.location}`, {
-                                  lokasiFisik: row.location,
+                                  company: row.location,
                                 })
                               }
                             >
@@ -544,7 +544,7 @@ function DashboardPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                          Belum ada ringkasan lokasi.
+                          Belum ada ringkasan company.
                         </TableCell>
                       </TableRow>
                     )}
@@ -780,6 +780,8 @@ function DashboardPage() {
         onOpenChange={setAssetDialogOpen}
         title={assetDialogTitle}
         filters={assetDialogFilters}
+        categoryOptions={data.locationSummaryFilters.categories}
+        homebaseOptions={data.locationSummaryFilters.homebases}
       />
       <IpAddressesDetailDialog
         isOpen={isIpDialogOpen}

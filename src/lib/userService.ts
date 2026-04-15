@@ -1,22 +1,51 @@
 "use server";
 import { prisma } from "./prisma";
-import { User } from "@prisma/client";
+import { User as PrismaUser } from "@prisma/client";
 
-export const getUsers = async (): Promise<User[]> => {
-  return await prisma.user.findMany({
+export interface UserWithAssetStatus {
+  id: number;
+  namaLengkap: string;
+  email: string | null;
+  departemen: string | null;
+  jabatan: string | null;
+  lokasiKantor: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  password: string | null;
+  role: string | null;
+  assetAssignmentCount: number;
+  hasAssignedAsset: boolean;
+}
+
+export const getUsers = async (): Promise<UserWithAssetStatus[]> => {
+  const users = await prisma.user.findMany({
     orderBy: {
       namaLengkap: "asc",
     },
+    include: {
+      _count: {
+        select: {
+          assetAssignments: true,
+        },
+      },
+    },
   });
+
+  return users.map(({ _count, ...user }) => ({
+    ...user,
+    assetAssignmentCount: _count.assetAssignments,
+    hasAssignedAsset: _count.assetAssignments > 0,
+  }));
 };
 
-export const getUserById = async (id: number): Promise<User | null> => {
+export const getUserById = async (id: number): Promise<PrismaUser | null> => {
   return await prisma.user.findUnique({ where: { id } });
 };
 
 export const createUser = async (
-  data: User
-): Promise<User> => {
+  data: PrismaUser
+): Promise<PrismaUser> => {
   return await prisma.user.create({
     data: {
       ...data,
@@ -27,15 +56,15 @@ export const createUser = async (
 
 export const updateUser = async (
   id: number,
-  data: Partial<Omit<User, "id" | "createdAt" | "updatedAt">>
-): Promise<User> => {
+  data: Partial<Omit<PrismaUser, "id" | "createdAt" | "updatedAt">>
+): Promise<PrismaUser> => {
   return await prisma.user.update({
     where: { id },
     data,
   });
 };
 
-export const deleteUser = async (id: number): Promise<User> => {
+export const deleteUser = async (id: number): Promise<PrismaUser> => {
   return await prisma.user.delete({
     where: { id },
   });

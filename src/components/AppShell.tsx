@@ -8,8 +8,12 @@ import { usePathname } from "next/navigation";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthRoute = pathname === "/login" || pathname?.startsWith("/auth");
-  const isLandingPage = pathname === "/";
+  const browserPathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
+  const effectivePathname = browserPathname || pathname || "";
+  const isAuthRoute =
+    effectivePathname === "/login" || effectivePathname.startsWith("/auth");
+  const isLandingPage = effectivePathname === "/";
   const hideNavbar = isAuthRoute || isLandingPage;
 
   return (
