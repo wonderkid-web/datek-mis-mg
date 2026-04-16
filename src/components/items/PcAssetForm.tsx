@@ -22,6 +22,7 @@ import { getLaptopStorageOptions } from "@/lib/laptopStorageService";
 import { getPcMonitorOptions } from "@/lib/pcMonitorService";
 import { getPcMotherboardOptions } from "@/lib/pcMotherboardService";
 import { getPcUpsOptions } from "@/lib/pcUpsService";
+import { FormPageSkeleton } from "@/components/loading/PageLoading";
 
 interface Option {
   id: number;
@@ -130,6 +131,7 @@ export function PcAssetForm({
   const [formValues, setFormValues] =
     useState<PcAssetFormValues>(emptyFormValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOptionsLoading, setIsOptionsLoading] = useState(true);
   const submitLockRef = useRef(false);
   const [brandOptions, setBrandOptions] = useState<Option[]>([]);
   const [processorOptions, setProcessorOptions] = useState<Option[]>([]);
@@ -147,49 +149,53 @@ export function PcAssetForm({
 
   useEffect(() => {
     const loadOptions = async () => {
-      const [
-        brands,
-        processors,
-        rams,
-        storages,
-        licenses,
-        operatingSystems,
-        powers,
-        offices,
-        colors,
-        graphics,
-        monitors,
-        motherboards,
-        upses,
-      ] = await Promise.all([
-        getLaptopBrandOptions(),
-        getLaptopProcessorOptions(),
-        getLaptopRamOptions(),
-        getLaptopStorageOptions(),
-        getLaptopLicenseOptions(),
-        getLaptopOsOptions(),
-        getLaptopPowerOptions(),
-        getLaptopMicrosoftOffices(),
-        getLaptopColors(),
-        getLaptopGraphicOptions(),
-        getPcMonitorOptions(),
-        getPcMotherboardOptions(),
-        getPcUpsOptions(),
-      ]);
+      try {
+        const [
+          brands,
+          processors,
+          rams,
+          storages,
+          licenses,
+          operatingSystems,
+          powers,
+          offices,
+          colors,
+          graphics,
+          monitors,
+          motherboards,
+          upses,
+        ] = await Promise.all([
+          getLaptopBrandOptions(),
+          getLaptopProcessorOptions(),
+          getLaptopRamOptions(),
+          getLaptopStorageOptions(),
+          getLaptopLicenseOptions(),
+          getLaptopOsOptions(),
+          getLaptopPowerOptions(),
+          getLaptopMicrosoftOffices(),
+          getLaptopColors(),
+          getLaptopGraphicOptions(),
+          getPcMonitorOptions(),
+          getPcMotherboardOptions(),
+          getPcUpsOptions(),
+        ]);
 
-      setBrandOptions(brands);
-      setProcessorOptions(processors);
-      setRamOptions(rams);
-      setStorageOptions(storages);
-      setLicenseOptions(licenses);
-      setOsOptions(operatingSystems);
-      setPowerOptions(powers);
-      setOfficeOptions(offices);
-      setColorOptions(colors);
-      setGraphicOptions(graphics);
-      setMonitorOptions(monitors);
-      setMotherboardOptions(motherboards);
-      setUpsOptions(upses);
+        setBrandOptions(brands);
+        setProcessorOptions(processors);
+        setRamOptions(rams);
+        setStorageOptions(storages);
+        setLicenseOptions(licenses);
+        setOsOptions(operatingSystems);
+        setPowerOptions(powers);
+        setOfficeOptions(offices);
+        setColorOptions(colors);
+        setGraphicOptions(graphics);
+        setMonitorOptions(monitors);
+        setMotherboardOptions(motherboards);
+        setUpsOptions(upses);
+      } finally {
+        setIsOptionsLoading(false);
+      }
     };
 
     loadOptions();
@@ -304,6 +310,10 @@ export function PcAssetForm({
     mode === "create"
       ? "mt-auto flex justify-end gap-3 pt-2"
       : "flex justify-end gap-3 md:col-span-2";
+
+  if (isOptionsLoading) {
+    return <FormPageSkeleton />;
+  }
 
   const handleMacAddressChange = (value: string) => {
     const cleanValue = value.replace(/[^0-9a-fA-F]/g, "");

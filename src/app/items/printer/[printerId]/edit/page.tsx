@@ -14,6 +14,7 @@ import { getPrinterBrandOptions } from "@/lib/printerBrandService";
 import { getPrinterTypeOptions } from "@/lib/printerTypeService";
 import { getPrinterModelOptions } from "@/lib/printerModelService";
 import { getAssetById, updateAssetAndPrinterSpecs } from "@/lib/assetService";
+import { FormPageSkeleton } from "@/components/loading/PageLoading";
 
 interface Option {
   id: number;
@@ -29,6 +30,8 @@ export default function EditPrinterAssetPage() {
   const router = useRouter();
   const params = useParams();
   const printerId = params.printerId as string;
+  const [isOptionsLoading, setIsOptionsLoading] = useState(true);
+  const [isAssetLoading, setIsAssetLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLockRef = useRef(false);
 
@@ -80,6 +83,8 @@ export default function EditPrinterAssetPage() {
         setModelOptions(mapOptions(models));
       } catch (error) {
         console.error("Failed to fetch options:", error);
+      } finally {
+        setIsOptionsLoading(false);
       }
     };
     fetchOptions();
@@ -104,10 +109,16 @@ export default function EditPrinterAssetPage() {
         }
       } catch (error) {
         console.error("Failed to load asset:", error);
+      } finally {
+        setIsAssetLoading(false);
       }
     };
     loadAsset();
   }, [printerId]);
+
+  if (isOptionsLoading || isAssetLoading) {
+    return <FormPageSkeleton />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

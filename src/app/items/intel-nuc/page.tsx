@@ -20,6 +20,7 @@ import { getLaptopTypeOptions } from "@/lib/laptopTypeService";
 import { getLaptopGraphicOptions } from "@/lib/laptopGraphicService";
 import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { createAssetAndIntelNucSpecs } from "@/lib/intelNucService";
+import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { toast } from "sonner";
 
 interface Option {
@@ -34,6 +35,7 @@ interface ReactSelectOption {
 
 export default function AddIntelNucAssetPage() {
   const router = useRouter();
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   // State for common asset fields
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
@@ -109,10 +111,16 @@ export default function AddIntelNucAssetPage() {
         setLicenseOptions(mapOptions(await getLaptopLicenseOptions()));
       } catch (error) {
         console.error("Failed to fetch options:", error);
+      } finally {
+        setIsPageLoading(false);
       }
     };
     fetchOptions();
   }, []);
+
+  if (isPageLoading) {
+    return <FormPageSkeleton />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

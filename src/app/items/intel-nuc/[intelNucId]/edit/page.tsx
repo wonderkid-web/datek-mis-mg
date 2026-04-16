@@ -22,6 +22,7 @@ import { getLaptopGraphicOptions } from "@/lib/laptopGraphicService";
 import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { getAssetById } from "@/lib/assetService";
 import { updateAssetAndIntelNucSpecs } from "@/lib/intelNucService";
+import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { toast } from "sonner";
 
 interface Option {
@@ -38,6 +39,8 @@ export default function EditIntelNucAssetPage() {
   const router = useRouter();
   const params = useParams();
   const intelNucId = params.intelNucId as string;
+  const [isOptionsLoading, setIsOptionsLoading] = useState(true);
+  const [isAssetLoading, setIsAssetLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLockRef = useRef(false);
 
@@ -115,6 +118,8 @@ export default function EditIntelNucAssetPage() {
         setLicenseOptions(mapOptions(await getLaptopLicenseOptions()));
       } catch (error) {
         console.error("Failed to fetch options:", error);
+      } finally {
+        setIsOptionsLoading(false);
       }
     };
     fetchOptions();
@@ -123,51 +128,58 @@ export default function EditIntelNucAssetPage() {
   useEffect(() => {
     const loadAssetData = async () => {
       if (intelNucId) {
-        const asset: any = await getAssetById(parseInt(intelNucId));
-        if (asset) {
-          setNamaAsset(asset.namaAsset);
-          setNomorSeri(asset.nomorSeri);
-          setTanggalPembelian(asset.tanggalPembelian?.toISOString().split('T')[0] || "");
-          setTanggalGaransi(asset.tanggalGaransi?.toISOString().split('T')[0] || "");
-          setStatusAsset(asset.statusAsset);
+        try {
+          const asset: any = await getAssetById(parseInt(intelNucId));
+          if (asset) {
+            setNamaAsset(asset.namaAsset);
+            setNomorSeri(asset.nomorSeri);
+            setTanggalPembelian(asset.tanggalPembelian?.toISOString().split('T')[0] || "");
+            setTanggalGaransi(asset.tanggalGaransi?.toISOString().split('T')[0] || "");
+            setStatusAsset(asset.statusAsset);
 
-          if (asset.intelNucSpecs) {
-            setMacWlan(asset.intelNucSpecs.macWlan || "");
-            setMacLan(asset.intelNucSpecs.macLan || "");
-            setLicenseKey(asset.intelNucSpecs.licenseKey || "");
+            if (asset.intelNucSpecs) {
+              setMacWlan(asset.intelNucSpecs.macWlan || "");
+              setMacLan(asset.intelNucSpecs.macLan || "");
+              setLicenseKey(asset.intelNucSpecs.licenseKey || "");
 
-            setBrandOptionId(asset.intelNucSpecs.brandOptionId);
-            setProcessorOptionId(asset.intelNucSpecs.processorOptionId);
-            setRamOptionId(asset.intelNucSpecs.ramOptionId);
-            setStorageTypeOptionId(asset.intelNucSpecs.storageTypeOptionId);
-            setOsOptionId(asset.intelNucSpecs.osOptionId);
-            setLicenseOptionId(asset.intelNucSpecs.licenseOptionId);
-            setPowerOptionId(asset.intelNucSpecs.powerOptionId);
-            setMicrosoftOfficeOptionId(asset.intelNucSpecs.microsoftOfficeOptionId);
-            setColorOptionId(asset.intelNucSpecs.colorOptionId);
-            setGraphicOptionId(asset.intelNucSpecs.graphicOptionId);
-            setTypeOptionId(asset.intelNucSpecs.typeOptionId);
+              setBrandOptionId(asset.intelNucSpecs.brandOptionId);
+              setProcessorOptionId(asset.intelNucSpecs.processorOptionId);
+              setRamOptionId(asset.intelNucSpecs.ramOptionId);
+              setStorageTypeOptionId(asset.intelNucSpecs.storageTypeOptionId);
+              setOsOptionId(asset.intelNucSpecs.osOptionId);
+              setLicenseOptionId(asset.intelNucSpecs.licenseOptionId);
+              setPowerOptionId(asset.intelNucSpecs.powerOptionId);
+              setMicrosoftOfficeOptionId(asset.intelNucSpecs.microsoftOfficeOptionId);
+              setColorOptionId(asset.intelNucSpecs.colorOptionId);
+              setGraphicOptionId(asset.intelNucSpecs.graphicOptionId);
+              setTypeOptionId(asset.intelNucSpecs.typeOptionId);
+            }
+
+            if (asset.officeAccount) {
+              setHasOfficeAccount(true);
+              setOfficeEmail(asset.officeAccount.email);
+              setOfficePassword(asset.officeAccount.password);
+              setOfficeLicenseExpiry(asset.officeAccount.licenseExpiry ? new Date(asset.officeAccount.licenseExpiry).toISOString().split("T")[0] : "");
+              setOfficeIsActive(asset.officeAccount.isActive);
+            } else {
+              setHasOfficeAccount(false);
+              setOfficeEmail("");
+              setOfficePassword("");
+              setOfficeLicenseExpiry("");
+              setOfficeIsActive(true);
+            }
           }
-
-           // Populate Office Account Data (UPDATED)
-           if (asset.officeAccount) {
-            setHasOfficeAccount(true);
-            setOfficeEmail(asset.officeAccount.email);
-            setOfficePassword(asset.officeAccount.password);
-            setOfficeLicenseExpiry(asset.officeAccount.licenseExpiry ? new Date(asset.officeAccount.licenseExpiry).toISOString().split("T")[0] : "");
-            setOfficeIsActive(asset.officeAccount.isActive);
-          } else {
-            setHasOfficeAccount(false);
-            setOfficeEmail("");
-            setOfficePassword("");
-            setOfficeLicenseExpiry("");
-            setOfficeIsActive(true);
-          }
+        } finally {
+          setIsAssetLoading(false);
         }
       }
     };
     loadAssetData();
   }, [intelNucId]);
+
+  if (isOptionsLoading || isAssetLoading) {
+    return <FormPageSkeleton />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

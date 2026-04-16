@@ -21,6 +21,7 @@ import { getLaptopTypeOptions } from "@/lib/laptopTypeService";
 import { getLaptopGraphicOptions } from "@/lib/laptopGraphicService";
 import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { getAssetById, updateAssetAndLaptopSpecs } from "@/lib/assetService";
+import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { toast } from "sonner";
 
 interface Option {
@@ -285,6 +286,10 @@ export default function EditLaptopAssetPage() {
     };
     fetchAllData();
   }, [laptopId]);
+
+  if (isLoading) {
+    return <FormPageSkeleton />;
+  }
 
   return (
     <div className="container mx-auto p-4">

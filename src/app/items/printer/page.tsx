@@ -11,6 +11,7 @@ import { getPrinterBrandOptions } from "@/lib/printerBrandService";
 import { getPrinterTypeOptions } from "@/lib/printerTypeService";
 import { getPrinterModelOptions } from "@/lib/printerModelService";
 import { createAssetAndPrinterSpecs } from "@/lib/printerService";
+import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { toast } from "sonner";
 import { Asset, PrinterSpecs } from "@/lib/types";
 
@@ -26,6 +27,7 @@ interface ReactSelectOption {
 
 export default function AddPrinterAssetPage() {
   const router = useRouter();
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   const [namaAsset, setNamaAsset] = useState<string | null>(null);
   const [nomorSeri, setNomorSeri] = useState("");
@@ -60,10 +62,16 @@ export default function AddPrinterAssetPage() {
         setModelOptions(mapOptions(await getPrinterModelOptions()));
       } catch (error) {
         console.error("Failed to fetch options:", error);
+      } finally {
+        setIsPageLoading(false);
       }
     };
     fetchOptions();
   }, []);
+
+  if (isPageLoading) {
+    return <FormPageSkeleton />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

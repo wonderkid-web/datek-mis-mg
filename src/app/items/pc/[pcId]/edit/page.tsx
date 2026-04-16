@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PcAssetForm } from "@/components/items/PcAssetForm";
+import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { Asset } from "@/lib/types";
 import { getAssetById } from "@/lib/assetService";
 import { updateAssetAndPcSpecs } from "@/lib/pcService";
@@ -13,17 +14,28 @@ export default function EditPcAssetPage() {
   const params = useParams();
   const pcId = Number(params.pcId);
   const [asset, setAsset] = useState<Asset | null>(null);
+  const [isAssetLoading, setIsAssetLoading] = useState(true);
 
   useEffect(() => {
     const loadAsset = async () => {
-      const fetchedAsset = await getAssetById(pcId);
-      setAsset(fetchedAsset as Asset | null);
+      try {
+        const fetchedAsset = await getAssetById(pcId);
+        setAsset(fetchedAsset as Asset | null);
+      } finally {
+        setIsAssetLoading(false);
+      }
     };
 
     if (Number.isFinite(pcId)) {
       loadAsset();
+    } else {
+      setIsAssetLoading(false);
     }
   }, [pcId]);
+
+  if (isAssetLoading) {
+    return <FormPageSkeleton />;
+  }
 
   return (
     <div className="flex min-h-full flex-col">
