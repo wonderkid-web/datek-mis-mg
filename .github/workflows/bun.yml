@@ -4,6 +4,10 @@ on:
   push:
     branches: ["main"]
 
+concurrency:
+  group: datek-production
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -57,7 +61,7 @@ jobs:
           source: release.tar.gz
           target: /tmp
 
-      - name: Extract release and restart PM2
+      - name: Extract release and reload PM2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -65,6 +69,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            set -e
             export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.bun/bin:$PATH"
             if [ -s "$HOME/.nvm/nvm.sh" ]; then
               . "$HOME/.nvm/nvm.sh"
@@ -83,11 +88,11 @@ jobs:
               echo "pm2 not found on VPS PATH"
               exit 1
             fi
-            mkdir -p /home/wonderkid/datek-mis-mg
-            rm -rf /home/wonderkid/datek-mis-mg/.next
-            tar -xzf /tmp/release.tar.gz -C /home/wonderkid/datek-mis-mg
+            APP_DIR="/home/wonderkid/datek-mis-mg"
+            mkdir -p "$APP_DIR"
+            tar -xzf /tmp/release.tar.gz -C "$APP_DIR"
             rm -f /tmp/release.tar.gz
-            cd /home/wonderkid/datek-mis-mg
+            cd "$APP_DIR"
             if "$PM2_BIN" describe datek >/dev/null 2>&1; then
               "$PM2_BIN" reload ecosystem.config.cjs --only datek --update-env
             else
