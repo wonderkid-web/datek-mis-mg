@@ -333,6 +333,12 @@ interface UpdateLaptopSpecsDataInput {
   licenseOptionId?: number | null;
 }
 
+interface UpdatePrinterSpecsDataInput {
+  brandOptionId?: number | null;
+  typeOptionId?: number | null;
+  modelOptionId?: number | null;
+}
+
 export async function updateAssetAndLaptopSpecs(
   id: number,
   assetData: Partial<CreateAssetData>,
@@ -459,6 +465,88 @@ export async function updateAssetAndLaptopSpecs(
     throw error;
   }
 
+}
+
+export async function updateAssetAndPrinterSpecs(
+  id: number,
+  assetData: Partial<CreateAssetData>,
+  printerSpecsDataInput: UpdatePrinterSpecsDataInput
+): Promise<Asset> {
+  const printerSpecsUpdateData: any = {};
+  const printerSpecsCreateData: any = {};
+
+  if (printerSpecsDataInput.brandOptionId !== undefined) {
+    printerSpecsUpdateData.brandOption =
+      printerSpecsDataInput.brandOptionId === null
+        ? { disconnect: true }
+        : { connect: { id: printerSpecsDataInput.brandOptionId } };
+
+    if (printerSpecsDataInput.brandOptionId !== null) {
+      printerSpecsCreateData.brandOption = {
+        connect: { id: printerSpecsDataInput.brandOptionId },
+      };
+    }
+  }
+
+  if (printerSpecsDataInput.typeOptionId !== undefined) {
+    printerSpecsUpdateData.typeOption =
+      printerSpecsDataInput.typeOptionId === null
+        ? { disconnect: true }
+        : { connect: { id: printerSpecsDataInput.typeOptionId } };
+
+    if (printerSpecsDataInput.typeOptionId !== null) {
+      printerSpecsCreateData.typeOption = {
+        connect: { id: printerSpecsDataInput.typeOptionId },
+      };
+    }
+  }
+
+  if (printerSpecsDataInput.modelOptionId !== undefined) {
+    printerSpecsUpdateData.modelOption =
+      printerSpecsDataInput.modelOptionId === null
+        ? { disconnect: true }
+        : { connect: { id: printerSpecsDataInput.modelOptionId } };
+
+    if (printerSpecsDataInput.modelOptionId !== null) {
+      printerSpecsCreateData.modelOption = {
+        connect: { id: printerSpecsDataInput.modelOptionId },
+      };
+    }
+  }
+
+  try {
+    const updatedAsset = await prisma.asset.update({
+      where: { id },
+      data: {
+        ...assetData,
+        printerSpecs: {
+          upsert: {
+            create: printerSpecsCreateData,
+            update: printerSpecsUpdateData,
+          },
+        },
+      },
+      include: {
+        printerSpecs: {
+          include: {
+            brandOption: true,
+            modelOption: true,
+            typeOption: true,
+          },
+        },
+      },
+    });
+
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments");
+    revalidateTag("asset-assignments_printer");
+
+    return updatedAsset;
+  } catch (error) {
+    console.error("Failed to update printer asset:", error);
+    throw error;
+  }
 }
 
 export async function getPaginatedAssets({
