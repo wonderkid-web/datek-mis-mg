@@ -7,13 +7,9 @@ import NextAuthProvider from "@/app/providers/next-auth-provider";
 import { usePathname } from "next/navigation";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const browserPathname =
-    typeof window !== "undefined" ? window.location.pathname : "";
-  const effectivePathname = browserPathname || pathname || "";
-  const isAuthRoute =
-    effectivePathname === "/login" || effectivePathname.startsWith("/auth");
-  const isLandingPage = effectivePathname === "/";
+  const pathname = usePathname() || "";
+  const isAuthRoute = pathname === "/login" || pathname.startsWith("/auth");
+  const isLandingPage = pathname === "/";
   const hideNavbar = isAuthRoute || isLandingPage;
 
   return (

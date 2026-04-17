@@ -5,6 +5,7 @@ import { LogOut, Menu, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
+import type { Session } from "next-auth";
 import {
   Sheet,
   SheetContent,
@@ -23,15 +24,20 @@ import logo from "../../public/logo.png"
 import Image from "next/image";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+let lastAuthenticatedSession: Session | null = null;
+
 export default function Navbar() {
   const { data: session, status } = useSession();
-  const [cachedSession, setCachedSession] = useState<typeof session | null>(null);
+  const [cachedSession, setCachedSession] = useState<Session | null>(
+    lastAuthenticatedSession
+  );
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const handleLogout = async () => {
+    lastAuthenticatedSession = null;
     setCachedSession(null);
     await signOut({ callbackUrl: "/login" });
   };
@@ -40,6 +46,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (session) {
+      lastAuthenticatedSession = session;
       setCachedSession(session);
     }
   }, [session]);
