@@ -16,6 +16,8 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useI18n } from "@/components/i18n/LanguageProvider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,7 @@ import pcImg from "../../../../public/pc.png";
 import printerImg from "../../../../public/printer.png";
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,13 +46,14 @@ export default function LoginPage() {
       });
 
       if (result?.ok) {
+        toast.success(t("login.success"));
         window.location.replace(result.url ?? "/dashboard");
         return;
       }
 
-      toast.error("Email atau password kamu salah.");
+      toast.error(t("login.invalidCredentials"));
     } catch (err) {
-      toast.error("Terjadi kesalahan saat login. Coba lagi nanti.");
+      toast.error(t("login.genericError"));
     } finally {
       setIsLoading(false);
     }
@@ -126,11 +130,10 @@ export default function LoginPage() {
 
         <div className="relative z-10 mt-auto">
           <h1 className="text-4xl font-bold leading-tight">
-            Kelola aset dan service records dengan lebih rapi
+            {t("login.heroTitle")}
           </h1>
           <p className="mt-3 text-white/80 max-w-md">
-            Portal internal untuk manajemen data center, penugasan aset, dan histori
-            perawatan. Akses aman, cepat, dan terintegrasi.
+            {t("login.heroDescription")}
           </p>
         </div>
       </div>
@@ -138,6 +141,9 @@ export default function LoginPage() {
       {/* Right form section */}
       <div className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md animate-in fade-in-0 zoom-in-95 duration-300">
+          <div className="mb-4 flex justify-end">
+            <LanguageSwitcher />
+          </div>
           <Card className="w-full shadow-lg">
             <CardHeader className="items-center space-y-4 pt-8">
               <Image
@@ -149,16 +155,16 @@ export default function LoginPage() {
                 priority
               />
               <div className="text-center">
-                <h2 className="text-2xl font-semibold tracking-tight">Masuk</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">{t("login.title")}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Gunakan akun yang terdaftar untuk mengakses dashboard
+                  {t("login.subtitle")}
                 </p>
               </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4" aria-busy={isLoading}>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("login.email")}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
@@ -176,7 +182,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t("login.password")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
@@ -193,7 +199,11 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
-                      aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                      aria-label={
+                        showPassword
+                          ? t("login.hidePassword")
+                          : t("login.showPassword")
+                      }
                       className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
                     >
                       {showPassword ? (
@@ -207,19 +217,19 @@ export default function LoginPage() {
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {isLoading ? "Memproses..." : "Login"}
+                  {isLoading ? t("login.submitting") : t("login.submit")}
                 </Button>
               </form>
 
               <div className="mt-6 text-center text-sm text-muted-foreground">
-                <p>Belum punya akun? Hubungi admin via WhatsApp.</p>
+                <p>{t("login.noAccount")}</p>
                 <Link
                   className="mt-2 inline-flex items-center gap-2 text-primary underline"
                   href={
                     "https://wa.me/6281396369699?text=Siang%20ndan%2C%20mau%20request%20buat%20akun%20Datek%20nih.."
                   }
                 >
-                  Hubungi Admin <PhoneCallIcon className="w-4 h-4" />
+                  {t("login.contactAdmin")} <PhoneCallIcon className="w-4 h-4" />
                 </Link>
               </div>
             </CardContent>

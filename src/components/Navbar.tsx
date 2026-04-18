@@ -20,14 +20,15 @@ import {
 } from "./ui/collapsible";
 import { navigationItems } from "@/lib/navigation";
 import { Skeleton } from "./ui/skeleton";
-import logo from "../../public/logo.png"
-import Image from "next/image";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useI18n } from "@/components/i18n/LanguageProvider";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 
 let lastAuthenticatedSession: Session | null = null;
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const { t } = useI18n();
   const [cachedSession, setCachedSession] = useState<Session | null>(
     lastAuthenticatedSession
   );
@@ -78,15 +79,27 @@ export default function Navbar() {
   const showAuthenticatedUi = status === "authenticated" || Boolean(activeSession);
   const isAdmin = (activeSession?.user as any)?.role === "administrator";
   const navItems = navigationItems.filter((item) => isAdmin || item.name !== "Asset");
+  const translateParentItem = (name: string) => {
+    if (name === "Dashboard") return t("navbar.dashboard");
+    if (name === "Employee") return t("navbar.employee");
+    if (name === "Master Data") return t("navbar.masterData");
+    if (name === "Asset") return t("navbar.asset");
+    if (name === "Data Centre") return t("navbar.dataCentre");
+    if (name === "Tracker") return t("navbar.tracker");
+    if (name === "Service Records") return t("navbar.serviceRecords");
+    return name;
+  };
+  const translateChildItem = (href: string, fallback: string) => {
+    const key = `navbar.nav.${href}`;
+    const translated = t(key);
+    return translated === key ? fallback : translated;
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-primary p-3 text-primary-foreground shadow-md sm:p-4">
       <div className="container mx-auto flex justify-between items-center">
-        {/* <div className="relative size-16 flex items-center">
-          <Image src={logo} objectFit="cover" alt="logo" layout="objectFit" />
-        </div> */}
         <Link href="/dashboard" className="flex items-center justify-center text-base font-bold sm:text-lg">
-          Datek Holding
+          {t("common.appName")}
         </Link>
 
         {/* Loading Skeleton */}
@@ -102,6 +115,7 @@ export default function Navbar() {
         {/* Desktop Menu */}
         {showAuthenticatedUi && (
           <div className="hidden md:flex items-center space-x-4">
+            <LanguageSwitcher />
             <ThemeToggle className="text-primary-foreground hover:bg-primary/90" />
             {navItems.map((item) =>
               item.children ? (
@@ -121,7 +135,7 @@ export default function Navbar() {
                     className="flex items-center space-x-2 text-primary-foreground hover:bg-primary/90"
                   >
                     {item.icon && <item.icon className="h-5 w-5" />}
-                    <span>{item.name}</span>
+                    <span>{translateParentItem(item.name)}</span>
                   </Button>
                   {openDropdown === item.name && (
                     <ul className="absolute top-full left-0 bg-green-700 text-white shadow-lg rounded-md mt-2 py-2 w-48 z-10">
@@ -131,7 +145,7 @@ export default function Navbar() {
                             href={child.href}
                             className="block px-4 py-2 hover:bg-green-800"
                           >
-                            {child.name}
+                            {translateChildItem(child.href, child.name)}
                           </Link>
                         </li>
                       ))}
@@ -145,7 +159,7 @@ export default function Navbar() {
                     className="flex items-center space-x-2 text-primary-foreground hover:bg-primary/90"
                   >
                     {item.icon && <item.icon className="h-5 w-5" />}
-                    <span>{item.name}</span>
+                    <span>{translateParentItem(item.name)}</span>
                   </Button>
                 </Link>
               )
@@ -161,7 +175,7 @@ export default function Navbar() {
               className="bg-destructive hover:bg-destructive/90"
             >
               <LogOut className="h-5 w-5 mr-2" />
-              Keluar
+              {t("common.logout")}
             </Button>
           </div>
         )}
@@ -181,7 +195,7 @@ export default function Navbar() {
               >
                 <SheetHeader>
                   <SheetTitle className="text-2xl font-bold text-primary-foreground">
-                    Menu
+                    {t("navbar.menu")}
                   </SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 flex items-center space-x-3 rounded-md bg-green-700 p-3">
@@ -191,8 +205,12 @@ export default function Navbar() {
                   <span className="truncate font-semibold">{activeSession?.user?.name}</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between rounded-md border border-primary-foreground/20 px-3 py-2">
-                  <span className="text-sm">Tema</span>
+                  <span className="text-sm">{t("common.theme")}</span>
                   <ThemeToggle variant="outline" className="border-white/40 text-white hover:bg-white/10" />
+                </div>
+                <div className="mt-4 flex items-center justify-between rounded-md border border-primary-foreground/20 px-3 py-2">
+                  <span className="text-sm">{t("common.language")}</span>
+                  <LanguageSwitcher compact />
                 </div>
                 <div className="mt-4 space-y-2">
                   <Link
@@ -201,7 +219,7 @@ export default function Navbar() {
                     onClick={closeSheet}
                   >
                     <UserCircle className="h-5 w-5" />
-                    <span>Profile</span>
+                    <span>{t("common.profile")}</span>
                   </Link>
                   {navItems.map((item) =>
                     item.children ? (
@@ -209,7 +227,7 @@ export default function Navbar() {
                         <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-3 rounded-md hover:bg-primary-foreground/10">
                           <div className="flex items-center space-x-2">
                             {item.icon && <item.icon className="h-5 w-5" />}
-                            <span>{item.name}</span>
+                            <span>{translateParentItem(item.name)}</span>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="ml-4 mt-2 space-y-1">
@@ -220,7 +238,7 @@ export default function Navbar() {
                               className="block px-4 py-2 rounded-md hover:bg-primary-foreground/10"
                               onClick={closeSheet}
                             >
-                              {child.name}
+                              {translateChildItem(child.href, child.name)}
                             </Link>
                           ))}
                         </CollapsibleContent>
@@ -233,7 +251,7 @@ export default function Navbar() {
                         onClick={closeSheet}
                       >
                         {item.icon && <item.icon className="h-5 w-5" />}
-                        <span>{item.name}</span>
+                        <span>{translateParentItem(item.name)}</span>
                       </Link>
                     )
                   )}
@@ -245,7 +263,7 @@ export default function Navbar() {
                     className="w-full bg-destructive hover:bg-destructive/90 mt-4"
                   >
                     <LogOut className="h-5 w-5 mr-2" />
-                    Keluar
+                    {t("common.logout")}
                   </Button>
                 </div>
               </SheetContent>

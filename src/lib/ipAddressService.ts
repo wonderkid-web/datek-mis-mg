@@ -7,8 +7,64 @@ import { formatMacAddress, isValidMacAddress } from "@/lib/utils";
 // Types for UI projections
 export type IpAddressWithRelations = Awaited<ReturnType<typeof getIpAddresses>>[number];
 
+const ipAddressAssetSelect = {
+  id: true,
+  namaAsset: true,
+  nomorSeri: true,
+  categoryId: true,
+  laptopSpecs: {
+    select: {
+      brandOption: { select: { value: true } },
+      macWlan: true,
+      macLan: true,
+    },
+  },
+  intelNucSpecs: {
+    select: {
+      brandOption: { select: { value: true } },
+      macWlan: true,
+      macLan: true,
+    },
+  },
+  pcSpecs: {
+    select: {
+      motherboardOption: { select: { value: true } },
+      macLan: true,
+    },
+  },
+  printerSpecs: { select: { brandOption: { select: { value: true } } } },
+} satisfies Prisma.AssetSelect;
+
+const normalizeIpAddressRow = <TRow extends {
+  macWlan: string | null;
+  assetAssignment?: {
+    asset?: {
+      laptopSpecs?: { macWlan: string | null; macLan: string | null } | null;
+      intelNucSpecs?: { macWlan: string | null; macLan: string | null } | null;
+      pcSpecs?: { macLan: string | null } | null;
+    } | null;
+  } | null;
+}>(row: TRow) => {
+  const resolvedMacWlan =
+    row.assetAssignment?.asset?.laptopSpecs?.macWlan ||
+    row.assetAssignment?.asset?.intelNucSpecs?.macWlan ||
+    row.macWlan ||
+    null;
+  const resolvedMacLan =
+    row.assetAssignment?.asset?.laptopSpecs?.macLan ||
+    row.assetAssignment?.asset?.intelNucSpecs?.macLan ||
+    row.assetAssignment?.asset?.pcSpecs?.macLan ||
+    null;
+
+  return {
+    ...row,
+    resolvedMacWlan,
+    resolvedMacLan,
+  };
+};
+
 export async function getIpAddresses() {
-  return prisma.ipAddress.findMany({
+  const rows = await prisma.ipAddress.findMany({
     include: {
       user: {
         select: { id: true, namaLengkap: true, lokasiKantor: true },
@@ -18,21 +74,15 @@ export async function getIpAddresses() {
           id: true,
           nomorAsset: true,
           asset: {
-            select: {
-              id: true,
-              namaAsset: true,
-              nomorSeri: true,
-              categoryId: true,
-              laptopSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
-              intelNucSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
-              printerSpecs: { select: { brandOption: { select: { value: true } } } },
-            },
+            select: ipAddressAssetSelect,
           },
         },
       },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  return rows.map(normalizeIpAddressRow);
 }
 
 export async function getIpAddressTotal(): Promise<number> {
@@ -93,11 +143,27 @@ export async function getPaginatedIpAddresses({
     const keyword = q.trim();
     where.OR = [
       { ip: { contains: keyword } },
+      { macWlan: { contains: keyword } },
       { user: { is: { namaLengkap: { contains: keyword } } } },
       { company: { contains: keyword } },
       { assetAssignment: { is: { nomorAsset: { contains: keyword } } } },
       { assetAssignment: { is: { asset: { is: { namaAsset: { contains: keyword } } } } } },
       { assetAssignment: { is: { asset: { is: { nomorSeri: { contains: keyword } } } } } },
+      {
+        assetAssignment: {
+          is: {
+            asset: {
+              is: {
+                OR: [
+                  { laptopSpecs: { is: { macLan: { contains: keyword } } } },
+                  { intelNucSpecs: { is: { macLan: { contains: keyword } } } },
+                  { pcSpecs: { is: { macLan: { contains: keyword } } } },
+                ],
+              },
+            },
+          },
+        },
+      },
     ];
   }
 
@@ -126,14 +192,7 @@ export async function getPaginatedIpAddresses({
           id: true,
           nomorAsset: true,
           asset: {
-            select: {
-              id: true,
-              namaAsset: true,
-              nomorSeri: true,
-              laptopSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
-              intelNucSpecs: { select: { brandOption: { select: { value: true } }, macWlan: true } },
-              printerSpecs: { select: { brandOption: { select: { value: true } } } },
-            },
+            select: ipAddressAssetSelect,
           },
         },
       },
@@ -143,7 +202,7 @@ export async function getPaginatedIpAddresses({
     take: pageSize,
   });
 
-  return { data, page, pageSize, total, pageCount };
+  return { data: data.map(normalizeIpAddressRow), page, pageSize, total, pageCount };
 }
 
 export async function createIpAddress(data: {

@@ -60,12 +60,8 @@ export default function IpAddressPage() {
         return (data || []).filter((row) => {
             const inUser = row.user?.namaLengkap?.toLowerCase().includes(s);
             const inIp = row.ip.toLowerCase().includes(s);
-            const macSource =
-                row.macWlan ||
-                row.assetAssignment?.asset?.laptopSpecs?.macWlan ||
-                row.assetAssignment?.asset?.intelNucSpecs?.macWlan ||
-                "";
-            const inMac = macSource.toLowerCase().includes(s);
+            const inMacWlan = (row.resolvedMacWlan || "").toLowerCase().includes(s);
+            const inMacLan = (row.resolvedMacLan || "").toLowerCase().includes(s);
             const inConn = row.connection.toLowerCase().includes(s);
             const inRole = row.role.toLowerCase().includes(s);
             const inStatus = row.status.toLowerCase().includes(s);
@@ -79,14 +75,15 @@ export default function IpAddressPage() {
                 .join(" ")
                 .toLowerCase();
             const inAsset = assetLabel.includes(s);
-            return inUser || inIp || inMac || inConn || inRole || inStatus || inCompany || inAsset;
+            return inUser || inIp || inMacWlan || inMacLan || inConn || inRole || inStatus || inCompany || inAsset;
         });
     }, [data, search]);
 
     const exportColumns = [
         { header: "User", accessorKey: "user.namaLengkap" },
         { header: "IP Address", accessorKey: "ip" },
-        { header: "MAC WLAN", accessorKey: "macWlan" },
+        { header: "MAC WLAN", accessorKey: "resolvedMacWlan" },
+        { header: "MAC LAN", accessorKey: "resolvedMacLan" },
         { header: "Connection", accessorKey: "connection" },
         { header: "Role", accessorKey: "role" },
         { header: "Status", accessorKey: "status" },

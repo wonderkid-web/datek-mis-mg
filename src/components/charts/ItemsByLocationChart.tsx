@@ -1,16 +1,5 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
 interface Props {
   data: {
     location: string;
@@ -18,41 +7,10 @@ interface Props {
   }[];
 }
 
-type LocationTooltipProps = {
-  active?: boolean;
-  payload?: Array<{
-    value?: number;
-    payload?: {
-      location: string;
-      total: number;
-    };
-  }>;
-};
-
 const formatCount = (value: number) => value.toLocaleString("id-ID");
 
 const truncateLabel = (value: string, maxLength: number) =>
   value.length > maxLength ? `${value.slice(0, maxLength - 1)}...` : value;
-
-function LocationTooltip({ active, payload }: LocationTooltipProps) {
-  if (!active || !payload?.length || !payload[0]?.payload) {
-    return null;
-  }
-
-  const item = payload[0].payload;
-
-  return (
-    <div className="rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-        Company
-      </p>
-      <p className="mt-1 text-sm font-semibold text-slate-950">{item.location}</p>
-      <p className="mt-2 text-sm text-slate-600">
-        Total aset: <span className="font-semibold text-slate-950">{formatCount(item.total)}</span>
-      </p>
-    </div>
-  );
-}
 
 function ItemsByLocationChart({ data }: Props) {
   if (!data.length) {
@@ -65,7 +23,6 @@ function ItemsByLocationChart({ data }: Props) {
   }
 
   const chartData = data.slice(0, 8);
-  const chartHeight = Math.min(Math.max(chartData.length * 48, 260), 420);
   const totalAssets = data.reduce((sum, item) => sum + item.total, 0);
   const topLocation = data[0];
   const averageAssetsPerLocation = totalAssets / data.length;
@@ -134,58 +91,43 @@ function ItemsByLocationChart({ data }: Props) {
       <div className={showLocationChart ? "grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_320px]" : "grid gap-4 xl:grid-cols-2"}>
         {showLocationChart ? (
           <div className="rounded-3xl border border-emerald-100/80 bg-[linear-gradient(180deg,#fbfffc_0%,#f1fbf4_100%)] p-3 sm:p-4">
-            <div style={{ height: `${chartHeight}px` }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  layout="vertical"
-                  margin={{ top: 4, right: 30, left: 8, bottom: 4 }}
-                  barCategoryGap={14}
-                >
-                  <defs>
-                    <linearGradient id="dashboard-location-bar" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#34d399" />
-                      <stop offset="55%" stopColor="#10b981" />
-                      <stop offset="100%" stopColor="#047857" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid horizontal={false} stroke="#d6e9dd" strokeDasharray="3 3" />
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#5f7768", fontSize: 12 }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="location"
-                    width={116}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#0f172a", fontSize: 12 }}
-                    tickFormatter={(value: string) => truncateLabel(value, 16)}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "rgba(16, 185, 129, 0.08)" }}
-                    content={<LocationTooltip />}
-                  />
-                  <Bar
-                    dataKey="total"
-                    fill="url(#dashboard-location-bar)"
-                    radius={[0, 12, 12, 0]}
-                    barSize={18}
+            <div className="space-y-4">
+              {chartData.map((item) => {
+                const percentage = totalAssets ? (item.total / totalAssets) * 100 : 0;
+
+                return (
+                  <div
+                    key={item.location}
+                    className="grid grid-cols-[minmax(0,116px)_minmax(0,1fr)_auto] items-center gap-3"
+                    title={`${item.location} - ${formatCount(item.total)} aset`}
                   >
-                    <LabelList
-                      dataKey="total"
-                      position="right"
-                      offset={10}
-                      formatter={(value) => formatCount(Number(value ?? 0))}
-                      className="fill-slate-700 text-xs font-medium"
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                    <p className="text-sm font-medium text-slate-900">
+                      {truncateLabel(item.location, 16)}
+                    </p>
+                    <div className="relative h-5 overflow-hidden rounded-full bg-[repeating-linear-gradient(90deg,#d6e9dd_0,#d6e9dd_1px,transparent_1px,transparent_20%)]">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-700"
+                        style={{ width: `${Math.max(percentage, 4)}%` }}
+                      />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-700">
+                      {formatCount(item.total)}
+                    </p>
+                  </div>
+                );
+              })}
+
+              <div className="grid grid-cols-[116px_minmax(0,1fr)_auto] items-center gap-3 pt-2 text-xs text-slate-500">
+                <span />
+                <div className="flex justify-between">
+                  <span>0</span>
+                  <span>{formatCount(Math.round(totalAssets * 0.25))}</span>
+                  <span>{formatCount(Math.round(totalAssets * 0.5))}</span>
+                  <span>{formatCount(Math.round(totalAssets * 0.75))}</span>
+                  <span>{formatCount(totalAssets)}</span>
+                </div>
+                <span />
+              </div>
             </div>
           </div>
         ) : null}

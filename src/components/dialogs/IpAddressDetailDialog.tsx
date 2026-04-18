@@ -24,6 +24,8 @@ import { ExportActions } from "../ExportActions";
 type Row = {
   id: number;
   ip: string;
+  resolvedMacWlan?: string | null;
+  resolvedMacLan?: string | null;
   connection: string;
   role: string;
   status: string;
@@ -49,6 +51,8 @@ const columns: ColumnDef<Row>[] = [
     cell: ({ row }) => row.original.user?.namaLengkap || "-",
   },
   { accessorKey: "ip", header: "IP Address" },
+  { accessorKey: "resolvedMacWlan", header: "MAC WLAN" },
+  { accessorKey: "resolvedMacLan", header: "MAC LAN" },
   { accessorKey: "connection", header: "Connection" },
   { accessorKey: "role", header: "Role" },
   { accessorKey: "status", header: "Status" },
@@ -68,6 +72,8 @@ const columns: ColumnDef<Row>[] = [
 const exportCols = [
   { header: "User", accessorKey: "user.namaLengkap" },
   { header: "IP Address", accessorKey: "ip" },
+  { header: "MAC WLAN", accessorKey: "resolvedMacWlan" },
+  { header: "MAC LAN", accessorKey: "resolvedMacLan" },
   { header: "Connection", accessorKey: "connection" },
   { header: "Role", accessorKey: "role" },
   { header: "Status", accessorKey: "status" },
@@ -244,4 +250,3 @@ export function IpAddressesDetailDialog({ isOpen, onOpenChange, title, filters =
     </Dialog>
   );
 }
-

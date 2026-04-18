@@ -13,9 +13,12 @@ interface ViewAssetDialogProps {
 export function ViewAssetDialog({ isOpen, onClose, item }: ViewAssetDialogProps) {
   const a = item?.assetAssignment;
   const asset = a?.asset;
-  const brand =
+  const isPcAsset = Boolean(asset?.pcSpecs);
+  const primarySpecLabel = isPcAsset ? "Motherboard" : "Brand";
+  const primarySpecValue =
     asset?.laptopSpecs?.brandOption?.value ||
     asset?.intelNucSpecs?.brandOption?.value ||
+    asset?.pcSpecs?.motherboardOption?.value ||
     asset?.printerSpecs?.brandOption?.value ||
     "-";
   return (
@@ -28,7 +31,7 @@ export function ViewAssetDialog({ isOpen, onClose, item }: ViewAssetDialogProps)
         {item?.status !== "EMPLOYEE" && (
           <div className="grid grid-cols-3 items-center gap-2 mb-4">
             <Label>MAC WLAN</Label>
-            <div className="col-span-2 font-mono">{item?.macWlan || "-"}</div>
+            <div className="col-span-2 font-mono">{item?.resolvedMacWlan || "-"}</div>
           </div>
         )}
         {a ? (
@@ -46,8 +49,16 @@ export function ViewAssetDialog({ isOpen, onClose, item }: ViewAssetDialogProps)
               <div className="col-span-2">{asset?.nomorSeri || '-'}</div>
             </div>
             <div className="grid grid-cols-3 items-center gap-2">
-              <Label>Brand</Label>
-              <div className="col-span-2">{brand}</div>
+              <Label>{primarySpecLabel}</Label>
+              <div className="col-span-2">{primarySpecValue}</div>
+            </div>
+            <div className="grid grid-cols-3 items-center gap-2">
+              <Label>MAC WLAN</Label>
+              <div className="col-span-2 font-mono">{item?.resolvedMacWlan || "-"}</div>
+            </div>
+            <div className="grid grid-cols-3 items-center gap-2">
+              <Label>MAC LAN</Label>
+              <div className="col-span-2 font-mono">{item?.resolvedMacLan || "-"}</div>
             </div>
           </div>
         ) : (

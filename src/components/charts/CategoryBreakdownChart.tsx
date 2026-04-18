@@ -155,6 +155,7 @@ function CategoryBreakdownChart({ data }: Props) {
                   paddingAngle={2}
                   stroke="#ffffff"
                   strokeWidth={4}
+                  isAnimationActive={false}
                 >
                   {chartData.map((entry) => (
                     <Cell key={entry.name} fill={entry.fill} />

@@ -27,7 +27,7 @@ export default function ItemsByUserChart({ data }: Props) {
         <YAxis />
         <Tooltip />
         <Legend />
-        <Bar dataKey="total" fill="#ffc658" />
+        <Bar dataKey="total" fill="#ffc658" isAnimationActive={false} />
       </BarChart>
     </ResponsiveContainer>
   );

@@ -27,7 +27,12 @@ function ItemsByStatusChart({ data }: Props) {
           axisLine={false}
           tickFormatter={(value) => `${value}`}
         />
-        <Bar dataKey="total" fill="#00612c" radius={[4, 4, 0, 0]} />
+        <Bar
+          dataKey="total"
+          fill="#00612c"
+          radius={[4, 4, 0, 0]}
+          isAnimationActive={false}
+        />
       </BarChart>
     </ResponsiveContainer>
   );

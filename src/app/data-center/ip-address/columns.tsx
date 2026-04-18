@@ -8,6 +8,8 @@ export interface IpAddressRow {
   id: number;
   ip: string;
   macWlan: string | null;
+  resolvedMacWlan?: string | null;
+  resolvedMacLan?: string | null;
   connection: "WIFI" | "ETHERNET";
   status: "EMPLOYEE" | "GUEST_LAPTOP" | "GUEST_PHONE";
   role: "LIST" | "FULL_ACCESS";
@@ -20,8 +22,20 @@ export interface IpAddressRow {
       id: number;
       namaAsset: string;
       nomorSeri: string;
-      laptopSpecs?: { brandOption?: { value: string } | null; macWlan: string | null } | null;
-      intelNucSpecs?: { brandOption?: { value: string } | null; macWlan: string | null } | null;
+      laptopSpecs?: {
+        brandOption?: { value: string } | null;
+        macWlan: string | null;
+        macLan: string | null;
+      } | null;
+      intelNucSpecs?: {
+        brandOption?: { value: string } | null;
+        macWlan: string | null;
+        macLan: string | null;
+      } | null;
+      pcSpecs?: {
+        motherboardOption?: { value: string } | null;
+        macLan: string | null;
+      } | null;
       printerSpecs?: { brandOption?: { value: string } | null } | null;
     } | null;
   } | null;
@@ -86,18 +100,21 @@ export const columns = ({ onView, onEdit, onDelete }: ColumnsProps): ColumnDef<I
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => {
-      const { status, macWlan, assetAssignment } = row.original;
-      const assetMac =
-        assetAssignment?.asset?.laptopSpecs?.macWlan ||
-        assetAssignment?.asset?.intelNucSpecs?.macWlan ||
-        null;
-      const value =
-        status === "EMPLOYEE"
-          ? assetMac || macWlan || "-"
-          : macWlan || "-";
-      return <p className="text-center font-mono">{value}</p>;
-    },
+    cell: ({ row }) => <p className="text-center font-mono">{row.original.resolvedMacWlan || "-"}</p>,
+  },
+  {
+    accessorKey: "resolvedMacLan",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="mx-auto"
+      >
+        MAC LAN
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <p className="text-center font-mono">{row.original.resolvedMacLan || "-"}</p>,
   },
   {
     accessorKey: "connection",
@@ -128,6 +145,7 @@ export const columns = ({ onView, onEdit, onDelete }: ColumnsProps): ColumnDef<I
       const brand =
         a.asset?.laptopSpecs?.brandOption?.value ||
         a.asset?.intelNucSpecs?.brandOption?.value ||
+        a.asset?.pcSpecs?.motherboardOption?.value ||
         a.asset?.printerSpecs?.brandOption?.value ||
         "";
       const label = [a.nomorAsset, a.asset?.namaAsset, brand].filter(Boolean).join(" • ");

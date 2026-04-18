@@ -27,7 +27,7 @@ export default function ItemsByDepartmentChart({ data }: Props) {
         <YAxis />
         <Tooltip />
         <Legend />
-        <Bar dataKey="total" fill="#82ca9d" />
+        <Bar dataKey="total" fill="#82ca9d" isAnimationActive={false} />
       </BarChart>
     </ResponsiveContainer>
   );
