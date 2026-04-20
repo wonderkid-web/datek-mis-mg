@@ -202,6 +202,14 @@ function DashboardPage() {
       }),
     [languageTag]
   );
+  const emptyAssetDistributionMessage =
+    locale === "en"
+      ? "Asset company data is not available yet."
+      : "Data company aset belum tersedia.";
+  const emptyCategoryDistributionMessage =
+    locale === "en"
+      ? "Asset category data is not available yet."
+      : "Data kategori aset belum tersedia.";
 
   const openAssetDialog = (
     title: string,
@@ -487,7 +495,7 @@ function DashboardPage() {
                 <ItemsByLocationChart data={data.assetDistributionByLocation} />
               ) : (
                 <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                  Data company aset belum tersedia.
+                  {emptyAssetDistributionMessage}
                 </div>
               )}
             </CardContent>
@@ -505,7 +513,7 @@ function DashboardPage() {
                 <CategoryBreakdownChart data={data.assetDistributionByCategory.slice(0, 8)} />
               ) : (
                 <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                  Data kategori aset belum tersedia.
+                  {emptyCategoryDistributionMessage}
                 </div>
               )}
             </CardContent>

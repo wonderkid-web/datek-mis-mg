@@ -456,21 +456,27 @@ interface LanguageProviderProps {
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
   const [locale, setLocaleState] = useState<AppLocale>(lastKnownLocale);
+  const [hasLoadedStoredLocale, setHasLoadedStoredLocale] = useState(false);
 
   useEffect(() => {
     const storedLocale = readLocaleFromStorage();
-    if (storedLocale && storedLocale !== locale) {
+    if (storedLocale) {
       lastKnownLocale = storedLocale;
       setLocaleState(storedLocale);
     }
-  }, [locale]);
+    setHasLoadedStoredLocale(true);
+  }, []);
 
   useEffect(() => {
+    if (!hasLoadedStoredLocale) {
+      return;
+    }
+
     lastKnownLocale = locale;
     document.documentElement.lang = locale;
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
     document.cookie = `${LOCALE_COOKIE_KEY}=${locale}; path=/; max-age=31536000; samesite=lax`;
-  }, [locale]);
+  }, [hasLoadedStoredLocale, locale]);
 
   const setLocale = useCallback((nextLocale: AppLocale) => {
     setLocaleState(nextLocale);
