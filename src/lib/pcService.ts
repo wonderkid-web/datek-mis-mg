@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { Asset } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getUserFacingAssetError } from "@/lib/errorMessage";
 
 interface CreatePcAssetData {
   namaAsset: string;
@@ -149,35 +150,42 @@ export async function createAssetAndPcSpecs(
 ): Promise<Asset> {
   const categoryId = await getOrCreatePcCategoryId();
 
-  const asset = await prisma.asset.create({
-    data: {
-      ...assetData,
-      categoryId,
-      pcSpecs: {
-        create: buildPcSpecsCreateData(pcSpecsData),
+  try {
+    const asset = await prisma.asset.create({
+      data: {
+        ...assetData,
+        categoryId,
+        pcSpecs: {
+          create: buildPcSpecsCreateData(pcSpecsData),
+        },
+        officeAccount: officeAccountData
+          ? {
+              create: {
+                email: officeAccountData.email,
+                password: officeAccountData.password,
+                licenseExpiry: officeAccountData.licenseExpiry,
+                isActive: officeAccountData.isActive,
+              },
+            }
+          : undefined,
       },
-      officeAccount: officeAccountData
-        ? {
-            create: {
-              email: officeAccountData.email,
-              password: officeAccountData.password,
-              licenseExpiry: officeAccountData.licenseExpiry,
-              isActive: officeAccountData.isActive,
-            },
-          }
-        : undefined,
-    },
-    include: {
-      pcSpecs: true,
-      officeAccount: true,
-    },
-  });
+      include: {
+        pcSpecs: true,
+        officeAccount: true,
+      },
+    });
 
-  revalidatePath("/data-center/assets");
-  revalidatePath("/data-center/assigned-assets");
-  revalidateTag("asset-assignments");
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments");
 
-  return asset;
+    return asset;
+  } catch (error) {
+    console.error("Failed to create PC asset:", error);
+    throw new Error(
+      getUserFacingAssetError(error, "Gagal menambahkan asset PC.")
+    );
+  }
 }
 
 export async function updateAssetAndPcSpecs(

@@ -22,6 +22,7 @@ import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { createAssetAndLaptopSpecs } from "@/lib/assetService";
 import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorMessage";
 
 interface Option {
   id: number;
@@ -167,7 +168,7 @@ export default function AddLaptopAssetPage() {
       router.push("/data-center/assigned-assets");
     } catch (error) {
       console.error("Failed to add laptop asset:", error);
-      toast.error("Failed to add laptop asset.");
+      toast.error(getErrorMessage(error, "Failed to add laptop asset."));
     }
   };
 

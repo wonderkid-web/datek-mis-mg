@@ -3,6 +3,8 @@ import { prisma } from "./prisma";
 import { Asset } from "@prisma/client";
 import { ALL_LOCATIONS } from "./constants";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { getOrCreateAssetCategoryId } from "@/lib/assetCategoryResolver";
+import { getUserFacingAssetError } from "@/lib/errorMessage";
 
 interface CreateAssetData {
   namaAsset: string;
@@ -46,6 +48,7 @@ export async function createAssetAndLaptopSpecs(
   laptopSpecsDataInput: CreateLaptopSpecsDataInput,
   officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
+  const categoryId = await getOrCreateAssetCategoryId("laptop");
   const laptopSpecsCreateData: any = {
     macWlan: laptopSpecsDataInput.macWlan,
     macLan: laptopSpecsDataInput.macLan,
@@ -119,37 +122,45 @@ export async function createAssetAndLaptopSpecs(
   }
 
   // Logic simpan asset + specs + akun office (UPDATED)
-  const newAsset = await prisma.asset.create({
-    data: {
-      ...assetData,
-      laptopSpecs: {
-        create: {
-          ...laptopSpecsCreateData,
-          licenseKey: laptopSpecsDataInput.licenseKey || null,
-        },
-      },
-      officeAccount: officeAccountData
-        ? {
+  try {
+    const newAsset = await prisma.asset.create({
+      data: {
+        ...assetData,
+        categoryId,
+        laptopSpecs: {
           create: {
-            email: officeAccountData.email,
-            password: officeAccountData.password,
-            licenseExpiry: officeAccountData.licenseExpiry, // Simpan expiry
-            isActive: officeAccountData.isActive,           // Simpan status
+            ...laptopSpecsCreateData,
+            licenseKey: laptopSpecsDataInput.licenseKey || null,
           },
-        }
-        : undefined,
-    },
-    include: {
-      laptopSpecs: true,
-      officeAccount: true,
-    },
-  });
-  // --- TAMBAHKAN BLOCK INI ---
-  revalidatePath("/data-center/assets");
-  revalidatePath("/data-center/assigned-assets");
-  revalidateTag("asset-assignments"); // Reset cache assigned assets
-  // ----------------------------
-  return newAsset;
+        },
+        officeAccount: officeAccountData
+          ? {
+            create: {
+              email: officeAccountData.email,
+              password: officeAccountData.password,
+              licenseExpiry: officeAccountData.licenseExpiry,
+              isActive: officeAccountData.isActive,
+            },
+          }
+          : undefined,
+      },
+      include: {
+        laptopSpecs: true,
+        officeAccount: true,
+      },
+    });
+
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments");
+
+    return newAsset;
+  } catch (error) {
+    console.error("Failed to create laptop asset:", error);
+    throw new Error(
+      getUserFacingAssetError(error, "Gagal menambahkan asset laptop.")
+    );
+  }
 }
 
 export async function getAssets(categoryId?: number): Promise<Asset[]> {
@@ -345,6 +356,7 @@ export async function updateAssetAndLaptopSpecs(
   laptopSpecsDataInput: UpdateLaptopSpecsDataInput,
   officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
+  const categoryId = await getOrCreateAssetCategoryId("laptop");
   const laptopSpecsUpdateData: any = {};
 
   if (laptopSpecsDataInput.macWlan !== undefined) {
@@ -438,6 +450,7 @@ export async function updateAssetAndLaptopSpecs(
       where: { id },
       data: {
         ...assetData,
+        categoryId,
         laptopSpecs: {
           update: {
             ...laptopSpecsUpdateData,
@@ -462,7 +475,9 @@ export async function updateAssetAndLaptopSpecs(
 
   } catch (error) {
     console.error('Failed to update laptop asset:', error);
-    throw error;
+    throw new Error(
+      getUserFacingAssetError(error, "Gagal memperbarui asset laptop.")
+    );
   }
 
 }
@@ -472,6 +487,7 @@ export async function updateAssetAndPrinterSpecs(
   assetData: Partial<CreateAssetData>,
   printerSpecsDataInput: UpdatePrinterSpecsDataInput
 ): Promise<Asset> {
+  const categoryId = await getOrCreateAssetCategoryId("printer");
   const printerSpecsUpdateData: any = {};
   const printerSpecsCreateData: any = {};
 
@@ -519,6 +535,7 @@ export async function updateAssetAndPrinterSpecs(
       where: { id },
       data: {
         ...assetData,
+        categoryId,
         printerSpecs: {
           upsert: {
             create: printerSpecsCreateData,
@@ -545,7 +562,9 @@ export async function updateAssetAndPrinterSpecs(
     return updatedAsset;
   } catch (error) {
     console.error("Failed to update printer asset:", error);
-    throw error;
+    throw new Error(
+      getUserFacingAssetError(error, "Gagal memperbarui asset printer.")
+    );
   }
 }
 

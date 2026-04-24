@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createAssetAndLaptopSpecs } from "@/lib/assetService";
 import { createAssetAndIntelNucSpecs } from "@/lib/intelNucService";
 import { createAssetAndPcSpecs } from "@/lib/pcService";
+import { getUserFacingAssetError } from "@/lib/errorMessage";
 import { AssetImportFamily, ParsedAssetImportRow } from "@/lib/assetImportConfig";
 import { getLaptopBrandOptions } from "@/lib/laptopBrandService";
 import { getLaptopColors } from "@/lib/laptopColorService";
@@ -761,11 +762,7 @@ export async function createMissingAssetImportMasterData(
 }
 
 function extractErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Import gagal diproses.";
+  return getUserFacingAssetError(error, "Import gagal diproses.");
 }
 
 export async function importAssetRows(

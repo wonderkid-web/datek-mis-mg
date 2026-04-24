@@ -21,6 +21,7 @@ import { getCctvChannelCameras } from "@/lib/cctvChannelCameraService";
 import { getAssetCategories } from "@/lib/assetCategoryService";
 import { SBU_OPTIONS } from "@/lib/constants";
 import { CctvBrand, CctvModel, CctvDeviceType, CctvChannelCamera, AssetCategory } from "@prisma/client";
+import { getErrorMessage } from "@/lib/errorMessage";
 
 interface AddCctvDialogProps {
   onSave: () => void;
@@ -138,7 +139,7 @@ export function AddCctvDialog({ onSave }: AddCctvDialogProps) {
       setOpen(false);
     } catch (error) {
       console.error("An error occurred:", error);
-      toast.error("Failed to add CCTV asset.");
+      toast.error(getErrorMessage(error, "Failed to add CCTV asset."));
     }
   };
 

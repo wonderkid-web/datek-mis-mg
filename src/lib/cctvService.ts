@@ -5,27 +5,35 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { Asset, CctvSpecs } from "./types";
 import { revalidatePath } from "next/cache";
+import { getUserFacingAssetError } from "./errorMessage";
 
 export const createAssetAndCctvSpecs = async (
   assetData: Omit<Asset, 'id' | 'createdAt' | 'updatedAt' | 'categoryId' | 'category' | 'laptopSpecs' | 'intelNucSpecs' | 'printerSpecs' | 'cctvSpecs'> & { categoryId: number },
   cctvSpecsData: Omit<CctvSpecs, 'id' | 'assetId' | 'nameSite' | 'brand' | 'model' | 'deviceType' | 'channelCamera'>
 ) => {
-  const result = await prisma.$transaction(async (tx) => {
+  let result;
 
-    const asset = await tx.asset.create({
-      // @ts-expect-error its okay
-      data: assetData,
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      const asset = await tx.asset.create({
+        // @ts-expect-error its okay
+        data: assetData,
+      });
+
+      const cctvSpecs = await tx.cctvSpecs.create({
+        data: {
+          ...cctvSpecsData,
+          assetId: asset.id,
+        },
+      });
+
+      return { asset, cctvSpecs };
     });
-
-    const cctvSpecs = await tx.cctvSpecs.create({
-      data: {
-        ...cctvSpecsData,
-        assetId: asset.id,
-      },
-    });
-
-    return { asset, cctvSpecs };
-  });
+  } catch (error) {
+    throw new Error(
+      getUserFacingAssetError(error, "Gagal menambahkan asset CCTV.")
+    );
+  }
 
   revalidatePath("/items/cctv");
   return result;
@@ -177,4 +185,3 @@ export const getCctvSpecByChannelCameraId = async (channelCameraId: number) => {
     },
   });
 };
-

@@ -14,6 +14,7 @@ import { createAssetAndPrinterSpecs } from "@/lib/printerService";
 import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { toast } from "sonner";
 import { Asset, PrinterSpecs } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errorMessage";
 
 interface Option {
   id: number;
@@ -97,7 +98,7 @@ export default function AddPrinterAssetPage() {
       router.push("/data-center/assigned-assets");
     } catch (error) {
       console.error("Failed to add printer asset:", error);
-      toast.error("Failed to add printer asset.");
+      toast.error(getErrorMessage(error, "Failed to add printer asset."));
     }
   };
 

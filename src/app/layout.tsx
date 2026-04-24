@@ -25,7 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} flex min-h-[100dvh] flex-col antialiased`}
+      >
         <AppShell>{children}</AppShell>
       </body>
     </html>

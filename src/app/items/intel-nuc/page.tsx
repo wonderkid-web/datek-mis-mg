@@ -22,6 +22,7 @@ import { getLaptopLicenseOptions } from "@/lib/laptopLicenseService";
 import { createAssetAndIntelNucSpecs } from "@/lib/intelNucService";
 import { FormPageSkeleton } from "@/components/loading/PageLoading";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorMessage";
 
 interface Option {
   id: number; 
@@ -167,7 +168,7 @@ export default function AddIntelNucAssetPage() {
       router.push("/data-center/assets");
     } catch (error) {
       console.error("Failed to add Intel NUC asset:", error);
-      toast.error("Failed to add Intel NUC asset.");
+      toast.error(getErrorMessage(error, "Failed to add Intel NUC asset."));
     }
   };
 

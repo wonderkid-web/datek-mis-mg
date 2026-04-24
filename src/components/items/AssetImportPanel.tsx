@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getErrorMessage } from "@/lib/errorMessage";
 
 interface AssetImportPanelProps {
   family: AssetImportFamily;
@@ -131,14 +132,19 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
       setPreview(result);
 
       if (result.invalidRows > 0) {
-        toast.error(`Ada ${result.invalidRows} row yang masih invalid.`);
+        const firstInvalidRow = result.rows.find((row) => !row.isValid);
+        toast.error(
+          firstInvalidRow?.errors.length
+            ? `Row ${firstInvalidRow.rowNumber}: ${firstInvalidRow.errors[0]}`
+            : `Ada ${result.invalidRows} row yang masih invalid.`
+        );
         return;
       }
 
       toast.success(`Semua ${result.validRows} row siap diimport.`);
     } catch (error) {
       console.error("Failed to validate import file:", error);
-      toast.error("Validasi import gagal diproses.");
+      toast.error(getErrorMessage(error, "Validasi import gagal diproses."));
     } finally {
       setIsValidating(false);
     }
@@ -166,8 +172,11 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
       const result = await importAssetRows(family, parsedRows);
 
       if (result.failedRows.length > 0) {
+        const firstFailedRow = result.failedRows[0];
         toast.error(
-          `Import selesai sebagian. ${result.importedRows} berhasil, ${result.failedRows.length} gagal.`
+          firstFailedRow
+            ? `Import selesai sebagian. ${result.importedRows} berhasil, ${result.failedRows.length} gagal. Row ${firstFailedRow.rowNumber}: ${firstFailedRow.error}`
+            : `Import selesai sebagian. ${result.importedRows} berhasil, ${result.failedRows.length} gagal.`
         );
       } else {
         toast.success(`${result.importedRows} asset ${config.label} berhasil diimport.`);
@@ -178,7 +187,7 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
       router.refresh();
     } catch (error) {
       console.error("Failed to import rows:", error);
-      toast.error("Import asset gagal diproses.");
+      toast.error(getErrorMessage(error, "Import asset gagal diproses."));
     } finally {
       setIsImporting(false);
     }
@@ -207,7 +216,7 @@ export function AssetImportPanel({ family }: AssetImportPanelProps) {
       );
     } catch (error) {
       console.error("Failed to create missing master data:", error);
-      toast.error("Gagal membuat master data yang belum ada.");
+      toast.error(getErrorMessage(error, "Gagal membuat master data yang belum ada."));
     } finally {
       setIsCreatingMasterData(false);
     }

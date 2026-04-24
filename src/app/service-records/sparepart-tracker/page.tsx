@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import ReactSelect from "react-select";
 import { toast } from "sonner";
 
 import { ExportActions } from "@/components/ExportActions";
@@ -112,6 +113,12 @@ type SparepartVisualizationItem = {
 
 const GENERAL_POOL_KEY = "general";
 const GENERAL_POOL_LABEL = "General Pool";
+const selectStyles = {
+  menu: (provided: Record<string, unknown>) => ({
+    ...provided,
+    zIndex: 50,
+  }),
+};
 
 const getOwnerSelectionKey = (userId?: number | null) =>
   userId === null || userId === undefined ? GENERAL_POOL_KEY : `user:${userId}`;
@@ -297,6 +304,12 @@ export default function SparepartTrackerPage() {
     }
   }, [ownerOptions, selectedOwnerKey]);
 
+  const selectedOwnerOption = useMemo(
+    () =>
+      ownerOptions.find((option) => option.value === selectedOwnerKey) ?? null,
+    [ownerOptions, selectedOwnerKey]
+  );
+
   const ownerMovements = useMemo(
     () =>
       (data ?? []).filter(
@@ -428,6 +441,24 @@ export default function SparepartTrackerPage() {
       { label: "Sudah Di-over", value: totalTransferred },
     ];
   }, [visualizationFamilies.length, visualizationItems]);
+
+  const selectedFamilySummary = useMemo(
+    () =>
+      visualizationFamilies.find(
+        (family) => family.family === selectedVisualizationFamily
+      ) ?? null,
+    [selectedVisualizationFamily, visualizationFamilies]
+  );
+
+  const selectedVisualizationFamilyLabel =
+    SPAREPART_DEVICE_FAMILY_OPTIONS.find(
+      (option) => option.value === selectedVisualizationFamily
+    )?.label ?? selectedVisualizationFamily;
+  const selectedVisualizationPartTypeLabel = selectedVisualizationPartType
+    ? SPAREPART_PART_TYPE_LABELS[
+        selectedVisualizationPartType as SparepartMovementWithUser["partType"]
+      ]
+    : "-";
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -728,22 +759,17 @@ export default function SparepartTrackerPage() {
             </CardDescription>
           </div>
           <div className="w-full sm:w-72">
-            <UiSelect
-              value={selectedOwnerKey || undefined}
-              onValueChange={setSelectedOwnerKey}
-              disabled={!ownerOptions.length}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih pemilik stok" />
-              </SelectTrigger>
-              <SelectContent>
-                {ownerOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </UiSelect>
+            <ReactSelect
+              instanceId="sparepart-owner-select"
+              styles={selectStyles}
+              value={selectedOwnerOption}
+              onChange={(option) => setSelectedOwnerKey(option?.value ?? "")}
+              options={ownerOptions}
+              placeholder="Pilih pemilik stok"
+              isDisabled={!ownerOptions.length}
+              isClearable={false}
+              classNamePrefix="react-select"
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -764,51 +790,153 @@ export default function SparepartTrackerPage() {
                 ))}
               </div>
 
-              <div className="space-y-3">
-                <div className="text-sm font-medium">Pilih Family</div>
-                <div className="flex flex-wrap gap-2">
-                  {visualizationFamilies.map((family) => {
-                    const isActive = family.family === selectedVisualizationFamily;
-                    const label =
-                      SPAREPART_DEVICE_FAMILY_OPTIONS.find(
-                        (option) => option.value === family.family
-                      )?.label ?? family.family;
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="space-y-4">
+                  <div className="rounded-2xl border bg-background p-4 shadow-sm">
+                    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold">Pilih Family</div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Filter pool berdasarkan device family yang punya stok aktif.
+                        </p>
+                      </div>
+                      <Badge variant="outline">
+                        {visualizationFamilies.length.toLocaleString("id-ID")} family
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {visualizationFamilies.map((family) => {
+                        const isActive = family.family === selectedVisualizationFamily;
+                        const label =
+                          SPAREPART_DEVICE_FAMILY_OPTIONS.find(
+                            (option) => option.value === family.family
+                          )?.label ?? family.family;
 
-                    return (
-                      <Button
-                        key={family.family}
-                        variant={isActive ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedVisualizationFamily(family.family)}
-                      >
-                        {label} · {family.totalItems}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {visualizationPartTypes.length ? (
-                <div className="space-y-3">
-                  <div className="text-sm font-medium">Pilih Jenis Sparepart</div>
-                  <div className="flex flex-wrap gap-2">
-                    {visualizationPartTypes.map((partType) => (
-                      <Button
-                        key={partType}
-                        variant={
-                          partType === selectedVisualizationPartType
-                            ? "default"
-                            : "outline"
-                        }
-                        size="sm"
-                        onClick={() => setSelectedVisualizationPartType(partType)}
-                      >
-                        {SPAREPART_PART_TYPE_LABELS[partType]}
-                      </Button>
-                    ))}
+                        return (
+                          <Button
+                            key={family.family}
+                            variant={isActive ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedVisualizationFamily(family.family)}
+                            className="h-auto gap-2 px-4 py-2"
+                          >
+                            <span>{label}</span>
+                            <span className={isActive ? "text-primary-foreground/75" : "text-muted-foreground"}>
+                              {family.totalItems.toLocaleString("id-ID")}
+                            </span>
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
+
+                  {visualizationPartTypes.length ? (
+                    <div className="rounded-2xl border bg-muted/20 p-4">
+                      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold">Pilih Jenis Sparepart</div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Jenis yang muncul mengikuti family yang sedang dipilih.
+                          </p>
+                        </div>
+                        <Badge variant="secondary">
+                          {visualizationPartTypes.length.toLocaleString("id-ID")} jenis
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {visualizationPartTypes.map((partType) => (
+                          <Button
+                            key={partType}
+                            variant={
+                              partType === selectedVisualizationPartType
+                                ? "default"
+                                : "outline"
+                            }
+                            size="sm"
+                            onClick={() => setSelectedVisualizationPartType(partType)}
+                            className="h-auto px-4 py-2"
+                          >
+                            {SPAREPART_PART_TYPE_LABELS[partType]}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
+
+                <aside className="rounded-2xl border bg-emerald-50/40 p-5 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+                        Konteks Pemilik
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-50">
+                        {selectedOwnerOption?.label ?? GENERAL_POOL_LABEL}
+                      </h3>
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/15 dark:text-emerald-200 dark:hover:bg-emerald-400/15">
+                      Active
+                    </Badge>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                    <div className="rounded-xl border bg-white/80 p-3 dark:border-emerald-900/50 dark:bg-slate-950/40">
+                      <div className="text-xs text-muted-foreground">Family aktif</div>
+                      <div className="mt-1 font-semibold text-slate-950 dark:text-slate-50">{selectedVisualizationFamilyLabel || "-"}</div>
+                    </div>
+                    <div className="rounded-xl border bg-white/80 p-3 dark:border-emerald-900/50 dark:bg-slate-950/40">
+                      <div className="text-xs text-muted-foreground">Jenis aktif</div>
+                      <div className="mt-1 font-semibold text-slate-950 dark:text-slate-50">{selectedVisualizationPartTypeLabel}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Stock family</div>
+                      <div className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                        {(selectedFamilySummary?.totalAvailable ?? 0).toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Pool family</div>
+                      <div className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                        {(selectedFamilySummary?.totalItems ?? 0).toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-emerald-100 bg-white/80 p-3 dark:border-emerald-900/50 dark:bg-slate-950/40">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-muted-foreground">Sudah di-over</span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                        {(selectedFamilySummary?.totalTransferred ?? 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950">
+                      <div
+                        className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400"
+                        style={{
+                          width: `${
+                            selectedFamilySummary &&
+                            selectedFamilySummary.totalAvailable + selectedFamilySummary.totalTransferred > 0
+                              ? Math.min(
+                                  100,
+                                  Math.max(
+                                    6,
+                                    (selectedFamilySummary.totalTransferred /
+                                      (selectedFamilySummary.totalAvailable +
+                                        selectedFamilySummary.totalTransferred)) *
+                                      100
+                                  )
+                                )
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </aside>
+              </div>
 
               <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                 <div className="space-y-3">

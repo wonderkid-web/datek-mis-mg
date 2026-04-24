@@ -2,6 +2,8 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "./prisma";
 import { Asset } from "@prisma/client";
+import { getOrCreateAssetCategoryId } from "@/lib/assetCategoryResolver";
+import { getUserFacingAssetError } from "@/lib/errorMessage";
 
 interface CreateAssetData {
   namaAsset: string;
@@ -45,6 +47,7 @@ export async function createAssetAndIntelNucSpecs(
   intelNucSpecsDataInput: CreateIntelNucSpecsDataInput,
   officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
+  const categoryId = await getOrCreateAssetCategoryId("intel-nuc");
   const intelNucSpecsCreateData: any = {
     macWlan: intelNucSpecsDataInput.macWlan,
     macLan: intelNucSpecsDataInput.macLan,
@@ -120,35 +123,42 @@ export async function createAssetAndIntelNucSpecs(
       intelNucSpecsDataInput.licenseKey || null;
   }
 
-  const newAsset = await prisma.asset.create({
-    data: {
-      ...assetData,
-      intelNucSpecs: {
-        create: intelNucSpecsCreateData,
+  try {
+    const newAsset = await prisma.asset.create({
+      data: {
+        ...assetData,
+        categoryId,
+        intelNucSpecs: {
+          create: intelNucSpecsCreateData,
+        },
+        officeAccount: officeAccountData
+          ? {
+            create: {
+              email: officeAccountData.email,
+              password: officeAccountData.password,
+              licenseExpiry: officeAccountData.licenseExpiry,
+              isActive: officeAccountData.isActive,
+            },
+          }
+          : undefined,
       },
-      // UPDATE Logic
-      officeAccount: officeAccountData
-        ? {
-          create: {
-            email: officeAccountData.email,
-            password: officeAccountData.password,
-            licenseExpiry: officeAccountData.licenseExpiry,
-            isActive: officeAccountData.isActive,
-          },
-        }
-        : undefined,
-    },
-    include: {
-      intelNucSpecs: true,
-      officeAccount: true,
-    },
-  });
-  // --- TAMBAHKAN BLOCK INI ---
-  revalidatePath("/data-center/assets");
-  revalidatePath("/data-center/assigned-assets");
-  revalidateTag("asset-assignments");
-  // ----------------------------
-  return newAsset;
+      include: {
+        intelNucSpecs: true,
+        officeAccount: true,
+      },
+    });
+
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments");
+
+    return newAsset;
+  } catch (error) {
+    console.error("Failed to create Intel NUC asset:", error);
+    throw new Error(
+      getUserFacingAssetError(error, "Gagal menambahkan asset Intel NUC.")
+    );
+  }
 }
 
 interface UpdateIntelNucSpecsDataInput {
@@ -176,6 +186,7 @@ export async function updateAssetAndIntelNucSpecs(
   intelNucSpecsDataInput: UpdateIntelNucSpecsDataInput,
   officeAccountData?: OfficeAccountData | null
 ): Promise<Asset> {
+  const categoryId = await getOrCreateAssetCategoryId("intel-nuc");
   const intelNucSpecsUpdateData: any = {};
   const existingAsset = await prisma.asset.findUnique({
     where: { id },
@@ -260,27 +271,34 @@ export async function updateAssetAndIntelNucSpecs(
     officeAccountUpdateLogic = { delete: true };
   }
 
-  const updatedAsset = await prisma.asset.update({
-    where: { id },
-    data: {
-      ...assetData,
-      intelNucSpecs: {
-        update: intelNucSpecsUpdateData,
+  try {
+    const updatedAsset = await prisma.asset.update({
+      where: { id },
+      data: {
+        ...assetData,
+        categoryId,
+        intelNucSpecs: {
+          update: intelNucSpecsUpdateData,
+        },
+        officeAccount: officeAccountUpdateLogic,
       },
-      officeAccount: officeAccountUpdateLogic,
-    },
-    include: {
-      intelNucSpecs: true,
-      officeAccount: true,
-    },
-  });
+      include: {
+        intelNucSpecs: true,
+        officeAccount: true,
+      },
+    });
 
-  // --- TAMBAHKAN BLOCK INI ---
-  revalidatePath("/data-center/assets");
-  revalidatePath("/data-center/assigned-assets");
-  revalidateTag("asset-assignments");
-  // ----------------------------
-  return updatedAsset;
+    revalidatePath("/data-center/assets");
+    revalidatePath("/data-center/assigned-assets");
+    revalidateTag("asset-assignments");
+
+    return updatedAsset;
+  } catch (error) {
+    console.error("Failed to update Intel NUC asset:", error);
+    throw new Error(
+      getUserFacingAssetError(error, "Gagal memperbarui asset Intel NUC.")
+    );
+  }
 }
 
 export async function getIntelNucAssetById(id: number): Promise<Asset | null> {

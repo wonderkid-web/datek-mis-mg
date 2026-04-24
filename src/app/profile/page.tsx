@@ -72,7 +72,9 @@ export default function ProfilePage() {
     }
   };
 
-  const firstName = session?.user?.name?.split(" ")[0] ?? "User";
+  const displayName =
+    session?.user?.name?.trim() || session?.user?.email?.trim() || "User";
+  const firstName = displayName.split(/\s+/)[0] || displayName;
   const initial = firstName.charAt(0)?.toUpperCase() ?? "U";
 
   return (
