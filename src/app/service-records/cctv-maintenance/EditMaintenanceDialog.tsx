@@ -55,6 +55,7 @@ export function EditMaintenanceDialog({
     onSuccess: () => {
       toast.success("Maintenance record updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["cctvRepetitiveMaintenances"] });
+      queryClient.invalidateQueries({ queryKey: ["cctvRepetitiveMaintenanceYears"] });
       queryClient.invalidateQueries({ queryKey: ["cctvSpecs"] }); // Invalidate asset list
       onOpenChange(false);
     },

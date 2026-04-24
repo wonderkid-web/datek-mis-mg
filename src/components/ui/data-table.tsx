@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  OnChangeFn,
   SortingState,
   PaginationState,
   flexRender,
@@ -98,11 +99,14 @@ const usePagination = ({
 // --- Komponen Pagination yang Diperbarui ---
 function DataTablePagination<TData>({
   table,
+  totalCount,
 }: {
   table: TanstackTable<TData>;
+  totalCount?: number;
 }) {
   const currentPage = table.getState().pagination.pageIndex + 1;
   const pageCount = table.getPageCount();
+  const rowCount = totalCount ?? table.getFilteredRowModel().rows.length;
 
   const paginationRange = usePagination({
     currentPage,
@@ -113,7 +117,7 @@ function DataTablePagination<TData>({
     <div className="mt-4 flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="order-2 text-xs text-muted-foreground sm:order-1 sm:text-sm">
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
-        {table.getFilteredRowModel().rows.length} row(s) selected.
+        {rowCount} row(s) selected.
       </div>
       <div className="order-1 flex flex-wrap items-center gap-2 sm:order-2 sm:gap-4 lg:gap-6">
         <div className="flex items-center gap-2">
@@ -189,12 +193,21 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   totalCount?: number;
+  pagination?: PaginationState;
+  onPaginationChange?: OnChangeFn<PaginationState>;
+  manualPagination?: boolean;
+  pageCount?: number;
   onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  totalCount,
+  pagination: controlledPagination,
+  onPaginationChange,
+  manualPagination = false,
+  pageCount,
   onRowClick,
 }: DataTableProps<TData, TValue>) {
   const { data: session } = useSession();
@@ -203,22 +216,26 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [pagination, setPagination] = React.useState<PaginationState>({
+  const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
+  const pagination = controlledPagination ?? internalPagination;
+  const handlePaginationChange = onPaginationChange ?? setInternalPagination;
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    manualPagination,
+    pageCount: manualPagination ? pageCount : undefined,
     autoResetPageIndex: false,
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onPaginationChange: setPagination,
+    onPaginationChange: handlePaginationChange,
     state: {
       sorting,
       columnFilters,
@@ -229,11 +246,18 @@ export function DataTable<TData, TValue>({
 
   // Clamp page index when data/pageCount changes (e.g., after filtering or data refresh)
   React.useEffect(() => {
-    const pageCount = table.getPageCount();
-    if (pagination.pageIndex > 0 && pagination.pageIndex >= pageCount && pageCount > 0) {
-      setPagination((prev) => ({ ...prev, pageIndex: pageCount - 1 }));
+    const resolvedPageCount = table.getPageCount();
+    if (
+      pagination.pageIndex > 0 &&
+      pagination.pageIndex >= resolvedPageCount &&
+      resolvedPageCount > 0
+    ) {
+      handlePaginationChange((prev) => ({
+        ...prev,
+        pageIndex: resolvedPageCount - 1,
+      }));
     }
-  }, [pagination.pageIndex, pagination.pageSize, data, table]);
+  }, [data, handlePaginationChange, pageCount, pagination.pageIndex, pagination.pageSize, table]);
 
   return (
     <div>
@@ -301,7 +325,7 @@ export function DataTable<TData, TValue>({
           </Table>
         </div>
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} totalCount={totalCount} />
     </div>
   );
 }

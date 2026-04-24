@@ -1,25 +1,13 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { CctvRepetitiveMaintenance, CCTVStatus, CctvChannelCamera, CctvSpecs, Asset, CctvBrand, CctvModel, CctvDeviceType } from "@prisma/client";
+import { CCTVStatus } from "@prisma/client";
 import { ArrowUpDown, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { CctvMaintenanceSummary } from "@/lib/cctvRepetitiveMaintenanceService";
 
-// Extend the type to include the nested relations we will fetch
-export type MaintenanceWithDetails = CctvRepetitiveMaintenance & {
-  channelCamera: (CctvChannelCamera & {
-    cctvSpecs: (CctvSpecs & {
-      brand: CctvBrand | null;
-      model: CctvModel | null;
-      deviceType: CctvDeviceType | null;
-      asset: Asset;
-      channelCamera: {
-        lokasi: string;
-      } | null;
-    })[];
-  }) | null;
-};
+export type MaintenanceWithDetails = CctvMaintenanceSummary;
 
 const StatusBadge = ({ status }: { status: CCTVStatus }) => {
     const getStatusClass = () => {

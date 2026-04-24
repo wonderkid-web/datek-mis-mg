@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { PaginationState } from "@tanstack/react-table";
 import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,7 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { createCctvRepetitiveMaintenance, getCctvRepetitiveMaintenances, deleteCctvRepetitiveMaintenance } from "@/lib/cctvRepetitiveMaintenanceService";
+import {
+  createCctvRepetitiveMaintenance,
+  deleteCctvRepetitiveMaintenance,
+  getCctvRepetitiveMaintenanceExportData,
+  getCctvRepetitiveMaintenanceYears,
+  getCctvRepetitiveMaintenancesPage,
+} from "@/lib/cctvRepetitiveMaintenanceService";
 import { CctvChannelCamera, CCTVStatus } from "@prisma/client";
 import { Package, Fingerprint, Info, MapPin, Tags, Type, GitBranch, Power, Eye, Network as NetworkIcon } from "lucide-react";
 import CCTVViewLink from "@/components/cctv";
@@ -57,7 +64,7 @@ const exportColumns = [
   { header: "Period", accessorKey: "periode" },
   { header: "SBU", accessorKey: "perusahaan" },
   { header: "Location", accessorKey: "channelCamera.lokasi" },
-  { header: "IP Address", accessorKey: "channelCamera.cctv.ipAddress" },
+  { header: "IP Address", accessorKey: "channelCamera.cctvSpecs.0.ipAddress" },
   { header: "Status", accessorKey: "status" },
   { header: "Remarks", accessorKey: "remarks" },
 ];
@@ -153,6 +160,7 @@ function AddMaintenanceForm({ onSave }: { onSave: () => void }) {
     onSuccess: () => {
       toast.success("Maintenance record added successfully!");
       queryClient.invalidateQueries({ queryKey: ["cctvRepetitiveMaintenances"] });
+      queryClient.invalidateQueries({ queryKey: ["cctvRepetitiveMaintenanceYears"] });
       queryClient.invalidateQueries({ queryKey: ["cctvSpecs"] }); // Invalidate asset list
       onSave();
       // Reset form
@@ -299,10 +307,9 @@ export default function CctvMaintenancePage() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "administrator";
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-
-  const { data, isLoading, isError } = useQuery<MaintenanceWithDetails[]>({
-    queryKey: ["cctvRepetitiveMaintenances"],
-    queryFn: getCctvRepetitiveMaintenances,
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
   });
 
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -314,14 +321,51 @@ export default function CctvMaintenancePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const deferredSearchTerm = useDeferredValue(searchTerm.trim());
 
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [deferredSearchTerm, selectedYear, selectedMonth]);
+
+  const queryFilters = useMemo(
+    () => ({
+      page: pagination.pageIndex + 1,
+      pageSize: pagination.pageSize,
+      search: deferredSearchTerm,
+      year: selectedYear,
+      month: selectedMonth,
+    }),
+    [deferredSearchTerm, pagination.pageIndex, pagination.pageSize, selectedMonth, selectedYear]
+  );
+
+  const { data: availableYears = [] } = useQuery<number[]>({
+    queryKey: ["cctvRepetitiveMaintenanceYears"],
+    queryFn: getCctvRepetitiveMaintenanceYears,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const {
+    data: maintenancePage,
+    isLoading,
+    isFetching,
+    isError,
+  } = useQuery({
+    queryKey: ["cctvRepetitiveMaintenances", queryFilters],
+    queryFn: () => getCctvRepetitiveMaintenancesPage(queryFilters),
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000,
+  });
+
+  const maintenanceRows = maintenancePage?.data ?? [];
 
   const deleteMutation = useMutation({
     mutationFn: deleteCctvRepetitiveMaintenance,
     onSuccess: () => {
       toast.success("Maintenance record deleted successfully.");
       queryClient.invalidateQueries({ queryKey: ["cctvRepetitiveMaintenances"] });
+      queryClient.invalidateQueries({ queryKey: ["cctvRepetitiveMaintenanceYears"] });
     },
     onError: () => {
       toast.error("Failed to delete maintenance record.");
@@ -351,51 +395,12 @@ export default function CctvMaintenancePage() {
     }
   };
 
-  const availableYears = useMemo(() => {
-    if (!data) return [];
-    const years = data
-      .map((record) => new Date(record.periode).getFullYear().toString())
-      .filter((year) => !isNaN(parseInt(year)));
-    const unique = Array.from(new Set(years));
-    unique.sort((a, b) => Number(b) - Number(a));
-    return unique;
-  }, [data]);
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    const query = searchTerm.trim().toLowerCase();
-    return data.filter((record) => {
-      const period = new Date(record.periode);
-      if (!Number.isNaN(period.getTime())) {
-        if (selectedYear !== "all" && period.getFullYear().toString() !== selectedYear) {
-          return false;
-        }
-        if (
-          selectedMonth !== "all" &&
-          (period.getMonth() + 1).toString() !== selectedMonth
-        ) {
-          return false;
-        }
-      }
-
-      if (!query) return true;
-
-      const cctvSpec = record.channelCamera?.cctvSpecs?.[0];
-
-      const corpus = [
-        record.perusahaan,
-        record.channelCamera?.lokasi,
-        cctvSpec?.ipAddress,
-        record.status,
-        record.remarks,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return corpus.includes(query);
+  const getExportData = async () =>
+    getCctvRepetitiveMaintenanceExportData({
+      search: deferredSearchTerm,
+      year: selectedYear,
+      month: selectedMonth,
     });
-  }, [data, searchTerm, selectedYear, selectedMonth]);
-
 
   if (isError) {
     return <div className="container mx-auto py-10">Error loading maintenance data.</div>;
@@ -434,8 +439,9 @@ export default function CctvMaintenancePage() {
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <ExportActions
                   columns={exportColumns}
-                  data={filteredData}
+                  data={maintenanceRows}
                   fileName="CCTV_Maintenance"
+                  getExportData={getExportData}
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <Input
@@ -451,7 +457,7 @@ export default function CctvMaintenancePage() {
                     <SelectContent>
                       <SelectItem value="all">All Years</SelectItem>
                       {availableYears.map((year) => (
-                        <SelectItem key={year} value={year}>
+                        <SelectItem key={year} value={String(year)}>
                           {year}
                         </SelectItem>
                       ))}
@@ -471,7 +477,20 @@ export default function CctvMaintenancePage() {
                   </Select>
                 </div>
               </div>
-              <DataTable columns={columns({ handleView, handleEdit, handleDelete })} data={filteredData} />
+              {isFetching && (
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Updating data...
+                </p>
+              )}
+              <DataTable
+                columns={columns({ handleView, handleEdit, handleDelete })}
+                data={maintenanceRows}
+                totalCount={maintenancePage?.totalCount ?? 0}
+                pageCount={maintenancePage?.pageCount ?? 1}
+                pagination={pagination}
+                onPaginationChange={setPagination}
+                manualPagination
+              />
             </>
           )}
         </CardContent>
@@ -509,6 +528,5 @@ export default function CctvMaintenancePage() {
     </div>
   );
 }
-
 
 
