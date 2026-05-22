@@ -10,6 +10,8 @@ const navLinks = [
   { href: '/tracker/intel-nuc', label: 'Tracker Intel NUC' },
   { href: '/tracker/pc', label: 'Tracker PC' },
   { href: '/tracker/sparepart', label: 'Tracker Sparepart' },
+  { href: '/tracker/observer-agent', label: 'Observer Agents' },
+  { href: '/tracker/observer-agent/software', label: 'Observer Software' },
 ];
 
 export default function TrackerLayout({

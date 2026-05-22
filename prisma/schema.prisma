@@ -691,6 +691,154 @@ model CctvRepetitiveMaintenance {
   @@map("cctv_repetitive_maintenances")
 }
 
+// =========================================================
+// Observer Agent monitoring (MVP)
+// =========================================================
+
+model ObserverDevice {
+  id           Int      @id @default(autoincrement())
+  deviceId     String   @unique @map("device_id") @db.VarChar(80)
+  hostname     String   @db.VarChar(255)
+  username     String?  @db.VarChar(255)
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  osName       String?  @map("os_name") @db.VarChar(255)
+  osVersion    String?  @map("os_version") @db.VarChar(255)
+  osBuild      String?  @map("os_build") @db.VarChar(255)
+  agentVersion String?  @map("agent_version") @db.VarChar(50)
+  lastSeen     DateTime? @map("last_seen")
+  lastReportAt DateTime? @map("last_report_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  hardwareSpec   ObserverHardwareSpec?
+  storageDrives  ObserverStorageDrive[]
+  storageHealth  ObserverStorageHealth[]
+  installedApps  ObserverInstalledApp[]
+  agentLogs      ObserverAgentLog[]
+  syncHistory    ObserverSyncHistory[]
+
+  @@index([hostname], map: "observer_devices_hostname_idx")
+  @@index([lastSeen], map: "observer_devices_last_seen_idx")
+  @@index([lastReportAt], map: "observer_devices_last_report_idx")
+  @@map("observer_devices")
+}
+
+model ObserverHardwareSpec {
+  id           Int      @id @default(autoincrement())
+  deviceRefId  Int      @unique @map("device_ref_id")
+  cpu          String?  @db.VarChar(255)
+  ramGb        Int?     @map("ram_gb")
+  manufacturer String?  @db.VarChar(255)
+  model        String?  @db.VarChar(255)
+  serialNumber String?  @map("serial_number") @db.VarChar(255)
+  gpu          String?  @db.VarChar(255)
+  motherboard  String?  @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
+
+  @@index([deviceRefId], map: "observer_hardware_specs_device_ref_idx")
+  @@map("observer_hardware_specs")
+}
+
+model ObserverStorageDrive {
+  id          Int      @id @default(autoincrement())
+  deviceRefId Int      @map("device_ref_id")
+  driveLetter String   @map("drive_letter") @db.VarChar(16)
+  totalGb     Int?     @map("total_gb")
+  freeGb      Int?     @map("free_gb")
+  freePercent Float?   @map("free_percent")
+  status      String?  @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
+
+  @@index([deviceRefId], map: "observer_storage_drives_device_ref_idx")
+  @@index([status], map: "observer_storage_drives_status_idx")
+  @@map("observer_storage_drives")
+}
+
+model ObserverStorageHealth {
+  id               Int       @id @default(autoincrement())
+  deviceRefId      Int       @map("device_ref_id")
+  diskDeviceId     String    @map("disk_device_id") @db.VarChar(255)
+  deviceName       String?   @map("device_name") @db.VarChar(255)
+  serialNumber     String?   @map("serial_number") @db.VarChar(255)
+  model            String?   @db.VarChar(255)
+  mediaType        String?   @map("media_type") @db.VarChar(50)
+  busType          String?   @map("bus_type") @db.VarChar(50)
+  firmwareVersion  String?   @map("firmware_version") @db.VarChar(100)
+  healthStatus     String?   @map("health_status") @db.VarChar(30)
+  operationalStatus String?  @map("operational_status") @db.VarChar(30)
+  predictedFailure Boolean?  @map("predicted_failure")
+  temperatureC     Float?    @map("temperature_c")
+  temperatureF     Float?    @map("temperature_f")
+  powerOnHours     Int?      @map("power_on_hours")
+  wearLevelPercent Float?    @map("wear_level_percent")
+  availableSparePercent Float? @map("available_spare_percent")
+  readErrors       Int?      @map("read_errors")
+  writeErrors      Int?      @map("write_errors")
+  collectedAt      DateTime? @map("collected_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
+
+  @@index([deviceRefId], map: "observer_storage_health_device_ref_idx")
+  @@index([healthStatus], map: "observer_storage_health_health_status_idx")
+  @@index([predictedFailure], map: "observer_storage_health_predicted_failure_idx")
+  @@unique([deviceRefId, diskDeviceId], map: "observer_storage_health_device_disk_uidx")
+  @@map("observer_storage_health")
+}
+
+model ObserverInstalledApp {
+  id          Int      @id @default(autoincrement())
+  deviceRefId Int      @map("device_ref_id")
+  appName     String   @map("app_name") @db.VarChar(255)
+  appVersion  String?  @map("app_version") @db.VarChar(255)
+  publisher   String?  @db.VarChar(255)
+  installDate DateTime? @map("install_date") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
+
+  @@index([deviceRefId], map: "observer_installed_apps_device_ref_idx")
+  @@index([appName], map: "observer_installed_apps_app_name_idx")
+  @@map("observer_installed_apps")
+}
+
+model ObserverAgentLog {
+  id        Int      @id @default(autoincrement())
+  deviceRefId Int    @map("device_ref_id")
+  eventType String   @map("event_type") @db.VarChar(100)
+  message   String   @db.Text
+  logLevel  String?  @map("log_level") @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
+
+  @@index([deviceRefId], map: "observer_agent_logs_device_ref_idx")
+  @@index([eventType], map: "observer_agent_logs_event_type_idx")
+  @@map("observer_agent_logs")
+}
+
+model ObserverSyncHistory {
+  id         Int      @id @default(autoincrement())
+  deviceRefId Int     @map("device_ref_id")
+  syncKind   String   @map("sync_kind") @db.VarChar(30)
+  collectedAt DateTime? @map("collected_at")
+  receivedAt  DateTime  @default(now()) @map("received_at")
+
+  device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
+
+  @@index([deviceRefId], map: "observer_sync_history_device_ref_idx")
+  @@index([syncKind], map: "observer_sync_history_kind_idx")
+  @@map("observer_sync_history")
+}
+
 model Isp {
   id             Int         @id @default(autoincrement())
   // sbu            String      @db.VarChar(255)

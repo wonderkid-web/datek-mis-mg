@@ -7,4 +7,3 @@ export async function GET() {
     server_time: new Date().toISOString(),
   });
 }
-
