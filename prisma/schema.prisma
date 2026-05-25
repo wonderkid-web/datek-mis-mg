@@ -701,10 +701,16 @@ model ObserverDevice {
   hostname     String   @db.VarChar(255)
   username     String?  @db.VarChar(255)
   ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  publicIp     String?  @map("public_ip") @db.VarChar(45)
   osName       String?  @map("os_name") @db.VarChar(255)
   osVersion    String?  @map("os_version") @db.VarChar(255)
   osBuild      String?  @map("os_build") @db.VarChar(255)
   agentVersion String?  @map("agent_version") @db.VarChar(50)
+  currentVersion String? @map("current_version") @db.VarChar(50)
+  lastUpdateStatus String? @map("last_update_status") @db.VarChar(40)
+  lastUpdateVersion String? @map("last_update_version") @db.VarChar(50)
+  lastUpdateMessage String? @map("last_update_message") @db.VarChar(500)
+  lastUpdateAt DateTime? @map("last_update_at")
   lastSeen     DateTime? @map("last_seen")
   lastReportAt DateTime? @map("last_report_at")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -718,6 +724,9 @@ model ObserverDevice {
   syncHistory    ObserverSyncHistory[]
 
   @@index([hostname], map: "observer_devices_hostname_idx")
+  @@index([publicIp], map: "observer_devices_public_ip_idx")
+  @@index([currentVersion], map: "observer_devices_current_version_idx")
+  @@index([lastUpdateStatus], map: "observer_devices_update_status_idx")
   @@index([lastSeen], map: "observer_devices_last_seen_idx")
   @@index([lastReportAt], map: "observer_devices_last_report_idx")
   @@map("observer_devices")
@@ -837,6 +846,26 @@ model ObserverSyncHistory {
   @@index([deviceRefId], map: "observer_sync_history_device_ref_idx")
   @@index([syncKind], map: "observer_sync_history_kind_idx")
   @@map("observer_sync_history")
+}
+
+model ObserverAgentRelease {
+  id             Int      @id @default(autoincrement())
+  version        String   @unique @db.VarChar(80)
+  originalName   String   @map("original_name") @db.VarChar(255)
+  storedName     String   @unique @map("stored_name") @db.VarChar(255)
+  sizeBytes      Int      @map("size_bytes")
+  sha256         String   @db.Char(64)
+  uploadedAt     DateTime @map("uploaded_at")
+  uploadedByName String?  @map("uploaded_by_name") @db.VarChar(255)
+  uploadedByEmail String? @map("uploaded_by_email") @db.VarChar(255)
+  isLatest       Boolean  @default(false) @map("is_latest")
+  releaseNotes   String?  @map("release_notes") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([isLatest], map: "observer_agent_releases_is_latest_idx")
+  @@index([uploadedAt], map: "observer_agent_releases_uploaded_at_idx")
+  @@map("observer_agent_releases")
 }
 
 model Isp {

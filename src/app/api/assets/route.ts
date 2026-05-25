@@ -1,6 +1,7 @@
 // app/api/assets/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getPaginatedAssets } from "@/lib/assetService";
+import { isAssetSummaryBucketKey } from "@/lib/assetSummaryBuckets";
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,6 +22,10 @@ export async function GET(request: NextRequest) {
 
     // NEW: dukung slug
     const categorySlug = searchParams.get("categorySlug") || undefined;
+    const assetKindParam = searchParams.get("assetKind");
+    const assetKind = isAssetSummaryBucketKey(assetKindParam)
+      ? assetKindParam
+      : undefined;
 
     // OPTIONAL: dukung tipe berdasar adanya tabel spesifikasi
     // mis: 'laptop' | 'intel-nuc' | 'printer'
@@ -39,6 +44,7 @@ export async function GET(request: NextRequest) {
       homebase,
       categoryId,
       categorySlug,
+      assetKind,
       osValue,
       idleOnly,
       assignedOnly,

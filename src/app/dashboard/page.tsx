@@ -21,8 +21,9 @@ import {
 
 import { AssetsDetailDialog } from "@/components/dialogs/AssetDetailDialog";
 import { IpAddressesDetailDialog } from "@/components/dialogs/IpAddressDetailDialog";
-import CategoryBreakdownChart from "@/components/charts/CategoryBreakdownChart";
-import ItemsByLocationChart from "@/components/charts/ItemsByLocationChart";
+import AssetBucketOverviewChart from "@/components/charts/AssetBucketOverviewChart";
+import AssetDistributionByCompanyChart from "@/components/charts/AssetDistributionByCompanyChart";
+import OperatingSystemSpreadChart from "@/components/charts/OperatingSystemSpreadChart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,16 +34,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { getDashboardData } from "@/lib/dashboardService";
+import type { AssetSummaryBucketKey } from "@/lib/assetSummaryBuckets";
 import { cn } from "@/lib/utils";
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
@@ -202,14 +196,18 @@ function DashboardPage() {
       }),
     [languageTag]
   );
-  const emptyAssetDistributionMessage =
+  const assetBucketLabels: Record<AssetSummaryBucketKey, string> =
     locale === "en"
-      ? "Asset company data is not available yet."
-      : "Data company aset belum tersedia.";
-  const emptyCategoryDistributionMessage =
-    locale === "en"
-      ? "Asset category data is not available yet."
-      : "Data kategori aset belum tersedia.";
+      ? {
+          laptop: "Laptop",
+          "intel-nuc": "Intel NUC",
+          other: "Other assets",
+        }
+      : {
+          laptop: "Laptop",
+          "intel-nuc": "Intel NUC",
+          other: "Asset lainnya",
+        };
 
   const openAssetDialog = (
     title: string,
@@ -227,6 +225,28 @@ function DashboardPage() {
     setIpDialogTitle(title);
     setIpDialogFilters(filters);
     setIpDialogOpen(true);
+  };
+
+  const openAssetBucketDialog = (
+    bucket: AssetSummaryBucketKey,
+    company?: string
+  ) => {
+    const bucketLabel = assetBucketLabels[bucket];
+
+    openAssetDialog(
+      company
+        ? t("dashboard.dialogs.assetsByBucketInCompany", {
+            bucket: bucketLabel,
+            company,
+          })
+        : t("dashboard.dialogs.assetsByBucket", {
+            bucket: bucketLabel,
+          }),
+      {
+        assetKind: bucket,
+        ...(company ? { company } : {}),
+      }
+    );
   };
 
   if (isLoading) {
@@ -482,124 +502,51 @@ function DashboardPage() {
           ))}
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-2">
+        <section className="space-y-6">
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
-              <CardTitle>{t("dashboard.sections.assetDistributionTitle")}</CardTitle>
+              <CardTitle>{t("dashboard.sections.coreAssetMixTitle")}</CardTitle>
               <CardDescription>
-                {t("dashboard.sections.assetDistributionDescription")}
+                {t("dashboard.sections.coreAssetMixDescription")}
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-full">
-              {data.assetDistributionByLocation.length ? (
-                <ItemsByLocationChart data={data.assetDistributionByLocation} />
-              ) : (
-                <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                  {emptyAssetDistributionMessage}
-                </div>
-              )}
+            <CardContent>
+              <AssetBucketOverviewChart
+                data={data.assetDistributionByBucket}
+                onSelectBucket={openAssetBucketDialog}
+              />
             </CardContent>
           </Card>
 
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
-              <CardTitle>{t("dashboard.sections.categoryCompositionTitle")}</CardTitle>
+              <CardTitle>{t("dashboard.sections.companyAssetMixTitle")}</CardTitle>
               <CardDescription>
-                {t("dashboard.sections.categoryCompositionDescription")}
+                {t("dashboard.sections.companyAssetMixDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {data.assetDistributionByCategory.length ? (
-                <CategoryBreakdownChart data={data.assetDistributionByCategory.slice(0, 8)} />
-              ) : (
-                <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
-                  {emptyCategoryDistributionMessage}
-                </div>
-              )}
+              <AssetDistributionByCompanyChart
+                data={data.assetDistributionByCompany}
+                onSelectCompany={(company) =>
+                  openAssetDialog(
+                    t("dashboard.dialogs.assetsInCompany", {
+                      company,
+                    }),
+                    {
+                      company,
+                    }
+                  )
+                }
+                onSelectBucket={(company, bucket) =>
+                  openAssetBucketDialog(bucket, company)
+                }
+              />
             </CardContent>
           </Card>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-2">
-          <Card className="border-slate-200/80 shadow-sm">
-            <CardHeader>
-              <CardTitle>{t("dashboard.sections.companySummaryTitle")}</CardTitle>
-              <CardDescription>
-                {t("dashboard.sections.companySummaryDescription")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("dashboard.table.company")}</TableHead>
-                      <TableHead className="text-right">{t("dashboard.table.assets")}</TableHead>
-                      <TableHead className="text-right">{t("dashboard.table.ip")}</TableHead>
-                      <TableHead className="text-right">{t("dashboard.table.activeUsers")}</TableHead>
-                      <TableHead>{t("dashboard.table.topCategory")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.locationSummary.length ? (
-                      data.locationSummary.map((row) => (
-                        <TableRow key={row.location}>
-                          <TableCell className="font-medium">
-                            <button
-                              type="button"
-                              className="text-left text-emerald-700 hover:text-emerald-900"
-                              onClick={() =>
-                                openAssetDialog(t("dashboard.dialogs.assetsInCompany", {
-                                  company: row.location,
-                                }), {
-                                  company: row.location,
-                                })
-                              }
-                            >
-                              {row.location}
-                            </button>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {integerFormatter.format(row.totalAssets)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <button
-                              type="button"
-                              className="font-medium text-sky-700 hover:text-sky-900"
-                              onClick={() =>
-                                openIpDialog(t("dashboard.dialogs.ipInCompany", {
-                                  company: row.location,
-                                }), {
-                                  company: row.location,
-                                })
-                              }
-                            >
-                              {integerFormatter.format(row.totalIpAddresses)}
-                            </button>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {integerFormatter.format(row.activeUsers)}
-                          </TableCell>
-                          <TableCell>
-                            {row.topCategory === "-"
-                              ? "-"
-                              : `${row.topCategory} (${integerFormatter.format(row.topCategoryCount)})`}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                          {t("dashboard.table.noCompanySummary")}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
+        <section className="grid gap-6">
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
               <CardTitle>{t("dashboard.sections.osSpreadTitle")}</CardTitle>
@@ -608,38 +555,19 @@ function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("dashboard.table.operatingSystem")}</TableHead>
-                      <TableHead className="text-right">{t("dashboard.table.assets")}</TableHead>
-                      <TableHead className="text-right">{t("dashboard.table.percentage")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.operatingSystemDistribution.length ? (
-                      data.operatingSystemDistribution.slice(0, 10).map((row) => (
-                        <TableRow key={row.name}>
-                          <TableCell>{row.name}</TableCell>
-                          <TableCell className="text-right">
-                            {integerFormatter.format(row.total)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {row.percentage.toFixed(1)}%
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                          {t("dashboard.table.noOsData")}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <OperatingSystemSpreadChart
+                data={data.operatingSystemDistribution}
+                onSelectOs={(osName) =>
+                  openAssetDialog(
+                    t("dashboard.dialogs.assetsByOperatingSystem", {
+                      os: osName,
+                    }),
+                    {
+                      osValue: osName,
+                    }
+                  )
+                }
+              />
             </CardContent>
           </Card>
         </section>

@@ -1,13 +1,43 @@
 "use server";
 
 import { unstable_noStore as noStore } from "next/cache";
+import {
+  ASSET_SUMMARY_BUCKET_ORDER,
+  type AssetSummaryBucketKey,
+  resolveAssetSummaryBucketKey,
+} from "./assetSummaryBuckets";
+import { resolveCanonicalCompanyName } from "./companyResolver";
 import { prisma } from "./prisma";
 
 const UNKNOWN_LOCATION = "Tanpa Company";
 
 const normalizeLocation = (value: string | null | undefined) => {
-  const trimmed = value?.trim();
+  const trimmed = resolveCanonicalCompanyName(value)?.trim() ?? value?.trim();
   return trimmed ? trimmed : UNKNOWN_LOCATION;
+};
+
+const resolveAssetCompany = (asset: {
+  category: {
+    slug: string;
+  };
+  assignments: Array<{
+    user: {
+      lokasiKantor: string | null;
+      jabatan: string | null;
+    };
+  }>;
+  cctvSpecs?: {
+    sbu: string | null;
+    channelCamera: {
+      sbu: string | null;
+    } | null;
+  } | null;
+}) => {
+  if (asset.category.slug === "cctv") {
+    return normalizeLocation(asset.cctvSpecs?.sbu ?? asset.cctvSpecs?.channelCamera?.sbu);
+  }
+
+  return normalizeLocation(asset.assignments[0]?.user.lokasiKantor);
 };
 
 const formatDurationShort = (milliseconds: number) => {
@@ -54,7 +84,7 @@ export async function getDashboardData() {
     totalPhoneAccounts,
     categoryCounts,
     categories,
-    assignedAssetLocations,
+    dashboardAssets,
     ipLocationCounts,
     activeUserLocationCounts,
     activeUserLocationHomebaseCounts,
@@ -109,21 +139,38 @@ export async function getDashboardData() {
         nama: true,
       },
     }),
-    prisma.assetAssignment.findMany({
-      orderBy: {
-        updatedAt: "desc",
-      },
+    prisma.asset.findMany({
       select: {
-        assetId: true,
-        user: {
+        id: true,
+        category: {
           select: {
-            lokasiKantor: true,
-            jabatan: true,
+            id: true,
+            nama: true,
+            slug: true,
           },
         },
-        asset: {
+        assignments: {
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 1,
           select: {
-            categoryId: true,
+            user: {
+              select: {
+                lokasiKantor: true,
+                jabatan: true,
+              },
+            },
+          },
+        },
+        cctvSpecs: {
+          select: {
+            sbu: true,
+            channelCamera: {
+              select: {
+                sbu: true,
+              },
+            },
           },
         },
       },
@@ -331,6 +378,19 @@ export async function getDashboardData() {
     }))
     .sort((left, right) => right.total - left.total);
 
+  const assetDistributionByBucketMap = new Map<AssetSummaryBucketKey, number>(
+    ASSET_SUMMARY_BUCKET_ORDER.map((key) => [key, 0])
+  );
+  const companyAssetDistributionMap = new Map<
+    string,
+    {
+      location: string;
+      total: number;
+      laptop: number;
+      intelNuc: number;
+      other: number;
+    }
+  >();
   const assignmentLocationCategoryMap = new Map<
     string,
     {
@@ -340,38 +400,58 @@ export async function getDashboardData() {
     }[]
   >();
   const assignedAssetCountByLocation = new Map<string, number>();
-  const processedAssignedAssetIds = new Set<number>();
   const homebasesByLocation = new Map<string, Set<string>>();
 
-  for (const row of assignedAssetLocations) {
-    if (processedAssignedAssetIds.has(row.assetId)) {
-      continue;
+  for (const asset of dashboardAssets) {
+    const latestAssignment = asset.assignments[0];
+    const location = resolveAssetCompany(asset);
+    const bucketKey = resolveAssetSummaryBucketKey(asset.category.slug);
+
+    assetDistributionByBucketMap.set(
+      bucketKey,
+      (assetDistributionByBucketMap.get(bucketKey) ?? 0) + 1
+    );
+
+    const companyBucket =
+      companyAssetDistributionMap.get(location) ?? {
+        location,
+        total: 0,
+        laptop: 0,
+        intelNuc: 0,
+        other: 0,
+      };
+
+    companyBucket.total += 1;
+    if (bucketKey === "laptop") {
+      companyBucket.laptop += 1;
+    } else if (bucketKey === "intel-nuc") {
+      companyBucket.intelNuc += 1;
+    } else {
+      companyBucket.other += 1;
     }
+    companyAssetDistributionMap.set(location, companyBucket);
 
-    processedAssignedAssetIds.add(row.assetId);
-
-    const location = normalizeLocation(row.user.lokasiKantor);
     assignedAssetCountByLocation.set(
       location,
       (assignedAssetCountByLocation.get(location) ?? 0) + 1
     );
 
     const bucket = assignmentLocationCategoryMap.get(location) ?? [];
-    const homebase = row.user.jabatan?.trim();
+    const homebase = latestAssignment?.user.jabatan?.trim();
     const homebaseBucket = homebasesByLocation.get(location) ?? new Set<string>();
     if (homebase) {
       homebaseBucket.add(homebase);
       homebasesByLocation.set(location, homebaseBucket);
     }
     const categoryName =
-      categoryNameById.get(row.asset.categoryId) ?? `Kategori ${row.asset.categoryId}`;
-    const existingCategory = bucket.find((category) => category.id === row.asset.categoryId);
+      categoryNameById.get(asset.category.id) ?? asset.category.nama ?? `Kategori ${asset.category.id}`;
+    const existingCategory = bucket.find((category) => category.id === asset.category.id);
 
     if (existingCategory) {
       existingCategory.total += 1;
     } else {
       bucket.push({
-        id: row.asset.categoryId,
+        id: asset.category.id,
         name: categoryName,
         total: 1,
       });
@@ -439,6 +519,36 @@ export async function getDashboardData() {
     }))
     .filter((item) => item.total > 0)
     .sort((left, right) => right.total - left.total);
+
+  const assetDistributionByBucket = ASSET_SUMMARY_BUCKET_ORDER.map((key) => {
+    const total = assetDistributionByBucketMap.get(key) ?? 0;
+    const companyCount = Array.from(companyAssetDistributionMap.values()).filter((row) => {
+      if (key === "laptop") {
+        return row.laptop > 0;
+      }
+
+      if (key === "intel-nuc") {
+        return row.intelNuc > 0;
+      }
+
+      return row.other > 0;
+    }).length;
+
+    return {
+      key,
+      total,
+      percentage: totalAssets > 0 ? (total / totalAssets) * 100 : 0,
+      companyCount,
+    };
+  });
+
+  const assetDistributionByCompany = Array.from(companyAssetDistributionMap.values()).sort(
+    (left, right) =>
+      right.total - left.total ||
+      right.laptop - left.laptop ||
+      right.intelNuc - left.intelNuc ||
+      right.other - left.other
+  );
 
   const operatingSystemTotals = new Map<number, number>();
 
@@ -591,6 +701,8 @@ export async function getDashboardData() {
       averageUploadLast30Days: ispReportsLast30Days._avg.uploadSpeed ?? 0,
     },
     assetDistributionByCategory,
+    assetDistributionByBucket,
+    assetDistributionByCompany,
     assetDistributionByLocation,
     operatingSystemDistribution,
     locationSummary: locationSummary.slice(0, 10),

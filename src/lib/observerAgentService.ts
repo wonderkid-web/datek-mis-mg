@@ -10,9 +10,14 @@ type RegisterPayload = {
 
 type HeartbeatPayload = {
   device_id: string;
-  hostname?: string;
-  agent_version?: string;
-  timestamp?: string;
+  hostname: string;
+  agent_version: string;
+  current_version?: string | null;
+  public_ip?: string;
+  last_update_status?: string | null;
+  last_update_version?: string | null;
+  last_update_message?: string | null;
+  timestamp: string;
 };
 
 type ReportPayload = {
@@ -102,6 +107,7 @@ export async function upsertDeviceFromRegister(payload: RegisterPayload) {
       username: payload.username ?? null,
       osName: payload.os_name ?? null,
       agentVersion: payload.agent_version ?? null,
+      currentVersion: payload.agent_version ?? null,
       lastSeen: now,
       lastReportAt: null,
     },
@@ -110,6 +116,7 @@ export async function upsertDeviceFromRegister(payload: RegisterPayload) {
       username: payload.username ?? undefined,
       osName: payload.os_name ?? undefined,
       agentVersion: payload.agent_version ?? undefined,
+      currentVersion: payload.agent_version ?? undefined,
       lastSeen: now,
     },
   });
@@ -129,19 +136,66 @@ export async function upsertDeviceFromRegister(payload: RegisterPayload) {
 export async function recordDeviceHeartbeat(payload: HeartbeatPayload) {
   const now = new Date();
   const collectedAt = safeDate(payload.timestamp) ?? now;
+  const hasLastUpdateStatus = payload.last_update_status !== undefined;
+  const hasLastUpdateVersion = payload.last_update_version !== undefined;
+  const hasLastUpdateMessage = payload.last_update_message !== undefined;
+  const currentVersion =
+    payload.current_version === null
+      ? null
+      : payload.current_version?.slice(0, 50) ?? undefined;
+  const lastUpdateStatus =
+    payload.last_update_status === null
+      ? null
+      : payload.last_update_status?.slice(0, 40) ?? undefined;
+  const lastUpdateVersion =
+    payload.last_update_version === null
+      ? null
+      : payload.last_update_version?.slice(0, 50) ?? undefined;
+  const lastUpdateMessage =
+    payload.last_update_message === null
+      ? null
+      : payload.last_update_message?.slice(0, 500) ?? undefined;
+  const hasUpdateSnapshot =
+    Boolean(lastUpdateStatus) ||
+    Boolean(lastUpdateVersion) ||
+    Boolean(lastUpdateMessage);
 
   const device = await prisma.observerDevice.upsert({
     where: { deviceId: payload.device_id },
     create: {
       deviceId: payload.device_id,
-      hostname: payload.hostname ?? payload.device_id,
-      agentVersion: payload.agent_version ?? null,
+      hostname: payload.hostname,
+      agentVersion: payload.agent_version,
+      currentVersion: currentVersion ?? payload.agent_version,
+      publicIp: payload.public_ip ?? null,
+      lastUpdateStatus: lastUpdateStatus ?? null,
+      lastUpdateVersion: lastUpdateVersion ?? null,
+      lastUpdateMessage: lastUpdateMessage ?? null,
+      lastUpdateAt: hasUpdateSnapshot ? collectedAt : null,
       lastSeen: collectedAt,
       lastReportAt: null,
     },
     update: {
-      hostname: payload.hostname ?? undefined,
-      agentVersion: payload.agent_version ?? undefined,
+      hostname: payload.hostname,
+      agentVersion: payload.agent_version,
+      currentVersion: currentVersion ?? payload.agent_version,
+      publicIp: payload.public_ip ?? undefined,
+      ...(hasLastUpdateStatus
+        ? {
+            lastUpdateStatus,
+          }
+        : {}),
+      ...(hasLastUpdateVersion
+        ? {
+            lastUpdateVersion,
+          }
+        : {}),
+      ...(hasLastUpdateMessage
+        ? {
+            lastUpdateMessage,
+          }
+        : {}),
+      ...(hasUpdateSnapshot ? { lastUpdateAt: collectedAt } : {}),
       lastSeen: collectedAt,
     },
   });
@@ -173,6 +227,7 @@ export async function ingestDeviceReport(payload: ReportPayload) {
       osVersion: payload.os?.version ?? null,
       osBuild: payload.os?.build ?? null,
       agentVersion: payload.agent_version ?? null,
+      currentVersion: payload.agent_version ?? null,
       lastSeen: collectedAt,
       lastReportAt: collectedAt,
     },
@@ -184,6 +239,7 @@ export async function ingestDeviceReport(payload: ReportPayload) {
       osVersion: payload.os?.version ?? undefined,
       osBuild: payload.os?.build ?? undefined,
       agentVersion: payload.agent_version ?? undefined,
+      currentVersion: payload.agent_version ?? undefined,
       lastSeen: collectedAt,
       lastReportAt: collectedAt,
     },

@@ -124,12 +124,13 @@ export default async function ObserverAgentPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="min-w-[980px]">
+            <Table className="min-w-[1140px]">
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead>Hostname</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>IP</TableHead>
+                  <TableHead>IP Local</TableHead>
+                  <TableHead>IP Public</TableHead>
                   <TableHead>OS</TableHead>
                   <TableHead className="text-center">RAM</TableHead>
                   <TableHead className="text-center">Disk</TableHead>
@@ -160,6 +161,7 @@ export default async function ObserverAgentPage() {
                         </TableCell>
                         <TableCell>{device.username ?? "-"}</TableCell>
                         <TableCell>{device.ipAddress ?? "-"}</TableCell>
+                        <TableCell>{device.publicIp ?? "-"}</TableCell>
                         <TableCell>
                           <div className="font-medium">{device.osName ?? "-"}</div>
                           <div className="text-xs text-muted-foreground">
@@ -190,7 +192,7 @@ export default async function ObserverAgentPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                       Belum ada device masuk. Coba jalankan agent dan cek endpoint `POST /api/agent/*`.
                     </TableCell>
                   </TableRow>

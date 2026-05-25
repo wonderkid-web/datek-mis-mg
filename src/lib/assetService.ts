@@ -4,6 +4,16 @@ import { Asset } from "@prisma/client";
 import { ALL_LOCATIONS } from "./constants";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getOrCreateAssetCategoryId } from "@/lib/assetCategoryResolver";
+import {
+  COMPANY_GROUP_LABEL,
+  getCompanySearchVariants,
+  isIsaGroupCompany,
+  resolveCanonicalCompanyName,
+} from "@/lib/companyResolver";
+import {
+  ASSET_SUMMARY_PRIMARY_CATEGORY_SLUGS,
+  type AssetSummaryBucketKey,
+} from "@/lib/assetSummaryBuckets";
 import { getUserFacingAssetError } from "@/lib/errorMessage";
 
 interface CreateAssetData {
@@ -578,6 +588,7 @@ export async function getPaginatedAssets({
   homebase,
   categoryId,
   categorySlug,
+  assetKind,
   osValue,
   idleOnly,
   assignedOnly,
@@ -592,6 +603,7 @@ export async function getPaginatedAssets({
   homebase?: string;
   categoryId?: number;
   categorySlug?: string;
+  assetKind?: AssetSummaryBucketKey;
   osValue?: string;
   idleOnly?: boolean;
   assignedOnly?: boolean;
@@ -629,27 +641,117 @@ export async function getPaginatedAssets({
     }
   }
   if (company) {
-    if (company === "PT Intan Sejati Andalan (Group)") {
-      AND.push({
-        assignments: {
-          some: {
-            user: {
-              lokasiKantor: {
-                startsWith: "PT Intan Sejati Andalan",
-              },
-            },
-          },
-        },
-      });
-    } else if (company === "Unassigned" || company === "Tanpa Lokasi") {
+    const canonicalCompany = resolveCanonicalCompanyName(company) ?? company;
+    const companyVariants = getCompanySearchVariants(company);
+
+    if (canonicalCompany === COMPANY_GROUP_LABEL) {
       AND.push({
         OR: [
           {
+            category: {
+              is: {
+                slug: "cctv",
+              },
+            },
+            cctvSpecs: {
+              is: {
+                OR: [
+                  {
+                    sbu: {
+                      in: ALL_LOCATIONS.flatMap((value) =>
+                        isIsaGroupCompany(value) ? getCompanySearchVariants(value) : []
+                      ),
+                    },
+                  },
+                  {
+                    channelCamera: {
+                      is: {
+                        sbu: {
+                          in: ALL_LOCATIONS.flatMap((value) =>
+                            isIsaGroupCompany(value) ? getCompanySearchVariants(value) : []
+                          ),
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          {
+            NOT: {
+              category: {
+                is: {
+                  slug: "cctv",
+                },
+              },
+            },
+            assignments: {
+              some: {
+                user: {
+                  lokasiKantor: {
+                    startsWith: "PT Intan Sejati Andalan",
+                  },
+                },
+              },
+            },
+          },
+        ],
+      });
+    } else if (
+      company === "Unassigned" ||
+      company === "Tanpa Lokasi" ||
+      company === "Tanpa Company"
+    ) {
+      AND.push({
+        OR: [
+          {
+            category: {
+              is: {
+                slug: "cctv",
+              },
+            },
+            OR: [
+              {
+                cctvSpecs: {
+                  is: {
+                    sbu: "",
+                  },
+                },
+              },
+              {
+                cctvSpecs: {
+                  is: {
+                    channelCamera: {
+                      is: {
+                        sbu: "",
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            NOT: {
+              category: {
+                is: {
+                  slug: "cctv",
+                },
+              },
+            },
             assignments: {
               none: {},
             },
           },
           {
+            NOT: {
+              category: {
+                is: {
+                  slug: "cctv",
+                },
+              },
+            },
             assignments: {
               some: {
                 user: {
@@ -662,13 +764,51 @@ export async function getPaginatedAssets({
       });
     } else {
       AND.push({
-        assignments: {
-          some: {
-            user: {
-              lokasiKantor: company,
+        OR: [
+          {
+            category: {
+              is: {
+                slug: "cctv",
+              },
+            },
+            cctvSpecs: {
+              is: {
+                OR: [
+                  {
+                    sbu: {
+                      in: companyVariants,
+                    },
+                  },
+                  {
+                    channelCamera: {
+                      is: {
+                        sbu: {
+                          in: companyVariants,
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
             },
           },
-        },
+          {
+            NOT: {
+              category: {
+                is: {
+                  slug: "cctv",
+                },
+              },
+            },
+            assignments: {
+              some: {
+                user: {
+                  lokasiKantor: canonicalCompany,
+                },
+              },
+            },
+          },
+        ],
       });
     }
   }
@@ -688,6 +828,20 @@ export async function getPaginatedAssets({
   }
   if (categorySlug) {
     AND.push({ category: { is: { slug: categorySlug } } });
+  }
+  if (assetKind === "laptop" || assetKind === "intel-nuc") {
+    AND.push({ category: { is: { slug: assetKind } } });
+  }
+  if (assetKind === "other") {
+    AND.push({
+      category: {
+        is: {
+          slug: {
+            notIn: [...ASSET_SUMMARY_PRIMARY_CATEGORY_SLUGS],
+          },
+        },
+      },
+    });
   }
 
   if (osValue) {

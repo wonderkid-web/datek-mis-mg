@@ -102,11 +102,22 @@ export default async function ObserverAgentDetailPage({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">Username</span><span className="font-medium">{device.username ?? "-"}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-muted-foreground">IP</span><span className="font-medium">{device.ipAddress ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">IP Local</span><span className="font-medium">{device.ipAddress ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">IP Public</span><span className="font-medium">{device.publicIp ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">OS</span><span className="font-medium">{device.osName ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">OS Version</span><span className="font-medium">{device.osVersion ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">OS Build</span><span className="font-medium">{device.osBuild ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">Agent Version</span><span className="font-medium">{device.agentVersion ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">Current Version</span><span className="font-medium">{device.currentVersion ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">Last Update Status</span><span className="font-medium">{device.lastUpdateStatus ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">Last Update Version</span><span className="font-medium">{device.lastUpdateVersion ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">Last Update At</span><span className="font-medium">{formatDateTime(device.lastUpdateAt)}</span></div>
+            <div className="space-y-1">
+              <div className="text-muted-foreground">Last Update Message</div>
+              <div className="rounded-md border bg-slate-50 p-2 text-xs font-medium">
+                {device.lastUpdateMessage ?? "-"}
+              </div>
+            </div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">Last Seen</span><span className="font-medium">{formatDateTime(device.lastSeen)}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">Last Report</span><span className="font-medium">{formatDateTime(device.lastReportAt)}</span></div>
           </CardContent>

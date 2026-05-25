@@ -156,9 +156,15 @@ const dictionaries = {
         categoryCompositionTitle: "Komposisi kategori aset",
         categoryCompositionDescription:
           "Breakdown kategori diambil dinamis dari data kategori aktual.",
+        coreAssetMixTitle: "Laptop, Intel NUC, dan asset lainnya",
+        coreAssetMixDescription:
+          "Akumulasi seluruh asset berdasarkan bucket utama lintas company/SBU.",
+        companyAssetMixTitle: "Distribusi asset per company/SBU",
+        companyAssetMixDescription:
+          "Klik nama company atau segmen warna untuk membuka rincian asset.",
         companySummaryTitle: "Ringkasan company",
         companySummaryDescription:
-          "Gabungan aset assigned, IP, user aktif, dan kategori dominan per company.",
+          "Gabungan total aset saat ini, IP, user aktif, dan kategori dominan per company.",
         osSpreadTitle: "Sebaran sistem operasi",
         osSpreadDescription:
           "OS laptop dan Intel NUC digabung tanpa filter value yang hardcoded.",
@@ -208,6 +214,9 @@ const dictionaries = {
         unassignedAssets: "Aset Belum Assigned",
         allIpAddresses: "Seluruh IP Address",
         assetsInCompany: "Aset di {company}",
+        assetsByBucket: "{bucket} di seluruh company/SBU",
+        assetsByBucketInCompany: "{bucket} di {company}",
+        assetsByOperatingSystem: "Aset dengan OS {os}",
         ipInCompany: "IP Address di {company}",
       },
     },
@@ -347,9 +356,15 @@ const dictionaries = {
         categoryCompositionTitle: "Asset category composition",
         categoryCompositionDescription:
           "The category breakdown is pulled dynamically from actual category data.",
+        coreAssetMixTitle: "Laptop, Intel NUC, and other assets",
+        coreAssetMixDescription:
+          "Accumulated assets grouped into the main buckets across all companies/SBUs.",
+        companyAssetMixTitle: "Asset distribution by company/SBU",
+        companyAssetMixDescription:
+          "Click a company name or color segment to open the asset details.",
         companySummaryTitle: "Company summary",
         companySummaryDescription:
-          "Combined assigned assets, IPs, active users, and top categories per company.",
+          "Combined current assets, IPs, active users, and top categories per company.",
         osSpreadTitle: "Operating system spread",
         osSpreadDescription:
           "Laptop and Intel NUC OS are combined without hardcoded value filters.",
@@ -399,6 +414,9 @@ const dictionaries = {
         unassignedAssets: "Unassigned Assets",
         allIpAddresses: "All IP Addresses",
         assetsInCompany: "Assets in {company}",
+        assetsByBucket: "{bucket} across all companies/SBUs",
+        assetsByBucketInCompany: "{bucket} in {company}",
+        assetsByOperatingSystem: "Assets with OS {os}",
         ipInCompany: "IP addresses in {company}",
       },
     },

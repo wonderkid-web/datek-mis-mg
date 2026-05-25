@@ -12,6 +12,7 @@ const navLinks = [
   { href: '/tracker/sparepart', label: 'Tracker Sparepart' },
   { href: '/tracker/observer-agent', label: 'Observer Agents' },
   { href: '/tracker/observer-agent/software', label: 'Observer Software' },
+  { href: '/tracker/observer-agent/releases', label: 'Observer Releases' },
 ];
 
 export default function TrackerLayout({
