@@ -64,6 +64,34 @@ const columns: ColumnDef<Asset>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    cell: ({ row }) => {
+      const asset = row.original;
+      const isCctv = asset.category?.slug === "cctv";
+      const cameraUrl = asset.cctvSpecs?.viewCamera;
+
+      if (!isCctv) {
+        return asset.namaAsset;
+      }
+
+      return (
+        <div className="space-y-1">
+          <p className="font-medium">
+            {asset.cctvSpecs?.channelCamera?.lokasi ?? "Site CCTV tidak tersedia"}
+          </p>
+          {cameraUrl ? (
+            <a
+              href={cameraUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-emerald-700 underline-offset-4 hover:underline"
+              onClick={(event) => event.stopPropagation()}
+            >
+              View Camera
+            </a>
+          ) : null}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "category.nama",

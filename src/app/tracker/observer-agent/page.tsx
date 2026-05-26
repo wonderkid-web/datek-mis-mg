@@ -124,24 +124,26 @@ export default async function ObserverAgentPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="min-w-[1140px]">
+            <Table className="w-full table-auto">
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead>Hostname</TableHead>
-                  <TableHead>Alias</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>IP Local</TableHead>
-                  <TableHead>IP Public</TableHead>
-                  <TableHead>OS</TableHead>
+                  <TableHead className="w-[220px]">Hostname</TableHead>
+                  <TableHead className="w-[140px]">Alias</TableHead>
+                  <TableHead className="w-[140px]">User</TableHead>
+                  <TableHead className="w-[130px]">IP Local</TableHead>
+                  <TableHead className="w-[130px]">IP Public</TableHead>
+                  <TableHead className="w-[170px]">OS</TableHead>
                   <TableHead className="text-center">RAM</TableHead>
                   <TableHead className="text-center">Disk</TableHead>
-                  <TableHead>Last seen</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="w-[130px]">Last seen</TableHead>
+                  <TableHead className="sticky right-0 z-20 border-l bg-gray-100 text-center shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.2)]">
+                    Status
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {derived.length ? (
-                  derived.map(({ device, status }) => {
+                  derived.map(({ device, status }, index) => {
                     const aliasName =
                       (device as { aliasName?: string | null }).aliasName ?? null;
                     const overallVariant = status.diskCritical || status.offline ? "crit" : status.diskWarning || status.stale || status.ramBelowStandard ? "warn" : status.online ? "ok" : "muted";
@@ -153,22 +155,23 @@ export default async function ObserverAgentPage() {
 
                     const diskLabel = status.diskCritical ? "CRITICAL" : status.diskWarning ? "WARNING" : "OK";
                     const diskVariant = status.diskCritical ? "crit" : status.diskWarning ? "warn" : "ok";
+                    const rowBgClass = index % 2 === 0 ? "bg-white" : "bg-emerald-50/40";
 
                     return (
-                      <TableRow key={device.id} className="even:bg-emerald-50/40">
+                      <TableRow key={device.id} className={rowBgClass}>
                         <TableCell className="font-medium">
                           <Link className="underline underline-offset-4" href={`/tracker/observer-agent/${device.deviceId}`}>
                             {device.hostname}
                           </Link>
-                          <div className="text-xs text-muted-foreground">{device.deviceId}</div>
+                          <div className="break-all text-xs text-muted-foreground">{device.deviceId}</div>
                         </TableCell>
-                        <TableCell>{aliasName ?? "-"}</TableCell>
-                        <TableCell>{device.username ?? "-"}</TableCell>
-                        <TableCell>{device.ipAddress ?? "-"}</TableCell>
-                        <TableCell>{device.publicIp ?? "-"}</TableCell>
+                        <TableCell className="break-words">{aliasName ?? "-"}</TableCell>
+                        <TableCell className="break-words">{device.username ?? "-"}</TableCell>
+                        <TableCell className="break-all">{device.ipAddress ?? "-"}</TableCell>
+                        <TableCell className="break-all">{device.publicIp ?? "-"}</TableCell>
                         <TableCell>
-                          <div className="font-medium">{device.osName ?? "-"}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="break-words font-medium">{device.osName ?? "-"}</div>
+                          <div className="break-words text-xs text-muted-foreground">
                             {device.osVersion ?? ""}{device.osBuild ? ` (${device.osBuild})` : ""}
                           </div>
                         </TableCell>
@@ -184,7 +187,7 @@ export default async function ObserverAgentPage() {
                             {device.lastSeen ? formatDateTime(device.lastSeen) : ""}
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className={`sticky right-0 z-10 border-l text-center shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.12)] ${rowBgClass}`}>
                           <StatusBadge label={overallLabel} variant={overallVariant} />
                           <div className="mt-1 flex flex-wrap justify-center gap-1">
                             {status.ramBelowStandard && <Badge variant="outline">RAM</Badge>}

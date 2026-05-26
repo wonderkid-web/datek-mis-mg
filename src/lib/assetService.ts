@@ -890,6 +890,16 @@ export async function getPaginatedAssets({
       orderBy: { id: "desc" },
       include: {
         category: true,
+        cctvSpecs: {
+          select: {
+            viewCamera: true,
+            channelCamera: {
+              select: {
+                lokasi: true,
+              },
+            },
+          },
+        },
         laptopSpecs: { select: { osOption: { select: { value: true } } } },
         intelNucSpecs: { select: { osOption: { select: { value: true } } } },
         pcSpecs: { select: { osOption: { select: { value: true } } } },
