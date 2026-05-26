@@ -156,9 +156,10 @@ export default async function ObserverAgentPage() {
                     const diskLabel = status.diskCritical ? "CRITICAL" : status.diskWarning ? "WARNING" : "OK";
                     const diskVariant = status.diskCritical ? "crit" : status.diskWarning ? "warn" : "ok";
                     const rowBgClass = index % 2 === 0 ? "bg-white" : "bg-emerald-50/40";
+                    const stickyStatusBgClass = index % 2 === 0 ? "bg-white" : "bg-emerald-50";
 
                     return (
-                      <TableRow key={device.id} className={rowBgClass}>
+                      <TableRow key={device.id} className={`group ${rowBgClass}`}>
                         <TableCell className="font-medium">
                           <Link className="underline underline-offset-4" href={`/tracker/observer-agent/${device.deviceId}`}>
                             {device.hostname}
@@ -187,7 +188,7 @@ export default async function ObserverAgentPage() {
                             {device.lastSeen ? formatDateTime(device.lastSeen) : ""}
                           </div>
                         </TableCell>
-                        <TableCell className={`sticky right-0 z-10 border-l text-center shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.12)] ${rowBgClass}`}>
+                        <TableCell className={`sticky right-0 z-10 border-l text-center shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.12)] group-hover:bg-muted ${stickyStatusBgClass}`}>
                           <StatusBadge label={overallLabel} variant={overallVariant} />
                           <div className="mt-1 flex flex-wrap justify-center gap-1">
                             {status.ramBelowStandard && <Badge variant="outline">RAM</Badge>}
