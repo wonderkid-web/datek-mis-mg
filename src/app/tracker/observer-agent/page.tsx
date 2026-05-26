@@ -142,6 +142,8 @@ export default async function ObserverAgentPage() {
               <TableBody>
                 {derived.length ? (
                   derived.map(({ device, status }) => {
+                    const aliasName =
+                      (device as { aliasName?: string | null }).aliasName ?? null;
                     const overallVariant = status.diskCritical || status.offline ? "crit" : status.diskWarning || status.stale || status.ramBelowStandard ? "warn" : status.online ? "ok" : "muted";
                     const overallLabel = status.offline
                       ? "OFFLINE"
@@ -160,7 +162,7 @@ export default async function ObserverAgentPage() {
                           </Link>
                           <div className="text-xs text-muted-foreground">{device.deviceId}</div>
                         </TableCell>
-                        <TableCell>{device.aliasName ?? "-"}</TableCell>
+                        <TableCell>{aliasName ?? "-"}</TableCell>
                         <TableCell>{device.username ?? "-"}</TableCell>
                         <TableCell>{device.ipAddress ?? "-"}</TableCell>
                         <TableCell>{device.publicIp ?? "-"}</TableCell>

@@ -464,11 +464,14 @@ export async function updateObserverDeviceAliasByDeviceId(input: {
   deviceId: string;
   aliasName: string | null;
 }) {
-  return prisma.observerDevice.update({
+  await prisma.$executeRaw`
+    UPDATE observer_devices
+    SET alias_name = ${input.aliasName}
+    WHERE device_id = ${input.deviceId}
+  `;
+
+  return prisma.observerDevice.findUnique({
     where: { deviceId: input.deviceId },
-    data: {
-      aliasName: input.aliasName,
-    },
   });
 }
 

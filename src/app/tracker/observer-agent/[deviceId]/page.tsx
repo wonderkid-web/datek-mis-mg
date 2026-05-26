@@ -64,10 +64,12 @@ export default async function ObserverAgentDetailPage({
   const { deviceId } = await params;
   const device = await getObserverDeviceByDeviceId(deviceId);
   if (!device) notFound();
+  const observerDevice = device;
+  const aliasName = (observerDevice as { aliasName?: string | null }).aliasName ?? null;
 
   async function deleteDeviceAction() {
     "use server";
-    await deleteObserverDeviceByDeviceId(device!.deviceId ?? "0");
+    await deleteObserverDeviceByDeviceId(observerDevice.deviceId);
     redirect("/tracker/observer-agent");
   }
 
@@ -78,12 +80,12 @@ export default async function ObserverAgentDetailPage({
     const aliasName = rawAlias ? rawAlias.slice(0, 120) : null;
 
     await updateObserverDeviceAliasByDeviceId({
-      deviceId: device.deviceId,
+      deviceId: observerDevice.deviceId,
       aliasName,
     });
 
     revalidatePath("/tracker/observer-agent");
-    revalidatePath(`/tracker/observer-agent/${device.deviceId}`);
+    revalidatePath(`/tracker/observer-agent/${observerDevice.deviceId}`);
   }
 
   const status = computeObserverDeviceStatus({
@@ -102,7 +104,7 @@ export default async function ObserverAgentDetailPage({
         <div>
           <h2 className="text-xl font-semibold">{device.hostname}</h2>
           <p className="text-sm text-muted-foreground">
-            Alias: {device.aliasName ?? "-"}
+            Alias: {aliasName ?? "-"}
           </p>
           <p className="text-sm text-muted-foreground">{device.deviceId}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -132,7 +134,7 @@ export default async function ObserverAgentDetailPage({
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   name="alias_name"
-                  defaultValue={device.aliasName ?? ""}
+                  defaultValue={aliasName ?? ""}
                   placeholder="Contoh: PC Kasir Lantai 2 - Budi"
                   maxLength={120}
                 />
