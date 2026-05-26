@@ -460,6 +460,18 @@ export async function deleteObserverDeviceByDeviceId(deviceId: string) {
   });
 }
 
+export async function updateObserverDeviceAliasByDeviceId(input: {
+  deviceId: string;
+  aliasName: string | null;
+}) {
+  return prisma.observerDevice.update({
+    where: { deviceId: input.deviceId },
+    data: {
+      aliasName: input.aliasName,
+    },
+  });
+}
+
 export function computeObserverDeviceStatus(input: {
   lastSeen: Date | null;
   lastReportAt: Date | null;

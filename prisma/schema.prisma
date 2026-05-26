@@ -699,6 +699,7 @@ model ObserverDevice {
   id           Int      @id @default(autoincrement())
   deviceId     String   @unique @map("device_id") @db.VarChar(80)
   hostname     String   @db.VarChar(255)
+  aliasName    String?  @map("alias_name") @db.VarChar(120)
   username     String?  @db.VarChar(255)
   ipAddress    String?  @map("ip_address") @db.VarChar(45)
   publicIp     String?  @map("public_ip") @db.VarChar(45)

@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getObserverDeviceByDeviceId, computeObserverDeviceStatus, deleteObserverDeviceByDeviceId } from "@/lib/observerAgentService";
+import {
+  getObserverDeviceByDeviceId,
+  computeObserverDeviceStatus,
+  deleteObserverDeviceByDeviceId,
+  updateObserverDeviceAliasByDeviceId,
+} from "@/lib/observerAgentService";
 import { DeleteDeviceForm } from "./DeleteDeviceForm";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +71,21 @@ export default async function ObserverAgentDetailPage({
     redirect("/tracker/observer-agent");
   }
 
+  async function updateAliasAction(formData: FormData) {
+    "use server";
+
+    const rawAlias = String(formData.get("alias_name") ?? "").trim();
+    const aliasName = rawAlias ? rawAlias.slice(0, 120) : null;
+
+    await updateObserverDeviceAliasByDeviceId({
+      deviceId: device.deviceId,
+      aliasName,
+    });
+
+    revalidatePath("/tracker/observer-agent");
+    revalidatePath(`/tracker/observer-agent/${device.deviceId}`);
+  }
+
   const status = computeObserverDeviceStatus({
     lastSeen: device.lastSeen,
     lastReportAt: device.lastReportAt,
@@ -78,6 +101,9 @@ export default async function ObserverAgentDetailPage({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">{device.hostname}</h2>
+          <p className="text-sm text-muted-foreground">
+            Alias: {device.aliasName ?? "-"}
+          </p>
           <p className="text-sm text-muted-foreground">{device.deviceId}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <StatusBadge label={overallLabel} variant={overallVariant} />
@@ -101,6 +127,20 @@ export default async function ObserverAgentDetailPage({
             <CardTitle>Identity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
+            <form action={updateAliasAction} className="space-y-2 rounded-md border bg-slate-50 p-3">
+              <div className="text-muted-foreground">Alias Internal (penanda komputer)</div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  name="alias_name"
+                  defaultValue={device.aliasName ?? ""}
+                  placeholder="Contoh: PC Kasir Lantai 2 - Budi"
+                  maxLength={120}
+                />
+                <Button type="submit" className="sm:w-auto">
+                  Simpan Alias
+                </Button>
+              </div>
+            </form>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">Username</span><span className="font-medium">{device.username ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">IP Local</span><span className="font-medium">{device.ipAddress ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">IP Public</span><span className="font-medium">{device.publicIp ?? "-"}</span></div>

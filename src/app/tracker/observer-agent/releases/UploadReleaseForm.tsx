@@ -38,6 +38,31 @@ export function UploadReleaseForm({ canUpload }: UploadReleaseFormProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  const readUploadResponse = async (response: Response) => {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.toLowerCase().includes("application/json")) {
+      try {
+        return (await response.json()) as {
+          success: boolean;
+          error?: string;
+          message?: string;
+        };
+      } catch {
+        return {
+          success: false,
+          error: "Response JSON tidak valid dari server.",
+        };
+      }
+    }
+
+    const text = await response.text();
+    const compact = text.replace(/\s+/g, " ").trim().slice(0, 240);
+    return {
+      success: false,
+      error: compact || "Server mengembalikan response non-JSON.",
+    };
+  };
+
   const handleFileSelection = (file: File | null) => {
     if (!file) {
       setSelectedFile(null);
@@ -83,11 +108,7 @@ export function UploadReleaseForm({ canUpload }: UploadReleaseFormProps) {
         body: formData,
       });
 
-      const result = (await response.json()) as {
-        success: boolean;
-        error?: string;
-        message?: string;
-      };
+      const result = await readUploadResponse(response);
 
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Upload release gagal.");

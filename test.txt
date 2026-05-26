@@ -1,0 +1,5 @@
+mkdir C:\temp\observer-test -Force
+copy "C:\Program Files\Datek\ObserverAgent\ObserverAgent.exe" "C:\temp\observer-test\ObserverAgent.exe"
+$env:OBSERVER_HOME="C:\temp\observer-test\runtime"
+& "C:\temp\observer-test\ObserverAgent.exe" heartbeat
+Get-ChildItem "C:\temp\observer-test\runtime" -Force
