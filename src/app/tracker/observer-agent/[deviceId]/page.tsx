@@ -135,7 +135,7 @@ export default async function ObserverAgentDetailPage({
                 <Input
                   name="alias_name"
                   defaultValue={aliasName ?? ""}
-                  placeholder="Contoh: PC Kasir Lantai 2 - Budi"
+                  placeholder="Contoh: PC Andi Kuncoro - MIS"
                   maxLength={120}
                 />
                 <Button type="submit" className="sm:w-auto">

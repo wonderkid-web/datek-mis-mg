@@ -14,20 +14,27 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-    defaults:
-      run:
-        working-directory: .
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Cache Bun and Next.js
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            .next/cache
+          key: ${{ runner.os }}-bun-next-${{ hashFiles('bun.lockb', 'package.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-next-${{ hashFiles('bun.lockb', 'package.json') }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -38,64 +45,107 @@ jobs:
       - name: Build project
         run: bun run build
 
-      - name: Prepare deploy bundle
+      - name: Prepare deploy folder
         run: |
+          rm -rf deploy
           mkdir -p deploy
+
           cp -R .next deploy/.next
-          cp -R public deploy/public
-          cp -R node_modules deploy/node_modules
-          cp -R prisma deploy/prisma
+          rm -rf deploy/.next/cache
+
+          if [ -d public ]; then
+            cp -R public deploy/public
+          fi
+
+          if [ -d prisma ]; then
+            cp -R prisma deploy/prisma
+          fi
+
           cp package.json deploy/package.json
-          cp bun.lockb deploy/bun.lockb
-          cp next.config.ts deploy/next.config.ts
+
+          if [ -f bun.lockb ]; then
+            cp bun.lockb deploy/bun.lockb
+          fi
+
+          if [ -f next.config.ts ]; then
+            cp next.config.ts deploy/next.config.ts
+          fi
+
           cp ecosystem.config.cjs deploy/ecosystem.config.cjs
-          tar -czf release.tar.gz -C deploy .
 
-      - name: Upload release archive to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: release.tar.gz
-          target: /tmp
+          echo "Deploy folder size:"
+          du -sh deploy
 
-      - name: Extract release and reload PM2
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Install rsync on runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Ensure remote directory and rsync exist
+        run: |
+          ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" '
             set -e
+            command -v rsync >/dev/null 2>&1 || {
+              echo "rsync not found on VPS. Please install rsync first."
+              exit 1
+            }
+            mkdir -p /home/wonderkid/datek-mis-mg
+          '
+
+      - name: Rsync deploy folder to VPS
+        run: |
+          rsync -az --delete \
+            --exclude='node_modules/' \
+            --exclude='.env' \
+            --exclude='logs/' \
+            --exclude='.next/cache/' \
+            -e "ssh -p ${{ secrets.VPS_PORT }}" \
+            deploy/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/wonderkid/datek-mis-mg/"
+
+      - name: Install dependencies and reload PM2
+        run: |
+          ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" '
+            set -e
+
             export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.bun/bin:$PATH"
-            if [ -s "$HOME/.nvm/nvm.sh" ]; then
-              . "$HOME/.nvm/nvm.sh"
+            [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
+            [ -f "$HOME/.profile" ] && . "$HOME/.profile"
+            [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
+            [ -f "$HOME/.zshrc" ] && . "$HOME/.zshrc"
+
+            APP_DIR="/home/wonderkid/datek-mis-mg"
+            cd "$APP_DIR"
+
+            BUN_BIN="$(command -v bun || true)"
+            if [ -z "$BUN_BIN" ]; then
+              echo "bun not found on VPS PATH"
+              exit 1
             fi
-            if [ -f "$HOME/.profile" ]; then
-              . "$HOME/.profile"
-            fi
-            if [ -f "$HOME/.bashrc" ]; then
-              . "$HOME/.bashrc"
-            fi
-            if [ -f "$HOME/.zshrc" ]; then
-              . "$HOME/.zshrc"
-            fi
+
             PM2_BIN="$(command -v pm2 || true)"
             if [ -z "$PM2_BIN" ]; then
               echo "pm2 not found on VPS PATH"
               exit 1
             fi
-            APP_DIR="/home/wonderkid/datek-mis-mg"
-            mkdir -p "$APP_DIR"
-            tar -xzf /tmp/release.tar.gz -C "$APP_DIR"
-            rm -f /tmp/release.tar.gz
-            cd "$APP_DIR"
+
+            "$BUN_BIN" install --frozen-lockfile
+            "$BUN_BIN"x prisma generate
+
             if "$PM2_BIN" describe datek >/dev/null 2>&1; then
               "$PM2_BIN" reload ecosystem.config.cjs --only datek --update-env
             else
               "$PM2_BIN" start ecosystem.config.cjs --only datek
             fi
+
             "$PM2_BIN" save
+          '
