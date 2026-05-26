@@ -195,6 +195,7 @@ export default async function ObserverHardwarePage({
               href={{
                 pathname: "/tracker/observer-agent/hardware",
                 query: { type: item.key },
+                hash: "hardware-inventory",
               }}
               className="block"
             >
@@ -232,7 +233,7 @@ export default async function ObserverHardwarePage({
       </div>
 
       {selectedDefinition ? (
-        <Card>
+        <Card id="hardware-inventory" className="scroll-mt-6">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <div>
               <CardTitle>{selectedDefinition.label} Inventory</CardTitle>
@@ -274,6 +275,7 @@ export default async function ObserverHardwarePage({
                             href={{
                               pathname: "/tracker/observer-agent/hardware",
                               query: { type: selectedDefinition.key, value: group.key },
+                              hash: "hardware-devices",
                             }}
                             className="text-sm underline underline-offset-4"
                           >
@@ -297,7 +299,7 @@ export default async function ObserverHardwarePage({
       ) : null}
 
       {selectedDefinition && selectedGroup ? (
-        <Card>
+        <Card id="hardware-devices" className="scroll-mt-6">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <div>
               <CardTitle>{selectedGroup.label}</CardTitle>
