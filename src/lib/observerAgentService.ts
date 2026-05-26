@@ -454,6 +454,17 @@ export async function getObserverSoftwareInventory() {
     .sort((a, b) => b.deviceCount - a.deviceCount || a.appName.localeCompare(b.appName));
 }
 
+export async function getObserverHardwareDeviceList() {
+  noStore();
+
+  return prisma.observerDevice.findMany({
+    include: {
+      hardwareSpec: true,
+    },
+    orderBy: [{ lastSeen: "desc" }, { id: "desc" }],
+  });
+}
+
 export async function deleteObserverDeviceByDeviceId(deviceId: string) {
   return prisma.observerDevice.delete({
     where: { deviceId },
