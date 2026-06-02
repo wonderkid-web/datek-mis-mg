@@ -234,7 +234,7 @@ export default function LoginPage() {
               </div>
             </CardContent>
           </Card>
-          <p className="mt-6 text-center text-xs text-muted-foreground">Developed by WonderKid 🐎</p>
+          <p className="mt-6 text-center text-xs text-muted-foreground">Developed by WonderKid. 🐎</p>
         </div>
       </div>
     </div>
