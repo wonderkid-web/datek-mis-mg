@@ -395,6 +395,7 @@ export async function getDashboardData() {
     string,
     {
       id: number;
+      slug: string;
       name: string;
       total: number;
     }[]
@@ -452,6 +453,7 @@ export async function getDashboardData() {
     } else {
       bucket.push({
         id: asset.category.id,
+        slug: asset.category.slug,
         name: categoryName,
         total: 1,
       });
@@ -548,7 +550,18 @@ export async function getDashboardData() {
       right.laptop - left.laptop ||
       right.intelNuc - left.intelNuc ||
       right.other - left.other
-  );
+  ).map((item) => ({
+    ...item,
+    categories: (assignmentLocationCategoryMap.get(item.location) ?? [])
+      .map((category) => ({
+        ...category,
+        percentage: item.total > 0 ? (category.total / item.total) * 100 : 0,
+      }))
+      .sort(
+        (left, right) =>
+          right.total - left.total || left.name.localeCompare(right.name)
+      ),
+  }));
 
   const operatingSystemTotals = new Map<number, number>();
 

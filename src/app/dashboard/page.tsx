@@ -249,6 +249,22 @@ function DashboardPage() {
     );
   };
 
+  const openAssetCategoryDialog = (
+    company: string,
+    category: DashboardData["assetDistributionByCompany"][number]["categories"][number]
+  ) => {
+    openAssetDialog(
+      t("dashboard.dialogs.assetsByCategoryInCompany", {
+        category: category.name,
+        company,
+      }),
+      {
+        company,
+        categoryId: category.id,
+      }
+    );
+  };
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -541,6 +557,7 @@ function DashboardPage() {
                 onSelectBucket={(company, bucket) =>
                   openAssetBucketDialog(bucket, company)
                 }
+                onSelectCategory={openAssetCategoryDialog}
               />
             </CardContent>
           </Card>
