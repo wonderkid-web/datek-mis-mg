@@ -18,7 +18,7 @@ jobs:
 
       - name: Create Docker env file
         run: |
-          cat > .env.docker <<EOF
+          cat > .env <<EOF
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}

@@ -107,7 +107,7 @@ function MetricCard({
           <div
             className={cn(
               "flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-sm",
-              accentClassName
+              accentClassName 
             )}
           >
             <Icon className="h-5 w-5" />
