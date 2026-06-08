@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: datek
 
     steps:
       - name: Checkout repository
