@@ -13,11 +13,14 @@ jobs:
     runs-on: datek
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Pull latest code
+        run: |
+          cd ~/datek-mis-mg
+          git pull origin main
 
       - name: Create Docker env file
         run: |
+          cd ~/datek-mis-mg
           cat > .env <<EOF
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
@@ -26,7 +29,9 @@ jobs:
           EOF
 
       - name: Deploy with Docker Compose
-        run: docker compose up --build -d
+        run: |
+          cd ~/datek-mis-mg
+          docker compose up --build -d
 
       - name: Cleanup unused Docker images
         run: docker image prune -f
