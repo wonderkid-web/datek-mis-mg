@@ -24,7 +24,11 @@ const getNestedValue = (obj: any, path: string): any => {
 interface ExportActionsProps<TData extends object> {
   data: TData[];
   fileName: string;
-  columns: { header: string; accessorKey: string }[];
+  columns: {
+    header: string;
+    accessorKey?: string;
+    accessorFn?: (row: TData) => unknown;
+  }[];
   getExportData?: () => Promise<TData[]>;
 }
 
@@ -57,7 +61,9 @@ export function ExportActions<TData extends object>({
       const flattenedData = exportData.map((row) => {
         const newRow: { [key: string]: any } = {};
         columns.forEach((col) => {
-          newRow[col.header] = getNestedValue(row, col.accessorKey);
+          newRow[col.header] = col.accessorFn
+            ? col.accessorFn(row)
+            : getNestedValue(row, col.accessorKey ?? "");
         });
         return newRow;
       });
@@ -88,7 +94,9 @@ export function ExportActions<TData extends object>({
       const tableHead = columns.map((col) => col.header);
       const tableBody = exportData.map((row) =>
         columns.map((col) => {
-          const value = getNestedValue(row, col.accessorKey);
+          const value = col.accessorFn
+            ? col.accessorFn(row)
+            : getNestedValue(row, col.accessorKey ?? "");
           return String(value);
         })
       );

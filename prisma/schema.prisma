@@ -889,6 +889,7 @@ model Isp {
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
   ispReports     IspReport[]
+  ispSlaRecords  IspSlaRecord[]
   problemSequences ProblemSequence[]
 
   @@map("isps")
@@ -909,6 +910,27 @@ model IspReport {
 
   @@index([ispId])
   @@map("isp_reports")
+}
+
+model IspSlaRecord {
+  id             Int      @id @default(autoincrement())
+  sbu            String   @db.VarChar(255)
+  month          Int
+  year           Int
+  ispId          Int
+  contract       String   @db.VarChar(255)
+  actualisation  Float
+  uptimeSeconds  Int      @map("uptime_seconds")
+  downtimeSeconds Int     @map("downtime_seconds")
+  remarks        String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  isp            Isp      @relation(fields: [ispId], references: [id])
+
+  @@index([ispId], map: "isp_sla_records_isp_id_idx")
+  @@index([year, month], map: "isp_sla_records_period_idx")
+  @@index([sbu], map: "isp_sla_records_sbu_idx")
+  @@map("isp_sla_records")
 }
 
 model ProblemSequence {

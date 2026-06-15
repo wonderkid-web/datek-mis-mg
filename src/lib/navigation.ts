@@ -93,6 +93,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Printer Maintenance", href: "/service-records/repetitive" },
       { name: "CCTV Maintenance", href: "/service-records/cctv-maintenance" },
       { name: "ISP Speed Test", href: "/service-records/isp" },
+      { name: "SLA", href: "/service-records/sla" },
       { name: "Biling Records", href: "/service-records/biling-records" },
       { name: "Problem Sequence", href: "/service-records/problem-sequence" },
       { name: "Sparepart Tracker", href: "/service-records/sparepart-tracker" },
