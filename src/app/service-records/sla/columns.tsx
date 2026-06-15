@@ -7,28 +7,44 @@ import { Button } from "@/components/ui/button";
 import {
   formatActualisation,
   formatDurationSeconds,
+  formatSlaSbuLabel,
   getSlaMonthLabel,
 } from "@/lib/ispSlaUtils";
 
 import { IspSlaRecordWithIsp } from "./types";
 
+type SlaColumnDef = ColumnDef<IspSlaRecordWithIsp> & {
+  headerClassName?: string;
+  cellClassName?: string;
+};
+
 interface ColumnsProps {
-  handleView: (slaRecord: IspSlaRecordWithIsp) => void;
   handleEdit: (slaRecord: IspSlaRecordWithIsp) => void;
   handleDelete: (id: number) => void;
   isAdmin: boolean;
 }
 
 export const columns = ({
-  handleView,
   handleEdit,
   handleDelete,
   isAdmin,
-}: ColumnsProps): ColumnDef<IspSlaRecordWithIsp>[] => [
+}: ColumnsProps): SlaColumnDef[] => [
   {
     accessorKey: "no",
     header: "No.",
-    cell: ({ row }) => row.index + 1,
+    cell: ({ row, table }) => {
+      const rows = table.getRowModel().rows;
+      const currentIndex = rows.findIndex((currentRow) => currentRow.id === row.id);
+      const { pageIndex, pageSize } = table.getState().pagination;
+
+      if (currentIndex < 0) {
+        return row.index + 1;
+      }
+
+      return pageIndex * pageSize + currentIndex + 1;
+    },
+    headerClassName: "text-center",
+    cellClassName: "text-center",
   },
   {
     accessorKey: "sbu",
@@ -41,7 +57,7 @@ export const columns = ({
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.original.sbu.replaceAll("_", " "),
+    cell: ({ row }) => formatSlaSbuLabel(row.original.sbu),
   },
   {
     accessorKey: "isp.isp",
@@ -53,6 +69,7 @@ export const columns = ({
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="w-full justify-center"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Month
@@ -60,63 +77,86 @@ export const columns = ({
       </Button>
     ),
     cell: ({ row }) => getSlaMonthLabel(row.original.month),
+    headerClassName: "text-center",
+    cellClassName: "text-center",
   },
   {
     accessorKey: "year",
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="w-full justify-center"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Year
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    headerClassName: "text-center",
+    cellClassName: "text-center",
   },
   {
     accessorKey: "contract",
-    header: "Contract",
+    header: () => <div className="text-center">Contract</div>,
+    headerClassName: "text-center",
+    cellClassName: "text-center",
   },
   {
     accessorKey: "actualisation",
-    header: "Actualisation",
+    header: () => <div className="text-center">Actualisation</div>,
     cell: ({ row }) => formatActualisation(row.original.actualisation),
+    headerClassName: "text-center",
+    cellClassName: "text-center",
   },
   {
     accessorKey: "uptimeSeconds",
-    header: "Uptime",
+    header: () => <div className="text-center">Uptime</div>,
     cell: ({ row }) => formatDurationSeconds(row.original.uptimeSeconds),
+    headerClassName: "text-center",
+    cellClassName: "text-center",
   },
   {
     accessorKey: "downtimeSeconds",
-    header: "Downtime",
+    header: () => <div className="text-center">Downtime</div>,
     cell: ({ row }) => formatDurationSeconds(row.original.downtimeSeconds),
+    headerClassName: "text-center",
+    cellClassName: "text-center",
   },
-  // {
-  //   accessorKey: "remarks",
-  //   header: "Remarks",
-  //   cell: ({ row }) => row.original.remarks || "-",
-  // },
+  {
+    accessorKey: "remarks",
+    header: "Remarks",
+    cell: ({ row }) => row.original.remarks || "-",
+  },
   {
     id: "actions",
     enableHiding: false,
+    header: () => <div className="text-center">Actions</div>,
+    headerClassName: "text-center",
+    cellClassName: "text-center",
     cell: ({ row }) => {
       const slaRecord = row.original;
 
       return (
         <div className="flex justify-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleView(slaRecord)}>
-            View
-          </Button>
           {isAdmin && (
             <>
-              <Button variant="outline" size="sm" onClick={() => handleEdit(slaRecord)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleEdit(slaRecord);
+                }}
+              >
                 Edit
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => handleDelete(slaRecord.id)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleDelete(slaRecord.id);
+                }}
               >
                 Delete
               </Button>

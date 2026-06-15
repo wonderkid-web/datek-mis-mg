@@ -66,3 +66,5 @@ USER bun
 EXPOSE 3001
 
 CMD ["bun", "run", "next", "start", "-H", "0.0.0.0", "-p", "3001"]
+
+

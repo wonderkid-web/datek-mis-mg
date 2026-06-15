@@ -13,6 +13,8 @@ export const SLA_MONTH_OPTIONS = [
   { value: 12, label: "Desember" },
 ] as const;
 
+const PRIMARY_ISA_SBU = "PT_Intan_Sejati_Andalan";
+
 export type DurationParts = {
   days: string;
   hours: string;
@@ -27,6 +29,28 @@ const clampUnit = (value: number) => Math.max(0, Math.min(value, 59));
 
 export const getSlaMonthLabel = (month: number) =>
   SLA_MONTH_OPTIONS.find((option) => option.value === month)?.label ?? "-";
+
+export const normalizeSlaSbuValue = (sbu: string) =>
+  sbu.startsWith(`${PRIMARY_ISA_SBU}_`) ? PRIMARY_ISA_SBU : sbu;
+
+export const formatSlaSbuLabel = (sbu: string) =>
+  normalizeSlaSbuValue(sbu).replaceAll("_", " ");
+
+export const buildSlaSbuOptions = (sbuOptions: string[]) => {
+  const seen = new Set<string>();
+
+  return sbuOptions
+    .map((option) => normalizeSlaSbuValue(option))
+    .filter((option) => {
+      if (seen.has(option)) return false;
+      seen.add(option);
+      return true;
+    })
+    .map((option) => ({
+      value: option,
+      label: option.replaceAll("_", " "),
+    }));
+};
 
 export const formatActualisation = (value: number) =>
   `${new Intl.NumberFormat("id-ID", {

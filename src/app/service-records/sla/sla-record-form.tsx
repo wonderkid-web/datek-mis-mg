@@ -20,8 +20,10 @@ import {
 import { getIsps } from "@/lib/ispService";
 import {
   SLA_MONTH_OPTIONS,
+  buildSlaSbuOptions,
   durationPartsToSeconds,
   formatDurationSeconds,
+  normalizeSlaSbuValue,
   sanitizeDurationDays,
   sanitizeDurationHours,
   sanitizeDurationMinutes,
@@ -64,7 +66,7 @@ const getCurrentYear = () => new Date().getFullYear().toString();
 const buildFormState = (
   initialData?: Partial<IspSlaRecordWithIsp>
 ): SlaRecordFormState => ({
-  sbu: initialData?.sbu ?? undefined,
+  sbu: initialData?.sbu ? normalizeSlaSbuValue(initialData.sbu) : undefined,
   month: initialData?.month ?? undefined,
   year: initialData?.year ? String(initialData.year) : getCurrentYear(),
   ispId: initialData?.ispId ?? undefined,
@@ -219,10 +221,7 @@ export function SlaRecordForm({ onSave, initialData }: SlaRecordFormProps) {
     },
   });
 
-  const sbuOptions = useMemo(
-    () => SBU_OPTIONS.map((option) => ({ value: option, label: option.replace(/_/g, " ") })),
-    []
-  );
+  const sbuOptions = useMemo(() => buildSlaSbuOptions(SBU_OPTIONS), []);
 
   const ispOptions = useMemo(
     () =>
@@ -321,7 +320,47 @@ export function SlaRecordForm({ onSave, initialData }: SlaRecordFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="year">Year</Label>
+            <Input
+              id="year"
+              type="number"
+              min="2000"
+              max="9999"
+              value={formData.year}
+              onChange={handleTextChange}
+              placeholder="Contoh: 2026"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="month">Month</Label>
+            <ReactSelect
+              options={SLA_MONTH_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+              placeholder="Pilih Bulan"
+              value={
+                SLA_MONTH_OPTIONS.find((option) => option.value === formData.month)
+                  ? {
+                      value: formData.month!,
+                      label: SLA_MONTH_OPTIONS.find(
+                        (option) => option.value === formData.month
+                      )!.label,
+                    }
+                  : null
+              }
+              onChange={(option) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  month: option?.value,
+                }))
+              }
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="sbu">SBU</Label>
             <ReactSelect
@@ -355,46 +394,6 @@ export function SlaRecordForm({ onSave, initialData }: SlaRecordFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="month">Month</Label>
-            <ReactSelect
-              options={SLA_MONTH_OPTIONS.map((option) => ({
-                value: option.value,
-                label: option.label,
-              }))}
-              placeholder="Pilih Bulan"
-              value={
-                SLA_MONTH_OPTIONS.find((option) => option.value === formData.month)
-                  ? {
-                      value: formData.month!,
-                      label: SLA_MONTH_OPTIONS.find(
-                        (option) => option.value === formData.month
-                      )!.label,
-                    }
-                  : null
-              }
-              onChange={(option) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  month: option?.value,
-                }))
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="year">Year</Label>
-            <Input
-              id="year"
-              type="number"
-              min="2000"
-              max="9999"
-              value={formData.year}
-              onChange={handleTextChange}
-              placeholder="Contoh: 2026"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="contract">Contract</Label>
             <Input
               id="contract"
@@ -419,22 +418,21 @@ export function SlaRecordForm({ onSave, initialData }: SlaRecordFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <DurationInputGroup
-            label="Uptime"
-            value={formData.uptime}
-            preview={uptimePreview}
-            onChange={(part, nextValue) => handleDurationChange("uptime", part, nextValue)}
-            onBlur={(part) => handleDurationBlur("uptime", part)}
-          />
-          <DurationInputGroup
-            label="Downtime"
-            value={formData.downtime}
-            preview={downtimePreview}
-            onChange={(part, nextValue) => handleDurationChange("downtime", part, nextValue)}
-            onBlur={(part) => handleDurationBlur("downtime", part)}
-          />
-        </div>
+        <DurationInputGroup
+          label="Uptime"
+          value={formData.uptime}
+          preview={uptimePreview}
+          onChange={(part, nextValue) => handleDurationChange("uptime", part, nextValue)}
+          onBlur={(part) => handleDurationBlur("uptime", part)}
+        />
+
+        <DurationInputGroup
+          label="Downtime"
+          value={formData.downtime}
+          preview={downtimePreview}
+          onChange={(part, nextValue) => handleDurationChange("downtime", part, nextValue)}
+          onBlur={(part) => handleDurationBlur("downtime", part)}
+        />
 
         <div className="space-y-2">
           <Label htmlFor="remarks">Remarks</Label>

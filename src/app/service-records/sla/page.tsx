@@ -31,9 +31,12 @@ import {
 import { getIsps } from "@/lib/ispService";
 import {
   SLA_MONTH_OPTIONS,
+  buildSlaSbuOptions,
   formatActualisation,
   formatDurationSeconds,
+  formatSlaSbuLabel,
   getSlaMonthLabel,
+  normalizeSlaSbuValue,
 } from "@/lib/ispSlaUtils";
 
 import { columns } from "./columns";
@@ -47,7 +50,7 @@ const currentYear = new Date().getFullYear();
 const exportColumns = [
   {
     header: "SBU",
-    accessorFn: (row: IspSlaRecordWithIsp) => row.sbu.replaceAll("_", " "),
+    accessorFn: (row: IspSlaRecordWithIsp) => formatSlaSbuLabel(row.sbu),
   },
   {
     header: "ISP",
@@ -125,10 +128,7 @@ export default function SlaPage() {
       .map((year) => ({ value: year, label: String(year) }));
   }, [data]);
 
-  const sbuOptions = useMemo(
-    () => SBU_OPTIONS.map((sbu) => ({ value: sbu, label: sbu.replaceAll("_", " ") })),
-    []
-  );
+  const sbuOptions = useMemo(() => buildSlaSbuOptions(SBU_OPTIONS), []);
 
   const ispOptions = useMemo(
     () => (ispsData ?? []).map((isp) => ({ value: isp.id, label: isp.isp })),
@@ -139,7 +139,12 @@ export default function SlaPage() {
     return (data ?? []).filter((record) => {
       if (selectedYear !== null && record.year !== selectedYear) return false;
       if (selectedMonth !== null && record.month !== selectedMonth) return false;
-      if (selectedSbu !== null && record.sbu !== selectedSbu) return false;
+      if (
+        selectedSbu !== null &&
+        normalizeSlaSbuValue(record.sbu) !== selectedSbu
+      ) {
+        return false;
+      }
       if (selectedIspId !== null && record.ispId !== selectedIspId) return false;
       return true;
     });
@@ -186,7 +191,7 @@ export default function SlaPage() {
   return (
     <div className="container mx-auto py-10 space-y-8">
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[720px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New SLA Record</DialogTitle>
           </DialogHeader>
@@ -272,12 +277,12 @@ export default function SlaPage() {
 
               <DataTable
                 columns={columns({
-                  handleView,
                   handleEdit,
                   handleDelete,
                   isAdmin,
                 })}
                 data={filteredData}
+                onRowClick={handleView}
               />
             </div>
           )}

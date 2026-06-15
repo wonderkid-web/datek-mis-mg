@@ -20,7 +20,7 @@ export function EditSlaRecordDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[720px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Data SLA</DialogTitle>
         </DialogHeader>

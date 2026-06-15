@@ -12,6 +12,7 @@ import {
 import {
   formatActualisation,
   formatDurationSeconds,
+  formatSlaSbuLabel,
   getSlaMonthLabel,
 } from "@/lib/ispSlaUtils";
 
@@ -31,7 +32,7 @@ export function ViewSlaRecordDialog({
   if (!slaRecord) return null;
 
   const detailRows = [
-    { label: "SBU", value: slaRecord.sbu.replaceAll("_", " ") },
+    { label: "SBU", value: formatSlaSbuLabel(slaRecord.sbu) },
     { label: "ISP", value: slaRecord.isp.isp },
     { label: "Month", value: getSlaMonthLabel(slaRecord.month) },
     { label: "Year", value: slaRecord.year },
