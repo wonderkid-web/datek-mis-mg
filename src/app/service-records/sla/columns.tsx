@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +51,7 @@ export const columns = ({
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="w-full justify-center"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         SBU
@@ -58,11 +59,13 @@ export const columns = ({
       </Button>
     ),
     cell: ({ row }) => formatSlaSbuLabel(row.original.sbu),
+    headerClassName: "text-center",
   },
   {
     accessorKey: "isp.isp",
-    header: "ISP",
+    header: () => <div className="text-center">ISP</div>,
     cell: ({ row }) => row.original.isp.isp,
+    headerClassName: "text-center",
   },
   {
     accessorKey: "month",
@@ -123,11 +126,6 @@ export const columns = ({
     cellClassName: "text-center",
   },
   {
-    accessorKey: "remarks",
-    header: "Remarks",
-    cell: ({ row }) => row.original.remarks || "-",
-  },
-  {
     id: "actions",
     enableHiding: false,
     header: () => <div className="text-center">Actions</div>,
@@ -142,23 +140,25 @@ export const columns = ({
             <>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
+                aria-label="Edit SLA"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleEdit(slaRecord);
                 }}
               >
-                Edit
+                <Pencil className="h-4 w-4" />
               </Button>
               <Button
                 variant="destructive"
-                size="sm"
+                size="icon"
+                aria-label="Delete SLA"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDelete(slaRecord.id);
                 }}
               >
-                Delete
+                <Trash2 className="h-4 w-4 text-white" />
               </Button>
             </>
           )}
