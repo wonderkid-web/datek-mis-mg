@@ -69,18 +69,33 @@ enum SparepartAdjustmentDirection {
   DECREASE
 }
 
+enum OfficeSeatSide {
+  TOP
+  BOTTOM
+}
+
+enum OfficeDeskLayoutKind {
+  DOUBLE
+  SINGLE_TOP
+  SINGLE_BOTTOM
+}
+
+enum OfficeFloorZoneKind {
+  WALKWAY
+}
+
 model User {
-  id               Int               @id @default(autoincrement())
-  namaLengkap      String            @map("nama_lengkap") @db.VarChar(255)
-  email            String?           @unique @db.VarChar(255)
-  departemen       String?           @db.VarChar(100)
-  jabatan          String?           @db.VarChar(100)
-  lokasiKantor     String?           @map("lokasi_kantor") @db.VarChar(100)
-  isActive         Boolean           @default(true) @map("is_active")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  password         String?           @db.VarChar(100)
-  role             String?           @db.VarChar(15)
+  id                       Int                      @id @default(autoincrement())
+  namaLengkap              String                   @map("nama_lengkap") @db.VarChar(255)
+  email                    String?                  @unique @db.VarChar(255)
+  departemen               String?                  @db.VarChar(100)
+  jabatan                  String?                  @db.VarChar(100)
+  lokasiKantor             String?                  @map("lokasi_kantor") @db.VarChar(100)
+  isActive                 Boolean                  @default(true) @map("is_active")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+  password                 String?                  @db.VarChar(100)
+  role                     String?                  @db.VarChar(15)
   assetAssignments         AssetAssignment[]        @relation("UserAssetAssignments")
   IpAddress                IpAddress[]
   phoneAccounts            PhoneAccount[]
@@ -88,6 +103,7 @@ model User {
   sparepartMovements       SparepartMovement[]
   sparepartOwnedMovements  SparepartMovement[]      @relation("SparepartStockOwner")
   assetAssignmentHistories AssetAssignmentHistory[] @relation("UserAssetAssignmentHistories")
+  officeSeats              OfficeSeat[]
 
   @@map("users")
 }
@@ -102,24 +118,24 @@ model AssetCategory {
 }
 
 model Asset {
-  id               Int               @id @default(autoincrement())
-  namaAsset        String            @map("nama_asset") @db.VarChar(255)
-  categoryId       Int
-  nomorSeri        String            @unique @map("nomor_seri") @db.VarChar(100)
-  tanggalPembelian DateTime?         @map("tanggal_pembelian") @db.Date
-  tanggalGaransi   DateTime?         @map("tanggal_garansi") @db.Date
-  statusAsset      String            @map("status_asset") @db.VarChar(50)
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  lokasiFisik      String?           @map("lokasi_fisik") @db.VarChar(255)
-  assignments      AssetAssignment[]
+  id                  Int                      @id @default(autoincrement())
+  namaAsset           String                   @map("nama_asset") @db.VarChar(255)
+  categoryId          Int
+  nomorSeri           String                   @unique @map("nomor_seri") @db.VarChar(100)
+  tanggalPembelian    DateTime?                @map("tanggal_pembelian") @db.Date
+  tanggalGaransi      DateTime?                @map("tanggal_garansi") @db.Date
+  statusAsset         String                   @map("status_asset") @db.VarChar(50)
+  createdAt           DateTime                 @default(now()) @map("created_at")
+  updatedAt           DateTime                 @updatedAt @map("updated_at")
+  lokasiFisik         String?                  @map("lokasi_fisik") @db.VarChar(255)
+  assignments         AssetAssignment[]
   assignmentHistories AssetAssignmentHistory[]
-  category         AssetCategory     @relation(fields: [categoryId], references: [id])
-  intelNucSpecs    IntelNucSpecs?
-  laptopSpecs      LaptopSpecs?
-  pcSpecs          PcSpecs?
-  printerSpecs     PrinterSpecs?
-  cctvSpecs        CctvSpecs?
+  category            AssetCategory            @relation(fields: [categoryId], references: [id])
+  intelNucSpecs       IntelNucSpecs?
+  laptopSpecs         LaptopSpecs?
+  pcSpecs             PcSpecs?
+  printerSpecs        PrinterSpecs?
+  cctvSpecs           CctvSpecs?
 
   officeAccount OfficeAccount? // Relasi ke akun Office
 
@@ -149,14 +165,14 @@ model AssetAssignment {
 
 model AssetAssignmentHistory {
   id         Int       @id @default(autoincrement())
-  assetId     Int       @map("asset_id")
-  userId      Int?      @map("user_id")
-  nomorAsset  String?   @map("nomor_asset") @db.VarChar(50)
-  catatan     String?   @db.Text
-  startedAt   DateTime  @default(now()) @map("started_at")
-  endedAt     DateTime? @map("ended_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  assetId    Int       @map("asset_id")
+  userId     Int?      @map("user_id")
+  nomorAsset String?   @map("nomor_asset") @db.VarChar(50)
+  catatan    String?   @db.Text
+  startedAt  DateTime  @default(now()) @map("started_at")
+  endedAt    DateTime? @map("ended_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
   user  User? @relation("UserAssetAssignmentHistories", fields: [userId], references: [id], onDelete: SetNull)
@@ -165,6 +181,85 @@ model AssetAssignmentHistory {
   @@index([assetId, endedAt], map: "asset_assignment_histories_asset_ended_idx")
   @@index([userId], map: "asset_assignment_histories_user_id_fkey")
   @@map("asset_assignment_histories")
+}
+
+model OfficeFloor {
+  id            Int               @id @default(autoincrement())
+  name          String            @db.VarChar(120)
+  slug          String            @unique @db.VarChar(120)
+  description   String?           @db.VarChar(255)
+  sortOrder     Int               @default(0) @map("sort_order")
+  canvasColumns Int               @default(12) @map("canvas_columns")
+  isActive      Boolean           @default(true) @map("is_active")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  deskGroups    OfficeDeskGroup[]
+  zones         OfficeFloorZone[]
+
+  @@index([sortOrder], map: "office_floors_sort_order_idx")
+  @@map("office_floors")
+}
+
+model OfficeDeskGroup {
+  id              Int          @id @default(autoincrement())
+  floorId         Int          @map("floor_id")
+  name            String       @db.VarChar(120)
+  department      String?      @db.VarChar(120)
+  departmentColor String?      @map("department_color") @db.VarChar(30)
+  layoutKind      OfficeDeskLayoutKind @default(DOUBLE) @map("layout_kind")
+  gridColumn      Int          @default(1) @map("grid_column")
+  gridRow         Int          @default(1) @map("grid_row")
+  columnSpan      Int          @default(4) @map("column_span")
+  seatsPerSide    Int          @default(2) @map("seats_per_side")
+  sortOrder       Int          @default(0) @map("sort_order")
+  notes           String?      @db.VarChar(255)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  floor           OfficeFloor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  seats           OfficeSeat[]
+
+  @@index([floorId, sortOrder], map: "office_desk_groups_floor_sort_idx")
+  @@index([floorId, gridRow, gridColumn], map: "office_desk_groups_floor_grid_idx")
+  @@map("office_desk_groups")
+}
+
+model OfficeFloorZone {
+  id          Int               @id @default(autoincrement())
+  floorId     Int               @map("floor_id")
+  kind        OfficeFloorZoneKind @default(WALKWAY)
+  name        String            @db.VarChar(120)
+  color       String?           @db.VarChar(30)
+  gridColumn  Int               @default(1) @map("grid_column")
+  gridRow     Int               @default(1) @map("grid_row")
+  columnSpan  Int               @default(2) @map("column_span")
+  rowSpan     Int               @default(1) @map("row_span")
+  sortOrder   Int               @default(0) @map("sort_order")
+  notes       String?           @db.VarChar(255)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  floor       OfficeFloor       @relation(fields: [floorId], references: [id], onDelete: Cascade)
+
+  @@index([floorId, sortOrder], map: "office_floor_zones_floor_sort_idx")
+  @@index([floorId, gridRow, gridColumn], map: "office_floor_zones_floor_grid_idx")
+  @@map("office_floor_zones")
+}
+
+model OfficeSeat {
+  id          Int             @id @default(autoincrement())
+  deskGroupId Int             @map("desk_group_id")
+  side        OfficeSeatSide
+  position    Int
+  userId      Int?            @map("user_id")
+  label       String?         @db.VarChar(120)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  deskGroup   OfficeDeskGroup @relation(fields: [deskGroupId], references: [id], onDelete: Cascade)
+  user        User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([deskGroupId, side, position], map: "office_seats_desk_group_side_position_uidx")
+  @@unique([userId], map: "office_seats_user_id_uidx")
+  @@index([userId], map: "office_seats_user_id_idx")
+  @@map("office_seats")
 }
 
 model ServiceRecord {
@@ -468,18 +563,18 @@ model PcSpecs {
   macLan                  String?                      @unique @map("mac_lan") @db.VarChar(17)
   casing                  String?                      @db.VarChar(100)
   asset                   Asset                        @relation(fields: [assetId], references: [id])
-  colorOption             LaptopColorOption?          @relation(fields: [colorOptionId], references: [id])
-  graphicOption           LaptopGraphicOption?        @relation(fields: [graphicOptionId], references: [id])
-  licenseOption           LaptopLicenseOption?        @relation(fields: [licenseOptionId], references: [id])
+  colorOption             LaptopColorOption?           @relation(fields: [colorOptionId], references: [id])
+  graphicOption           LaptopGraphicOption?         @relation(fields: [graphicOptionId], references: [id])
+  licenseOption           LaptopLicenseOption?         @relation(fields: [licenseOptionId], references: [id])
   microsoftOfficeOption   LaptopMicrosoftOfficeOption? @relation(fields: [microsoftOfficeOptionId], references: [id])
-  monitorOption           PcMonitorOption?            @relation(fields: [monitorOptionId], references: [id])
-  motherboardOption       PcMotherboardOption?        @relation(fields: [motherboardOptionId], references: [id])
-  osOption                LaptopOsOption?             @relation(fields: [osOptionId], references: [id])
-  powerOption             LaptopPowerOption?          @relation(fields: [powerOptionId], references: [id])
-  processorOption         LaptopProcessorOption?      @relation(fields: [processorOptionId], references: [id])
-  ramOption               LaptopRamOption?            @relation(fields: [ramOptionId], references: [id])
-  storageTypeOption       LaptopStorageTypeOption?    @relation(fields: [storageTypeOptionId], references: [id])
-  upsOption               PcUpsOption?                @relation(fields: [upsOptionId], references: [id])
+  monitorOption           PcMonitorOption?             @relation(fields: [monitorOptionId], references: [id])
+  motherboardOption       PcMotherboardOption?         @relation(fields: [motherboardOptionId], references: [id])
+  osOption                LaptopOsOption?              @relation(fields: [osOptionId], references: [id])
+  powerOption             LaptopPowerOption?           @relation(fields: [powerOptionId], references: [id])
+  processorOption         LaptopProcessorOption?       @relation(fields: [processorOptionId], references: [id])
+  ramOption               LaptopRamOption?             @relation(fields: [ramOptionId], references: [id])
+  storageTypeOption       LaptopStorageTypeOption?     @relation(fields: [storageTypeOptionId], references: [id])
+  upsOption               PcUpsOption?                 @relation(fields: [upsOptionId], references: [id])
 
   @@index([colorOptionId], map: "pc_specs_colorOptionId_fkey")
   @@index([graphicOptionId], map: "pc_specs_graphicOptionId_fkey")
@@ -696,33 +791,33 @@ model CctvRepetitiveMaintenance {
 // =========================================================
 
 model ObserverDevice {
-  id           Int      @id @default(autoincrement())
-  deviceId     String   @unique @map("device_id") @db.VarChar(80)
-  hostname     String   @db.VarChar(255)
-  aliasName    String?  @map("alias_name") @db.VarChar(120)
-  username     String?  @db.VarChar(255)
-  ipAddress    String?  @map("ip_address") @db.VarChar(45)
-  publicIp     String?  @map("public_ip") @db.VarChar(45)
-  osName       String?  @map("os_name") @db.VarChar(255)
-  osVersion    String?  @map("os_version") @db.VarChar(255)
-  osBuild      String?  @map("os_build") @db.VarChar(255)
-  agentVersion String?  @map("agent_version") @db.VarChar(50)
-  currentVersion String? @map("current_version") @db.VarChar(50)
-  lastUpdateStatus String? @map("last_update_status") @db.VarChar(40)
-  lastUpdateVersion String? @map("last_update_version") @db.VarChar(50)
-  lastUpdateMessage String? @map("last_update_message") @db.VarChar(500)
-  lastUpdateAt DateTime? @map("last_update_at")
-  lastSeen     DateTime? @map("last_seen")
-  lastReportAt DateTime? @map("last_report_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                Int       @id @default(autoincrement())
+  deviceId          String    @unique @map("device_id") @db.VarChar(80)
+  hostname          String    @db.VarChar(255)
+  aliasName         String?   @map("alias_name") @db.VarChar(120)
+  username          String?   @db.VarChar(255)
+  ipAddress         String?   @map("ip_address") @db.VarChar(45)
+  publicIp          String?   @map("public_ip") @db.VarChar(45)
+  osName            String?   @map("os_name") @db.VarChar(255)
+  osVersion         String?   @map("os_version") @db.VarChar(255)
+  osBuild           String?   @map("os_build") @db.VarChar(255)
+  agentVersion      String?   @map("agent_version") @db.VarChar(50)
+  currentVersion    String?   @map("current_version") @db.VarChar(50)
+  lastUpdateStatus  String?   @map("last_update_status") @db.VarChar(40)
+  lastUpdateVersion String?   @map("last_update_version") @db.VarChar(50)
+  lastUpdateMessage String?   @map("last_update_message") @db.VarChar(500)
+  lastUpdateAt      DateTime? @map("last_update_at")
+  lastSeen          DateTime? @map("last_seen")
+  lastReportAt      DateTime? @map("last_report_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  hardwareSpec   ObserverHardwareSpec?
-  storageDrives  ObserverStorageDrive[]
-  storageHealth  ObserverStorageHealth[]
-  installedApps  ObserverInstalledApp[]
-  agentLogs      ObserverAgentLog[]
-  syncHistory    ObserverSyncHistory[]
+  hardwareSpec  ObserverHardwareSpec?
+  storageDrives ObserverStorageDrive[]
+  storageHealth ObserverStorageHealth[]
+  installedApps ObserverInstalledApp[]
+  agentLogs     ObserverAgentLog[]
+  syncHistory   ObserverSyncHistory[]
 
   @@index([hostname], map: "observer_devices_hostname_idx")
   @@index([publicIp], map: "observer_devices_public_ip_idx")
@@ -771,47 +866,47 @@ model ObserverStorageDrive {
 }
 
 model ObserverStorageHealth {
-  id               Int       @id @default(autoincrement())
-  deviceRefId      Int       @map("device_ref_id")
-  diskDeviceId     String    @map("disk_device_id") @db.VarChar(255)
-  deviceName       String?   @map("device_name") @db.VarChar(255)
-  serialNumber     String?   @map("serial_number") @db.VarChar(255)
-  model            String?   @db.VarChar(255)
-  mediaType        String?   @map("media_type") @db.VarChar(50)
-  busType          String?   @map("bus_type") @db.VarChar(50)
-  firmwareVersion  String?   @map("firmware_version") @db.VarChar(100)
-  healthStatus     String?   @map("health_status") @db.VarChar(30)
-  operationalStatus String?  @map("operational_status") @db.VarChar(30)
-  predictedFailure Boolean?  @map("predicted_failure")
-  temperatureC     Float?    @map("temperature_c")
-  temperatureF     Float?    @map("temperature_f")
-  powerOnHours     Int?      @map("power_on_hours")
-  wearLevelPercent Float?    @map("wear_level_percent")
-  availableSparePercent Float? @map("available_spare_percent")
-  readErrors       Int?      @map("read_errors")
-  writeErrors      Int?      @map("write_errors")
-  collectedAt      DateTime? @map("collected_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id                    Int       @id @default(autoincrement())
+  deviceRefId           Int       @map("device_ref_id")
+  diskDeviceId          String    @map("disk_device_id") @db.VarChar(255)
+  deviceName            String?   @map("device_name") @db.VarChar(255)
+  serialNumber          String?   @map("serial_number") @db.VarChar(255)
+  model                 String?   @db.VarChar(255)
+  mediaType             String?   @map("media_type") @db.VarChar(50)
+  busType               String?   @map("bus_type") @db.VarChar(50)
+  firmwareVersion       String?   @map("firmware_version") @db.VarChar(100)
+  healthStatus          String?   @map("health_status") @db.VarChar(30)
+  operationalStatus     String?   @map("operational_status") @db.VarChar(30)
+  predictedFailure      Boolean?  @map("predicted_failure")
+  temperatureC          Float?    @map("temperature_c")
+  temperatureF          Float?    @map("temperature_f")
+  powerOnHours          Int?      @map("power_on_hours")
+  wearLevelPercent      Float?    @map("wear_level_percent")
+  availableSparePercent Float?    @map("available_spare_percent")
+  readErrors            Int?      @map("read_errors")
+  writeErrors           Int?      @map("write_errors")
+  collectedAt           DateTime? @map("collected_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
 
+  @@unique([deviceRefId, diskDeviceId], map: "observer_storage_health_device_disk_uidx")
   @@index([deviceRefId], map: "observer_storage_health_device_ref_idx")
   @@index([healthStatus], map: "observer_storage_health_health_status_idx")
   @@index([predictedFailure], map: "observer_storage_health_predicted_failure_idx")
-  @@unique([deviceRefId, diskDeviceId], map: "observer_storage_health_device_disk_uidx")
   @@map("observer_storage_health")
 }
 
 model ObserverInstalledApp {
-  id          Int      @id @default(autoincrement())
-  deviceRefId Int      @map("device_ref_id")
-  appName     String   @map("app_name") @db.VarChar(255)
-  appVersion  String?  @map("app_version") @db.VarChar(255)
-  publisher   String?  @db.VarChar(255)
+  id          Int       @id @default(autoincrement())
+  deviceRefId Int       @map("device_ref_id")
+  appName     String    @map("app_name") @db.VarChar(255)
+  appVersion  String?   @map("app_version") @db.VarChar(255)
+  publisher   String?   @db.VarChar(255)
   installDate DateTime? @map("install_date") @db.Date
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
 
@@ -821,12 +916,12 @@ model ObserverInstalledApp {
 }
 
 model ObserverAgentLog {
-  id        Int      @id @default(autoincrement())
-  deviceRefId Int    @map("device_ref_id")
-  eventType String   @map("event_type") @db.VarChar(100)
-  message   String   @db.Text
-  logLevel  String?  @map("log_level") @db.VarChar(30)
-  createdAt DateTime @default(now()) @map("created_at")
+  id          Int      @id @default(autoincrement())
+  deviceRefId Int      @map("device_ref_id")
+  eventType   String   @map("event_type") @db.VarChar(100)
+  message     String   @db.Text
+  logLevel    String?  @map("log_level") @db.VarChar(30)
+  createdAt   DateTime @default(now()) @map("created_at")
 
   device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
 
@@ -836,9 +931,9 @@ model ObserverAgentLog {
 }
 
 model ObserverSyncHistory {
-  id         Int      @id @default(autoincrement())
-  deviceRefId Int     @map("device_ref_id")
-  syncKind   String   @map("sync_kind") @db.VarChar(30)
+  id          Int       @id @default(autoincrement())
+  deviceRefId Int       @map("device_ref_id")
+  syncKind    String    @map("sync_kind") @db.VarChar(30)
   collectedAt DateTime? @map("collected_at")
   receivedAt  DateTime  @default(now()) @map("received_at")
 
@@ -850,19 +945,19 @@ model ObserverSyncHistory {
 }
 
 model ObserverAgentRelease {
-  id             Int      @id @default(autoincrement())
-  version        String   @unique @db.VarChar(80)
-  originalName   String   @map("original_name") @db.VarChar(255)
-  storedName     String   @unique @map("stored_name") @db.VarChar(255)
-  sizeBytes      Int      @map("size_bytes")
-  sha256         String   @db.Char(64)
-  uploadedAt     DateTime @map("uploaded_at")
-  uploadedByName String?  @map("uploaded_by_name") @db.VarChar(255)
-  uploadedByEmail String? @map("uploaded_by_email") @db.VarChar(255)
-  isLatest       Boolean  @default(false) @map("is_latest")
-  releaseNotes   String?  @map("release_notes") @db.Text
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id              Int      @id @default(autoincrement())
+  version         String   @unique @db.VarChar(80)
+  originalName    String   @map("original_name") @db.VarChar(255)
+  storedName      String   @unique @map("stored_name") @db.VarChar(255)
+  sizeBytes       Int      @map("size_bytes")
+  sha256          String   @db.Char(64)
+  uploadedAt      DateTime @map("uploaded_at")
+  uploadedByName  String?  @map("uploaded_by_name") @db.VarChar(255)
+  uploadedByEmail String?  @map("uploaded_by_email") @db.VarChar(255)
+  isLatest        Boolean  @default(false) @map("is_latest")
+  releaseNotes    String?  @map("release_notes") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@index([isLatest], map: "observer_agent_releases_is_latest_idx")
   @@index([uploadedAt], map: "observer_agent_releases_uploaded_at_idx")
@@ -870,26 +965,26 @@ model ObserverAgentRelease {
 }
 
 model Isp {
-  id             Int         @id @default(autoincrement())
+  id               Int               @id @default(autoincrement())
   // sbu            String      @db.VarChar(255)
-  isp            String      @db.VarChar(255)
-  asNumber       String      @map("as_number") @db.VarChar(255)
-  address        String      @db.VarChar(255)
-  maps           String      @db.VarChar(255)
-  pop            String      @db.VarChar(255)
-  transmisi      String      @db.VarChar(255)
-  productService String      @map("product_service") @db.VarChar(255)
-  ipPublic       String      @map("ip_public") @db.VarChar(255)
-  sla            String      @db.VarChar(255)
-  picNoc         String      @map("pic_noc") @db.VarChar(255)
-  hpNoc          String      @map("hp_noc") @db.VarChar(255)
-  prtg           String      @db.VarChar(255)
-  username       String      @db.VarChar(255)
-  password       String      @db.VarChar(255)
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  ispReports     IspReport[]
-  ispSlaRecords  IspSlaRecord[]
+  isp              String            @db.VarChar(255)
+  asNumber         String            @map("as_number") @db.VarChar(255)
+  address          String            @db.VarChar(255)
+  maps             String            @db.VarChar(255)
+  pop              String            @db.VarChar(255)
+  transmisi        String            @db.VarChar(255)
+  productService   String            @map("product_service") @db.VarChar(255)
+  ipPublic         String            @map("ip_public") @db.VarChar(255)
+  sla              String            @db.VarChar(255)
+  picNoc           String            @map("pic_noc") @db.VarChar(255)
+  hpNoc            String            @map("hp_noc") @db.VarChar(255)
+  prtg             String            @db.VarChar(255)
+  username         String            @db.VarChar(255)
+  password         String            @db.VarChar(255)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  ispReports       IspReport[]
+  ispSlaRecords    IspSlaRecord[]
   problemSequences ProblemSequence[]
 
   @@map("isps")
@@ -913,19 +1008,19 @@ model IspReport {
 }
 
 model IspSlaRecord {
-  id             Int      @id @default(autoincrement())
-  sbu            String   @db.VarChar(255)
-  month          Int
-  year           Int
-  ispId          Int
-  contract       String   @db.VarChar(255)
-  actualisation  Float
-  uptimeSeconds  Int      @map("uptime_seconds")
-  downtimeSeconds Int     @map("downtime_seconds")
-  remarks        String?  @db.Text
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  isp            Isp      @relation(fields: [ispId], references: [id])
+  id              Int      @id @default(autoincrement())
+  sbu             String   @db.VarChar(255)
+  month           Int
+  year            Int
+  ispId           Int
+  contract        String   @db.VarChar(255)
+  actualisation   Float
+  uptimeSeconds   Int      @map("uptime_seconds")
+  downtimeSeconds Int      @map("downtime_seconds")
+  remarks         String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  isp             Isp      @relation(fields: [ispId], references: [id])
 
   @@index([ispId], map: "isp_sla_records_isp_id_idx")
   @@index([year, month], map: "isp_sla_records_period_idx")
@@ -973,21 +1068,21 @@ model BilingRecord {
 }
 
 model SparepartMovement {
-  id                  Int                         @id @default(autoincrement())
-  deviceFamily        SparepartDeviceFamily       @map("device_family")
-  partType            SparepartPartType           @map("part_type")
-  sourceOptionId      Int                         @map("source_option_id")
-  sourceOptionValue   String                      @map("source_option_value") @db.VarChar(255)
-  movementType        SparepartMovementType       @map("movement_type")
+  id                  Int                           @id @default(autoincrement())
+  deviceFamily        SparepartDeviceFamily         @map("device_family")
+  partType            SparepartPartType             @map("part_type")
+  sourceOptionId      Int                           @map("source_option_id")
+  sourceOptionValue   String                        @map("source_option_value") @db.VarChar(255)
+  movementType        SparepartMovementType         @map("movement_type")
   adjustmentDirection SparepartAdjustmentDirection? @map("adjustment_direction")
   quantity            Int
-  movedAt             DateTime                    @map("moved_at")
-  userId              Int?                        @map("user_id")
-  stockOwnerUserId    Int?                        @map("stock_owner_user_id")
-  sourceAssignmentId  Int?                        @map("source_assignment_id")
-  notes               String?                     @db.Text
-  createdAt           DateTime                    @default(now()) @map("created_at")
-  updatedAt           DateTime                    @updatedAt @map("updated_at")
+  movedAt             DateTime                      @map("moved_at")
+  userId              Int?                          @map("user_id")
+  stockOwnerUserId    Int?                          @map("stock_owner_user_id")
+  sourceAssignmentId  Int?                          @map("source_assignment_id")
+  notes               String?                       @db.Text
+  createdAt           DateTime                      @default(now()) @map("created_at")
+  updatedAt           DateTime                      @updatedAt @map("updated_at")
 
   user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   stockOwner       User?            @relation("SparepartStockOwner", fields: [stockOwnerUserId], references: [id], onDelete: SetNull)

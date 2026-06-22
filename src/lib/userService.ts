@@ -12,7 +12,6 @@ export interface UserWithAssetStatus {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  password: string | null;
   role: string | null;
   assetAssignmentCount: number;
   hasAssignedAsset: boolean;

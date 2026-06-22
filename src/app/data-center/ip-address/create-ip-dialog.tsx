@@ -13,10 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Select from "react-select";
-import { getUsers } from "@/lib/userService";
+import { getUsers, type UserWithAssetStatus } from "@/lib/userService";
 import { getAssignments } from "@/lib/assignmentService";
 import { createIpAddress } from "@/lib/ipAddressService";
-import type { User } from "@prisma/client";
 import type { AssetAssignment } from "@prisma/client";
 import { toast } from "sonner";
 import { formatMacAddress, isValidMacAddress } from "@/lib/utils";
@@ -54,7 +53,7 @@ const parseOctet = (value: string) => {
 };
 
 export function CreateIpDialog({ isOpen, onClose, onSaved }: CreateIpDialogProps) {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithAssetStatus[]>([]);
   const [assignments, setAssignments] = useState<AssetAssignment[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState(false);

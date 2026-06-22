@@ -15,9 +15,9 @@ import { Label } from "@/components/ui/label";
 import Select from "react-select";
 import { Textarea } from "@/components/ui/textarea";
 import { createAssignment } from "@/lib/assignmentService";
-import { getUsers } from "@/lib/userService";
+import { getUsers, type UserWithAssetStatus } from "@/lib/userService";
 import { getAssets } from "@/lib/assetService";
-import { User, Asset } from "@prisma/client";
+import { Asset } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -47,7 +47,7 @@ export function AssignAssetDialog({
   const [userId, setUserId] = useState<string | null>(null);
   const [nomorAsset, setNomorAsset] = useState<string>("");
   const [catatan, setCatatan] = useState("");
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithAssetStatus[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingAssets, setLoadingAssets] = useState(false);

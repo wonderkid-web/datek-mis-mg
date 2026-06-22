@@ -70,6 +70,87 @@ export interface AssetAssignment {
   computerMaintenances?: ComputerMaintenance[];
 }
 
+export type OfficeSeatSide = "TOP" | "BOTTOM";
+export type OfficeDeskLayoutKind = "DOUBLE" | "SINGLE_TOP" | "SINGLE_BOTTOM";
+export type OfficeFloorZoneKind = "WALKWAY";
+
+export interface OfficeSeatAssetSummary {
+  id: number;
+  nomorAsset: string;
+  catatan: string | null;
+  asset: Pick<Asset, "id" | "namaAsset" | "nomorSeri" | "statusAsset"> & {
+    category: Pick<AssetCategory, "id" | "nama" | "slug">;
+  };
+}
+
+export interface OfficeSeatUserSummary
+  extends Pick<
+    User,
+    "id" | "namaLengkap" | "email" | "departemen" | "jabatan" | "lokasiKantor" | "isActive"
+  > {
+  assetAssignments: OfficeSeatAssetSummary[];
+}
+
+export interface OfficeSeat {
+  id: number;
+  deskGroupId: number;
+  side: OfficeSeatSide;
+  position: number;
+  userId: number | null;
+  label: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  user?: OfficeSeatUserSummary | null;
+}
+
+export interface OfficeDeskGroup {
+  id: number;
+  floorId: number;
+  name: string;
+  department: string | null;
+  departmentColor: string | null;
+  layoutKind: OfficeDeskLayoutKind;
+  gridColumn: number;
+  gridRow: number;
+  columnSpan: number;
+  seatsPerSide: number;
+  sortOrder: number;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  seats: OfficeSeat[];
+}
+
+export interface OfficeFloorZone {
+  id: number;
+  floorId: number;
+  kind: OfficeFloorZoneKind;
+  name: string;
+  color: string | null;
+  gridColumn: number;
+  gridRow: number;
+  columnSpan: number;
+  rowSpan: number;
+  sortOrder: number;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OfficeFloor {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  sortOrder: number;
+  canvasColumns: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deskGroups: OfficeDeskGroup[];
+  zones: OfficeFloorZone[];
+}
+
 
 export interface AssetAssignmentPrinter {
   id: number;

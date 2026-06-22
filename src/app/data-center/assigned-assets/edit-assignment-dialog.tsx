@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import Select from "react-select";
 import { Textarea } from "@/components/ui/textarea";
-import { AssetAssignment, Asset, User } from "@prisma/client";
+import { AssetAssignment, Asset } from "@prisma/client";
 import { updateAssignment } from "@/lib/assignmentService";
-import { getUsers } from "@/lib/userService";
+import { getUsers, type UserWithAssetStatus } from "@/lib/userService";
 import { getAssets } from "@/lib/assetService";
 
 interface EditAssignmentDialogProps {
@@ -32,7 +32,7 @@ export function EditAssignmentDialog({
   assignment,
 }: EditAssignmentDialogProps) {
   const [formData, setFormData] = useState<Partial<AssetAssignment>>(assignment);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithAssetStatus[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
 
   useEffect(() => {
