@@ -15,11 +15,9 @@ const formatterIDR = new Intl.NumberFormat("id-ID", {
 export const getColumns = ({
   handleEditClick,
   handleDeleteClick,
-  handleRemarksClick,
 }: {
   handleEditClick: (record: ServiceRecordWithDetails) => void;
   handleDeleteClick: (record: ServiceRecordWithDetails) => void;
-  handleRemarksClick: (record: ServiceRecordWithDetails) => void;
 }): ColumnDef<ServiceRecordWithDetails>[] => [
     {
       accessorKey: "no",
@@ -55,31 +53,6 @@ export const getColumns = ({
       },
     },
     {
-      accessorKey: "remarks",
-      header: () => <div className="text-center">Remarks</div>,
-      cell: ({ row }) => {
-        const serviceRecord = row.original;
-        const hasRemarks = Boolean(serviceRecord.remarks?.trim());
-
-        if (!hasRemarks) {
-          return <div className="text-center text-muted-foreground">-</div>;
-        }
-
-        return (
-          <div className="text-center">
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-auto px-2 py-1 text-xs underline underline-offset-4"
-              onClick={() => handleRemarksClick(serviceRecord)}
-            >
-              View Remarks
-            </Button>
-          </div>
-        );
-      },
-    },
-    {
       accessorKey: "createdAt",
       header: () => <div className="text-center">Created At</div>,
       cell: ({ row }) => {
@@ -99,7 +72,10 @@ export const getColumns = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleEditClick(serviceRecord)}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleEditClick(serviceRecord);
+              }}
             >
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Edit</span>
@@ -107,7 +83,10 @@ export const getColumns = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleDeleteClick(serviceRecord)}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDeleteClick(serviceRecord);
+              }}
             >
               <Trash className="h-4 w-4" />
               <span className="sr-only">Delete</span>

@@ -11,13 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select as UiSelect,
   SelectContent,
@@ -39,6 +33,7 @@ import { getColumns } from "./columns";
 import { exportColumns } from "./exportColumns";
 import { DeleteRecordDialog } from "./delete-record-dialog";
 import { EditRecordDialog } from "./edit-record-dialog";
+import { ViewRecordDialog } from "./view-record-dialog";
 import {
   AssetAssignment,
   Asset,
@@ -122,9 +117,9 @@ export default function ServiceHistoryPage() {
   const [recordToEdit, setRecordToEdit] =
     useState<ServiceRecordWithDetails | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [recordToViewRemarks, setRecordToViewRemarks] =
+  const [recordToView, setRecordToView] =
     useState<ServiceRecordWithDetails | null>(null);
-  const [isRemarksDialogOpen, setIsRemarksDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState("all");
@@ -220,9 +215,9 @@ export default function ServiceHistoryPage() {
     setIsDeleteDialogOpen(true);
   }, []);
 
-  const handleRemarksClick = useCallback((record: ServiceRecordWithDetails) => {
-    setRecordToViewRemarks(record);
-    setIsRemarksDialogOpen(true);
+  const handleRowClick = useCallback((record: ServiceRecordWithDetails) => {
+    setRecordToView(record);
+    setIsViewDialogOpen(true);
   }, []);
 
   const handleConfirmDelete = async () => {
@@ -245,9 +240,8 @@ export default function ServiceHistoryPage() {
       getColumns({
         handleEditClick,
         handleDeleteClick,
-        handleRemarksClick,
       }),
-    [handleDeleteClick, handleEditClick, handleRemarksClick]
+    [handleDeleteClick, handleEditClick]
   );
 
   const isAdmin = (session?.user as any)?.role === "administrator";
@@ -371,7 +365,11 @@ export default function ServiceHistoryPage() {
                   )}
                 </div>
               </div>
-              <DataTable columns={columns} data={filteredRecords} />
+              <DataTable
+                columns={columns}
+                data={filteredRecords}
+                onRowClick={handleRowClick}
+              />
             </>
           )}
         </CardContent>
@@ -544,31 +542,16 @@ export default function ServiceHistoryPage() {
         onSave={fetchData}
       />
 
-      <Dialog
-        open={isRemarksDialogOpen}
+      <ViewRecordDialog
+        isOpen={isViewDialogOpen}
         onOpenChange={(open) => {
-          setIsRemarksDialogOpen(open);
+          setIsViewDialogOpen(open);
           if (!open) {
-            setRecordToViewRemarks(null);
+            setRecordToView(null);
           }
         }}
-      >
-        <DialogContent className="sm:max-w-[560px]">
-          <DialogHeader>
-            <DialogTitle>Remarks Service Record</DialogTitle>
-            <DialogDescription>
-              {recordToViewRemarks
-                ? `${recordToViewRemarks.ticketHelpdesk} · ${recordToViewRemarks.assetAssignment?.nomorAsset ?? "-"} · ${recordToViewRemarks.assetAssignment?.user?.namaLengkap ?? "-"}`
-                : "Detail remarks service record."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-md border bg-muted/30 p-4">
-            <p className="whitespace-pre-wrap break-words text-sm leading-6">
-              {recordToViewRemarks?.remarks?.trim() || "No remarks."}
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+        record={recordToView}
+      />
     </>
   );
 }
