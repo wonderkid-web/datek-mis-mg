@@ -32,6 +32,10 @@ export function ViewSlaRecordDialog({
   if (!slaRecord) return null;
 
   const detailRows = [
+    {
+      label: "Created At",
+      value: format(new Date(slaRecord.createdAt), "PPP p"),
+    },
     { label: "SBU", value: formatSlaSbuLabel(slaRecord.sbu) },
     { label: "ISP", value: slaRecord.isp.isp },
     { label: "Month", value: getSlaMonthLabel(slaRecord.month) },
@@ -41,14 +45,11 @@ export function ViewSlaRecordDialog({
     { label: "Uptime", value: formatDurationSeconds(slaRecord.uptimeSeconds) },
     { label: "Downtime", value: formatDurationSeconds(slaRecord.downtimeSeconds) },
     { label: "Remarks", value: slaRecord.remarks || "-" },
-    {
-      label: "Created At",
-      value: format(new Date(slaRecord.createdAt), "PPP p"),
-    },
-    {
-      label: "Updated At",
-      value: format(new Date(slaRecord.updatedAt), "PPP p"),
-    },
+    
+    // {
+    //   label: "Updated At",
+    //   value: format(new Date(slaRecord.updatedAt), "PPP p"),
+    // },
   ];
 
   return (

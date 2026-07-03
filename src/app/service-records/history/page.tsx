@@ -11,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select as UiSelect,
   SelectContent,
@@ -116,6 +122,9 @@ export default function ServiceHistoryPage() {
   const [recordToEdit, setRecordToEdit] =
     useState<ServiceRecordWithDetails | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [recordToViewRemarks, setRecordToViewRemarks] =
+    useState<ServiceRecordWithDetails | null>(null);
+  const [isRemarksDialogOpen, setIsRemarksDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState("all");
@@ -211,6 +220,11 @@ export default function ServiceHistoryPage() {
     setIsDeleteDialogOpen(true);
   }, []);
 
+  const handleRemarksClick = useCallback((record: ServiceRecordWithDetails) => {
+    setRecordToViewRemarks(record);
+    setIsRemarksDialogOpen(true);
+  }, []);
+
   const handleConfirmDelete = async () => {
     if (!recordToDelete) return;
     try {
@@ -227,8 +241,13 @@ export default function ServiceHistoryPage() {
   };
 
   const columns = useMemo(
-    () => getColumns({ handleEditClick, handleDeleteClick }),
-    [handleEditClick, handleDeleteClick]
+    () =>
+      getColumns({
+        handleEditClick,
+        handleDeleteClick,
+        handleRemarksClick,
+      }),
+    [handleDeleteClick, handleEditClick, handleRemarksClick]
   );
 
   const isAdmin = (session?.user as any)?.role === "administrator";
@@ -524,6 +543,32 @@ export default function ServiceHistoryPage() {
         onOpenChange={setIsEditDialogOpen}
         onSave={fetchData}
       />
+
+      <Dialog
+        open={isRemarksDialogOpen}
+        onOpenChange={(open) => {
+          setIsRemarksDialogOpen(open);
+          if (!open) {
+            setRecordToViewRemarks(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle>Remarks Service Record</DialogTitle>
+            <DialogDescription>
+              {recordToViewRemarks
+                ? `${recordToViewRemarks.ticketHelpdesk} · ${recordToViewRemarks.assetAssignment?.nomorAsset ?? "-"} · ${recordToViewRemarks.assetAssignment?.user?.namaLengkap ?? "-"}`
+                : "Detail remarks service record."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border bg-muted/30 p-4">
+            <p className="whitespace-pre-wrap break-words text-sm leading-6">
+              {recordToViewRemarks?.remarks?.trim() || "No remarks."}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

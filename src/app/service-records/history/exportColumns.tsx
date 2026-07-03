@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ServiceRecordWithDetails } from "./columns";
+import { ServiceRecordWithDetails } from "@/lib/types";
 
 const formatterIDR = new Intl.NumberFormat("id-ID", {
   style: "currency",

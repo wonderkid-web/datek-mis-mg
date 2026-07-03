@@ -3,15 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Asset, AssetAssignment, ServiceRecord, User } from "@prisma/client";
-
-// Extends ServiceRecord to include nested details for the table
-export type ServiceRecordWithDetails = ServiceRecord & {
-  assetAssignment: AssetAssignment & {
-    asset: Asset;
-    user: User;
-  };
-};
+import { ServiceRecordWithDetails } from "@/lib/types";
 
 const formatterIDR = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -23,7 +15,12 @@ const formatterIDR = new Intl.NumberFormat("id-ID", {
 export const getColumns = ({
   handleEditClick,
   handleDeleteClick,
-}: any): ColumnDef<any>[] => [
+  handleRemarksClick,
+}: {
+  handleEditClick: (record: ServiceRecordWithDetails) => void;
+  handleDeleteClick: (record: ServiceRecordWithDetails) => void;
+  handleRemarksClick: (record: ServiceRecordWithDetails) => void;
+}): ColumnDef<ServiceRecordWithDetails>[] => [
     {
       accessorKey: "no",
       header: () => <div className="text-center">No</div>,
@@ -60,6 +57,27 @@ export const getColumns = ({
     {
       accessorKey: "remarks",
       header: () => <div className="text-center">Remarks</div>,
+      cell: ({ row }) => {
+        const serviceRecord = row.original;
+        const hasRemarks = Boolean(serviceRecord.remarks?.trim());
+
+        if (!hasRemarks) {
+          return <div className="text-center text-muted-foreground">-</div>;
+        }
+
+        return (
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto px-2 py-1 text-xs underline underline-offset-4"
+              onClick={() => handleRemarksClick(serviceRecord)}
+            >
+              View Remarks
+            </Button>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "createdAt",
