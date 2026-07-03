@@ -96,6 +96,44 @@ function driveStatusFromFreePercent(freePercent: number | null | undefined) {
   return "OK";
 }
 
+function normalizeStorageDrives(
+  drives: ReportPayload["storage"] | undefined,
+  deviceRefId: number
+) {
+  const byDriveLetter = new Map<
+    string,
+    {
+      deviceRefId: number;
+      driveLetter: string;
+      totalGb: number | null;
+      freeGb: number | null;
+      freePercent: number | null;
+      status: string | null;
+    }
+  >();
+
+  for (const drive of drives ?? []) {
+    if (!drive || typeof drive.drive !== "string" || !drive.drive.trim()) {
+      continue;
+    }
+
+    const driveLetter = drive.drive.trim();
+    byDriveLetter.set(driveLetter, {
+      deviceRefId,
+      driveLetter,
+      totalGb:
+        typeof drive.total_gb === "number" ? Math.round(drive.total_gb) : null,
+      freeGb:
+        typeof drive.free_gb === "number" ? Math.round(drive.free_gb) : null,
+      freePercent:
+        typeof drive.free_percent === "number" ? drive.free_percent : null,
+      status: driveStatusFromFreePercent(drive.free_percent),
+    });
+  }
+
+  return Array.from(byDriveLetter.values());
+}
+
 export async function upsertDeviceFromRegister(payload: RegisterPayload) {
   const now = new Date();
 
@@ -286,24 +324,18 @@ export async function ingestDeviceReport(payload: ReportPayload) {
       where: { deviceRefId: device.id },
     });
 
-    const drives = payload.storage ?? [];
+    const drives = normalizeStorageDrives(payload.storage, device.id);
     if (drives.length) {
       await tx.observerStorageDrive.createMany({
-        data: drives
-          .filter((d) => d && typeof d.drive === "string" && d.drive.trim())
-          .map((drive) => ({
-            deviceRefId: device.id,
-            driveLetter: drive.drive!.trim(),
-            totalGb:
-              typeof drive.total_gb === "number" ? Math.round(drive.total_gb) : null,
-            freeGb:
-              typeof drive.free_gb === "number" ? Math.round(drive.free_gb) : null,
-            freePercent:
-              typeof drive.free_percent === "number"
-                ? drive.free_percent
-                : null,
-            status: driveStatusFromFreePercent(drive.free_percent),
-          })),
+        data: drives,
+      });
+
+      await tx.observerStorageSnapshot.createMany({
+        data: drives.map((drive) => ({
+          ...drive,
+          collectedAt,
+        })),
+        skipDuplicates: true,
       });
     }
 

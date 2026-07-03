@@ -814,6 +814,7 @@ model ObserverDevice {
 
   hardwareSpec  ObserverHardwareSpec?
   storageDrives ObserverStorageDrive[]
+  storageSnapshots ObserverStorageSnapshot[]
   storageHealth ObserverStorageHealth[]
   installedApps ObserverInstalledApp[]
   agentLogs     ObserverAgentLog[]
@@ -863,6 +864,25 @@ model ObserverStorageDrive {
   @@index([deviceRefId], map: "observer_storage_drives_device_ref_idx")
   @@index([status], map: "observer_storage_drives_status_idx")
   @@map("observer_storage_drives")
+}
+
+model ObserverStorageSnapshot {
+  id          Int      @id @default(autoincrement())
+  deviceRefId Int      @map("device_ref_id")
+  driveLetter String   @map("drive_letter") @db.VarChar(16)
+  totalGb     Int?     @map("total_gb")
+  freeGb      Int?     @map("free_gb")
+  freePercent Float?   @map("free_percent")
+  status      String?  @db.VarChar(20)
+  collectedAt DateTime @map("collected_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  device ObserverDevice @relation(fields: [deviceRefId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceRefId, driveLetter, collectedAt], map: "observer_storage_snapshots_device_drive_collected_uidx")
+  @@index([deviceRefId, driveLetter, collectedAt], map: "observer_storage_snapshots_device_drive_collected_idx")
+  @@index([collectedAt], map: "observer_storage_snapshots_collected_at_idx")
+  @@map("observer_storage_snapshots")
 }
 
 model ObserverStorageHealth {
