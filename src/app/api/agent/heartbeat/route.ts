@@ -13,6 +13,10 @@ import {
   getLatestObserverAgentRelease,
   getObserverAgentReleaseDownloadPath,
 } from "@/lib/observerAgentReleaseStorage";
+import {
+  getObserverRuntimeConfigForAgent,
+  OBSERVER_RUNTIME_CONFIG_DEFAULTS,
+} from "@/lib/observerAgentRuntimeConfigService";
 import { compareSemver } from "@/lib/semver";
 
 export const runtime = "nodejs";
@@ -185,12 +189,16 @@ export async function POST(req: NextRequest) {
     timestamp: timestamp!,
   });
 
-  let latestRelease: Awaited<ReturnType<typeof getLatestObserverAgentRelease>> = null;
-  try {
-    latestRelease = await getLatestObserverAgentRelease();
-  } catch (error) {
-    console.error("Failed to resolve latest observer release on heartbeat:", error);
-  }
+  const [latestRelease, runtimeConfig] = await Promise.all([
+    getLatestObserverAgentRelease().catch((error) => {
+      console.error("Failed to resolve latest observer release on heartbeat:", error);
+      return null;
+    }),
+    getObserverRuntimeConfigForAgent({ deviceId: deviceId! }).catch((error) => {
+      console.error("Failed to resolve observer runtime config on heartbeat:", error);
+      return OBSERVER_RUNTIME_CONFIG_DEFAULTS;
+    }),
+  ]);
   const agentCurrentVersion = currentVersion ?? agentVersion;
 
   let updateAvailable = false;
@@ -226,6 +234,7 @@ export async function POST(req: NextRequest) {
     download_url: downloadUrl,
     sha256,
     update_available: updateAvailable,
+    runtime_config: runtimeConfig,
   };
 
   console.log(
@@ -239,6 +248,7 @@ export async function POST(req: NextRequest) {
           latest_version: latestVersion,
           semver_compare_result: versionComparison,
           update_available: updateAvailable,
+          runtime_config: runtimeConfig,
           download_url: downloadUrl,
           sha256_present: Boolean(sha256),
           response: heartbeatResponse,

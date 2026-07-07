@@ -16,6 +16,7 @@ const navLinks = [
   { href: '/tracker/observer-agent/hardware', label: 'Observer Hardware' },
   { href: '/tracker/observer-agent/software', label: 'Observer Software' },
   { href: '/tracker/observer-agent/releases', label: 'Observer Releases' },
+  { href: '/tracker/observer-agent/runtime-config', label: 'Runtime Config' },
 ];
 
 export default function TrackerLayout({

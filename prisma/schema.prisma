@@ -986,6 +986,21 @@ model ObserverAgentRelease {
   @@map("observer_agent_releases")
 }
 
+model ObserverRuntimeConfig {
+  id                       Int      @id @default(autoincrement())
+  scopeType                String   @map("scope_type") @db.VarChar(30)
+  scopeKey                 String   @map("scope_key") @db.VarChar(120)
+  heartbeatIntervalMinutes Int      @map("heartbeat_interval_minutes")
+  fullReportIntervalHours  Int      @map("full_report_interval_hours")
+  isActive                 Boolean  @default(true) @map("is_active")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  @@unique([scopeType, scopeKey], map: "observer_runtime_configs_scope_uidx")
+  @@index([scopeType, isActive], map: "observer_runtime_configs_scope_active_idx")
+  @@map("observer_runtime_configs")
+}
+
 model Isp {
   id               Int               @id @default(autoincrement())
   // sbu            String      @db.VarChar(255)
