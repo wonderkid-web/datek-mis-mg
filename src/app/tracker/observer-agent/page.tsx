@@ -1,9 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getObserverDeviceList, computeObserverDeviceStatus } from "@/lib/observerAgentService";
+import {
+  createSendFullReportCommandsForActiveDevices,
+  listObserverAgentCommands,
+  ObserverAgentCommandError,
+} from "@/lib/observerAgentCommandService";
+import { getCurrentSession } from "@/lib/session";
+import { RequestFullReportCommandForm } from "./RequestFullReportCommandForm";
 
 export const dynamic = "force-dynamic";
 
@@ -41,8 +50,76 @@ function StatusBadge({ label, variant }: { label: string; variant: "ok" | "warn"
   return <Badge className={className}>{label}</Badge>;
 }
 
-export default async function ObserverAgentPage() {
-  const devices = await getObserverDeviceList();
+function CommandStatusBadge({ status }: { status: string }) {
+  const variant =
+    status === "completed"
+      ? "ok"
+      : status === "delivered" || status === "pending"
+      ? "warn"
+      : status === "expired" || status === "cancelled"
+      ? "crit"
+      : "muted";
+  return <StatusBadge label={status.toUpperCase()} variant={variant} />;
+}
+
+function commandMessageUrl(type: "command_saved" | "command_error", message: string) {
+  return `/tracker/observer-agent?${type}=${encodeURIComponent(message)}`;
+}
+
+async function requestAllAgentSpecsAction() {
+  "use server";
+
+  const session = await getCurrentSession();
+  const user = session?.user as
+    | { role?: string; name?: string | null; email?: string | null }
+    | undefined;
+
+  if (user?.role !== "administrator") {
+    redirect(commandMessageUrl("command_error", "Hanya administrator yang boleh trigger full report."));
+  }
+
+  let result: Awaited<ReturnType<typeof createSendFullReportCommandsForActiveDevices>>;
+  try {
+    result = await createSendFullReportCommandsForActiveDevices({
+      requester: {
+        name: user?.name,
+        email: user?.email,
+      },
+    });
+  } catch (error) {
+    const message =
+      error instanceof ObserverAgentCommandError
+        ? error.message
+        : "Gagal membuat command full report global.";
+    redirect(commandMessageUrl("command_error", message));
+  }
+
+  revalidatePath("/tracker/observer-agent");
+  const skipped = result.duplicateCount
+    ? ` ${result.duplicateCount} duplicate dilewati.`
+    : "";
+  redirect(
+    commandMessageUrl(
+      "command_saved",
+      `${result.createdCount} command full report dibuat.${skipped}`
+    )
+  );
+}
+
+export default async function ObserverAgentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ command_saved?: string; command_error?: string }>;
+}) {
+  const [devices, commandHistory, session, params] = await Promise.all([
+    getObserverDeviceList(),
+    listObserverAgentCommands(20),
+    getCurrentSession(),
+    searchParams,
+  ]);
+  const user = session?.user as { role?: string } | undefined;
+  const canTriggerCommands = user?.role === "administrator";
+  const commandMessage = params.command_error ?? params.command_saved ?? null;
 
   const derived = devices.map((device) => {
     const status = computeObserverDeviceStatus({
@@ -72,12 +149,32 @@ export default async function ObserverAgentPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">Observer Agents</h2>
-        <p className="text-sm text-muted-foreground">
-          Monitoring dasar request register/heartbeat/report dari Observer Agent.
-        </p>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div>
+          <h2 className="text-xl font-semibold">Observer Agents</h2>
+          <p className="text-sm text-muted-foreground">
+            Monitoring dasar request register/heartbeat/report dari Observer Agent.
+          </p>
+        </div>
+        <RequestFullReportCommandForm
+          action={requestAllAgentSpecsAction}
+          label="Get All Agent Specs Now"
+          confirmMessage="Minta semua agent aktif mengirim full report pada heartbeat berikutnya?"
+          disabled={!canTriggerCommands}
+        />
       </div>
+
+      {commandMessage ? (
+        <div
+          className={
+            params.command_error
+              ? "rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              : "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700"
+          }
+        >
+          {commandMessage}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <Card>
@@ -117,6 +214,77 @@ export default async function ObserverAgentPage() {
           <CardContent className="text-2xl font-semibold">{summary.stale}</CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Full Report Commands</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border">
+            <Table className="min-w-[1180px]">
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead>Command</TableHead>
+                  <TableHead>Target</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Requested By</TableHead>
+                  <TableHead>Requested</TableHead>
+                  <TableHead>Delivered</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead>Expires</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {commandHistory.length ? (
+                  commandHistory.map((command) => (
+                    <TableRow key={command.id} className="even:bg-emerald-50/40">
+                      <TableCell>
+                        <div className="font-medium">{command.commandType}</div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {command.id}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{command.targetScope}</Badge>
+                        <div className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                          {command.targetDeviceId ?? "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <CommandStatusBadge status={command.status} />
+                      </TableCell>
+                      <TableCell>
+                        <div>{command.requestedBy ?? "-"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {command.requestedByEmail ?? "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.requestedAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.deliveredAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.completedAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.expiresAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
+                      Belum ada command full report.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

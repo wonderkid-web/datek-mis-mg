@@ -1001,6 +1001,31 @@ model ObserverRuntimeConfig {
   @@map("observer_runtime_configs")
 }
 
+model ObserverAgentCommand {
+  id               String    @id @db.VarChar(40)
+  commandType      String    @map("command_type") @db.VarChar(80)
+  targetScope      String    @map("target_scope") @db.VarChar(30)
+  targetDeviceId   String?   @map("target_device_id") @db.VarChar(80)
+  requestedBy      String?   @map("requested_by") @db.VarChar(255)
+  requestedByEmail String?   @map("requested_by_email") @db.VarChar(255)
+  requestedAt      DateTime  @map("requested_at")
+  expiresAt        DateTime  @map("expires_at")
+  status           String    @db.VarChar(30)
+  deliveredAt      DateTime? @map("delivered_at")
+  completedAt      DateTime? @map("completed_at")
+  cancelledAt      DateTime? @map("cancelled_at")
+  batchId          String?   @map("batch_id") @db.VarChar(40)
+  deliveryCount    Int       @default(0) @map("delivery_count")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([commandType, status, expiresAt], map: "observer_agent_commands_type_status_exp_idx")
+  @@index([targetScope, targetDeviceId, status], map: "observer_agent_commands_target_status_idx")
+  @@index([batchId], map: "observer_agent_commands_batch_idx")
+  @@index([requestedAt], map: "observer_agent_commands_requested_idx")
+  @@map("observer_agent_commands")
+}
+
 model Isp {
   id               Int               @id @default(autoincrement())
   // sbu            String      @db.VarChar(255)

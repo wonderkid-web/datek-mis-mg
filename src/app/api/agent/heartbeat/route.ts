@@ -17,6 +17,7 @@ import {
   getObserverRuntimeConfigForAgent,
   OBSERVER_RUNTIME_CONFIG_DEFAULTS,
 } from "@/lib/observerAgentRuntimeConfigService";
+import { getPendingCommandsForHeartbeat } from "@/lib/observerAgentCommandService";
 import { compareSemver } from "@/lib/semver";
 
 export const runtime = "nodejs";
@@ -189,7 +190,7 @@ export async function POST(req: NextRequest) {
     timestamp: timestamp!,
   });
 
-  const [latestRelease, runtimeConfig] = await Promise.all([
+  const [latestRelease, runtimeConfig, commands] = await Promise.all([
     getLatestObserverAgentRelease().catch((error) => {
       console.error("Failed to resolve latest observer release on heartbeat:", error);
       return null;
@@ -197,6 +198,10 @@ export async function POST(req: NextRequest) {
     getObserverRuntimeConfigForAgent({ deviceId: deviceId! }).catch((error) => {
       console.error("Failed to resolve observer runtime config on heartbeat:", error);
       return OBSERVER_RUNTIME_CONFIG_DEFAULTS;
+    }),
+    getPendingCommandsForHeartbeat({ deviceId: deviceId! }).catch((error) => {
+      console.error("Failed to resolve observer commands on heartbeat:", error);
+      return [];
     }),
   ]);
   const agentCurrentVersion = currentVersion ?? agentVersion;
@@ -235,6 +240,7 @@ export async function POST(req: NextRequest) {
     sha256,
     update_available: updateAvailable,
     runtime_config: runtimeConfig,
+    commands,
   };
 
   console.log(
@@ -249,6 +255,7 @@ export async function POST(req: NextRequest) {
           semver_compare_result: versionComparison,
           update_available: updateAvailable,
           runtime_config: runtimeConfig,
+          commands_count: commands.length,
           download_url: downloadUrl,
           sha256_present: Boolean(sha256),
           response: heartbeatResponse,

@@ -13,7 +13,14 @@ import {
   deleteObserverDeviceByDeviceId,
   updateObserverDeviceAliasByDeviceId,
 } from "@/lib/observerAgentService";
+import {
+  createSendFullReportCommandForDevice,
+  listObserverAgentCommandsForDevice,
+  ObserverAgentCommandError,
+} from "@/lib/observerAgentCommandService";
+import { getCurrentSession } from "@/lib/session";
 import { DeleteDeviceForm } from "./DeleteDeviceForm";
+import { RequestFullReportCommandForm } from "../RequestFullReportCommandForm";
 
 export const dynamic = "force-dynamic";
 
@@ -56,16 +63,49 @@ function StatusBadge({ label, variant }: { label: string; variant: "ok" | "warn"
   return <Badge className={className}>{label}</Badge>;
 }
 
+function CommandStatusBadge({ status }: { status: string }) {
+  const variant =
+    status === "completed"
+      ? "ok"
+      : status === "delivered" || status === "pending"
+      ? "warn"
+      : status === "expired" || status === "cancelled"
+      ? "crit"
+      : "muted";
+  return <StatusBadge label={status.toUpperCase()} variant={variant} />;
+}
+
+function commandMessageUrl(
+  deviceId: string,
+  type: "command_saved" | "command_error",
+  message: string
+) {
+  return `/tracker/observer-agent/${deviceId}?${type}=${encodeURIComponent(message)}`;
+}
+
 export default async function ObserverAgentDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ deviceId: string }>;
+  searchParams: Promise<{ command_saved?: string; command_error?: string }>;
 }) {
   const { deviceId } = await params;
-  const device = await getObserverDeviceByDeviceId(deviceId);
+  const [device, commandHistory, session, query] = await Promise.all([
+    getObserverDeviceByDeviceId(deviceId),
+    listObserverAgentCommandsForDevice(deviceId, 12),
+    getCurrentSession(),
+    searchParams,
+  ]);
   if (!device) notFound();
   const observerDevice = device;
   const aliasName = (observerDevice as { aliasName?: string | null }).aliasName ?? null;
+  const user = session?.user as
+    | { role?: string; name?: string | null; email?: string | null }
+    | undefined;
+  const canTriggerCommands = user?.role === "administrator";
+
+  const commandMessage = query.command_error ?? query.command_saved ?? null;
 
   async function deleteDeviceAction() {
     "use server";
@@ -86,6 +126,51 @@ export default async function ObserverAgentDetailPage({
 
     revalidatePath("/tracker/observer-agent");
     revalidatePath(`/tracker/observer-agent/${observerDevice.deviceId}`);
+  }
+
+  async function requestDeviceSpecsAction() {
+    "use server";
+
+    const session = await getCurrentSession();
+    const user = session?.user as
+      | { role?: string; name?: string | null; email?: string | null }
+      | undefined;
+
+    if (user?.role !== "administrator") {
+      redirect(
+        commandMessageUrl(
+          observerDevice.deviceId,
+          "command_error",
+          "Hanya administrator yang boleh trigger full report."
+        )
+      );
+    }
+
+    try {
+      await createSendFullReportCommandForDevice({
+        deviceId: observerDevice.deviceId,
+        requester: {
+          name: user?.name,
+          email: user?.email,
+        },
+      });
+    } catch (error) {
+      const message =
+        error instanceof ObserverAgentCommandError
+          ? error.message
+          : "Gagal membuat command full report untuk device ini.";
+      redirect(commandMessageUrl(observerDevice.deviceId, "command_error", message));
+    }
+
+    revalidatePath("/tracker/observer-agent");
+    revalidatePath(`/tracker/observer-agent/${observerDevice.deviceId}`);
+    redirect(
+      commandMessageUrl(
+        observerDevice.deviceId,
+        "command_saved",
+        "Command full report dibuat untuk device ini."
+      )
+    );
   }
 
   const status = computeObserverDeviceStatus({
@@ -115,13 +200,31 @@ export default async function ObserverAgentDetailPage({
             {status.stale && <Badge variant="outline">STALE</Badge>}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <RequestFullReportCommandForm
+            action={requestDeviceSpecsAction}
+            label="Get Latest Spec Now"
+            confirmMessage={`Minta device "${device.hostname}" mengirim full report pada heartbeat berikutnya?`}
+            disabled={!canTriggerCommands}
+          />
           <DeleteDeviceForm hostname={device.hostname} action={deleteDeviceAction} />
           <Link className="text-sm underline underline-offset-4" href="/tracker/observer-agent">
             Back
           </Link>
         </div>
       </div>
+
+      {commandMessage ? (
+        <div
+          className={
+            query.command_error
+              ? "rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              : "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700"
+          }
+        >
+          {commandMessage}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -182,6 +285,70 @@ export default async function ObserverAgentDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Full Report Commands</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border">
+            <Table className="min-w-[1040px]">
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead>Command</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Requested By</TableHead>
+                  <TableHead>Requested</TableHead>
+                  <TableHead>Delivered</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead>Expires</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {commandHistory.length ? (
+                  commandHistory.map((command) => (
+                    <TableRow key={command.id} className="even:bg-emerald-50/40">
+                      <TableCell>
+                        <div className="font-medium">{command.commandType}</div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {command.id}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <CommandStatusBadge status={command.status} />
+                      </TableCell>
+                      <TableCell>
+                        <div>{command.requestedBy ?? "-"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {command.requestedByEmail ?? "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.requestedAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.deliveredAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.completedAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.expiresAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
+                      Belum ada command full report untuk device ini.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

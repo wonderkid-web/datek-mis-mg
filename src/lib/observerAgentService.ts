@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { completeSendFullReportCommandsForDevice } from "@/lib/observerAgentCommandService";
 import { unstable_noStore as noStore } from "next/cache";
 type RegisterPayload = {
   device_id: string;
@@ -416,6 +417,15 @@ export async function ingestDeviceReport(payload: ReportPayload) {
       },
     });
   });
+
+  try {
+    await completeSendFullReportCommandsForDevice({
+      deviceId: payload.device_id,
+      collectedAt,
+    });
+  } catch (error) {
+    console.error("Failed to complete observer full report commands:", error);
+  }
 
   return device;
 }
