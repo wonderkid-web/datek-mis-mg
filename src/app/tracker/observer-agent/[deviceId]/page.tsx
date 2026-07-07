@@ -146,6 +146,8 @@ export default async function ObserverAgentDetailPage({
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">Username</span><span className="font-medium">{device.username ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">IP Local</span><span className="font-medium">{device.ipAddress ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">IP Public</span><span className="font-medium">{device.publicIp ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">MAC LAN</span><span className="break-all font-mono text-xs font-medium">{device.lanMacAddress ?? "-"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-muted-foreground">MAC WLAN</span><span className="break-all font-mono text-xs font-medium">{device.wlanMacAddress ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">OS</span><span className="font-medium">{device.osName ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">OS Version</span><span className="font-medium">{device.osVersion ?? "-"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-muted-foreground">OS Build</span><span className="font-medium">{device.osBuild ?? "-"}</span></div>

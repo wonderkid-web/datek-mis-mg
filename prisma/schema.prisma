@@ -798,6 +798,8 @@ model ObserverDevice {
   username          String?   @db.VarChar(255)
   ipAddress         String?   @map("ip_address") @db.VarChar(45)
   publicIp          String?   @map("public_ip") @db.VarChar(45)
+  lanMacAddress     String?   @map("lan_mac_address") @db.VarChar(17)
+  wlanMacAddress    String?   @map("wlan_mac_address") @db.VarChar(17)
   osName            String?   @map("os_name") @db.VarChar(255)
   osVersion         String?   @map("os_version") @db.VarChar(255)
   osBuild           String?   @map("os_build") @db.VarChar(255)

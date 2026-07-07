@@ -25,6 +25,8 @@ type ReportPayload = {
   hostname: string;
   username?: string;
   ip_address?: string;
+  lan_mac_address?: string | null;
+  wlan_mac_address?: string | null;
   os?: {
     name?: string;
     version?: string;
@@ -261,6 +263,8 @@ export async function ingestDeviceReport(payload: ReportPayload) {
       hostname: payload.hostname,
       username: payload.username ?? null,
       ipAddress: payload.ip_address ?? null,
+      lanMacAddress: payload.lan_mac_address ?? null,
+      wlanMacAddress: payload.wlan_mac_address ?? null,
       osName: payload.os?.name ?? null,
       osVersion: payload.os?.version ?? null,
       osBuild: payload.os?.build ?? null,
@@ -273,6 +277,10 @@ export async function ingestDeviceReport(payload: ReportPayload) {
       hostname: payload.hostname,
       username: payload.username ?? undefined,
       ipAddress: payload.ip_address ?? undefined,
+      lanMacAddress:
+        payload.lan_mac_address === undefined ? undefined : payload.lan_mac_address,
+      wlanMacAddress:
+        payload.wlan_mac_address === undefined ? undefined : payload.wlan_mac_address,
       osName: payload.os?.name ?? undefined,
       osVersion: payload.os?.version ?? undefined,
       osBuild: payload.os?.build ?? undefined,

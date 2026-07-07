@@ -124,7 +124,7 @@ export default async function ObserverAgentPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="w-full table-auto">
+            <Table className="min-w-[1420px]">
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="w-[220px]">Hostname</TableHead>
@@ -132,6 +132,8 @@ export default async function ObserverAgentPage() {
                   <TableHead className="w-[140px]">User</TableHead>
                   <TableHead className="w-[130px]">IP Local</TableHead>
                   <TableHead className="w-[130px]">IP Public</TableHead>
+                  <TableHead className="w-[150px]">MAC LAN</TableHead>
+                  <TableHead className="w-[150px]">MAC WLAN</TableHead>
                   <TableHead className="w-[170px]">OS</TableHead>
                   <TableHead className="text-center">RAM</TableHead>
                   <TableHead className="text-center">Disk</TableHead>
@@ -170,6 +172,8 @@ export default async function ObserverAgentPage() {
                         <TableCell className="break-words">{device.username ?? "-"}</TableCell>
                         <TableCell className="break-all">{device.ipAddress ?? "-"}</TableCell>
                         <TableCell className="break-all">{device.publicIp ?? "-"}</TableCell>
+                        <TableCell className="break-all font-mono text-xs">{device.lanMacAddress ?? "-"}</TableCell>
+                        <TableCell className="break-all font-mono text-xs">{device.wlanMacAddress ?? "-"}</TableCell>
                         <TableCell>
                           <div className="break-words font-medium">{device.osName ?? "-"}</div>
                           <div className="break-words text-xs text-muted-foreground">
@@ -200,7 +204,7 @@ export default async function ObserverAgentPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={12} className="h-24 text-center text-muted-foreground">
                       Belum ada device masuk. Coba jalankan agent dan cek endpoint `POST /api/agent/*`.
                     </TableCell>
                   </TableRow>

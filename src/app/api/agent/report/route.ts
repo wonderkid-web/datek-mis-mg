@@ -48,6 +48,11 @@ export async function POST(req: NextRequest) {
     return undefined;
   };
 
+  const normalizeOptionalString = (keys: string[]) => {
+    const value = pick(json.body, keys);
+    return value === undefined ? undefined : normalizeString(value);
+  };
+
   const deviceId = normalizeString(pick(json.body, ["device_id", "deviceId"]));
   const hostname = normalizeString(pick(json.body, ["hostname", "host_name", "hostName"]));
   if (!deviceId || !hostname) {
@@ -145,11 +150,16 @@ export async function POST(req: NextRequest) {
         }))
     : undefined;
 
+  const lanMacAddress = normalizeOptionalString(["lan_mac_address", "lanMacAddress"]);
+  const wlanMacAddress = normalizeOptionalString(["wlan_mac_address", "wlanMacAddress"]);
+
   const normalizedSummary = {
     device_id: deviceId,
     hostname,
     username_present: Boolean(normalizeString(pick(json.body, ["username", "user_name", "userName"]))),
     ip_present: Boolean(normalizeString(pick(json.body, ["ip_address", "ipAddress", "ip"]))),
+    lan_mac_present: Boolean(lanMacAddress),
+    wlan_mac_present: Boolean(wlanMacAddress),
     os_present: Boolean(os?.name || os?.version || os?.build),
     hardware_present: Boolean(
       hardware?.cpu ||
@@ -179,6 +189,8 @@ export async function POST(req: NextRequest) {
       hostname,
       username: normalizeString(pick(json.body, ["username", "user_name", "userName"])) ?? undefined,
       ip_address: normalizeString(pick(json.body, ["ip_address", "ipAddress", "ip"])) ?? undefined,
+      lan_mac_address: lanMacAddress,
+      wlan_mac_address: wlanMacAddress,
       os,
       hardware,
       storage,
