@@ -52,6 +52,11 @@ export async function POST(req: NextRequest) {
     const value = pick(json.body, keys);
     return value === undefined ? undefined : normalizeString(value);
   };
+  const normalizePercent = (value: unknown) => {
+    const number = normalizeNumber(value);
+    if (number === null) return undefined;
+    return number >= 0 && number <= 100 ? number : undefined;
+  };
 
   const deviceId = normalizeString(pick(json.body, ["device_id", "deviceId"]));
   const hostname = normalizeString(pick(json.body, ["hostname", "host_name", "hostName"]));
@@ -110,6 +115,8 @@ export async function POST(req: NextRequest) {
           bus_type: normalizeString(pick(item, ["bus_type", "busType"])) ?? undefined,
           firmware_version: normalizeString(pick(item, ["firmware_version", "firmwareVersion"])) ?? undefined,
           health_status: normalizeString(pick(item, ["health_status", "healthStatus"])) ?? undefined,
+          health_percent: normalizePercent(pick(item, ["health_percent", "healthPercent"])),
+          health_source: normalizeString(pick(item, ["health_source", "healthSource"])) ?? undefined,
           operational_status: normalizeString(pick(item, ["operational_status", "operationalStatus"])) ?? undefined,
           predicted_failure:
             typeof pick(item, ["predicted_failure", "predictedFailure"]) === "boolean"

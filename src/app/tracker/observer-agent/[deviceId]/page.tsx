@@ -41,14 +41,50 @@ function formatDateOnly(date: Date | null) {
   }).format(date);
 }
 
-function healthVariant(input: { healthStatus: string | null; predictedFailure: boolean | null; temperatureC: number | null }) {
+function healthVariant(input: {
+  healthPercent: number | null;
+  healthStatus: string | null;
+  predictedFailure: boolean | null;
+  temperatureC: number | null;
+}) {
   const status = (input.healthStatus ?? "").toLowerCase();
   if (input.predictedFailure) return "crit";
+  if (typeof input.healthPercent === "number" && input.healthPercent <= 50) return "crit";
+  if (typeof input.healthPercent === "number" && input.healthPercent <= 75) return "warn";
   if (typeof input.temperatureC === "number" && input.temperatureC >= 60) return "warn";
   if (status === "critical") return "crit";
   if (status === "warning") return "warn";
-  if (status === "healthy") return "ok";
+  if (["excellent", "good", "healthy", "ok"].includes(status)) return "ok";
   return "muted";
+}
+
+function formatNumber(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function formatStorageHealthLabel(input: {
+  healthPercent: number | null;
+  healthStatus: string | null;
+  predictedFailure: boolean | null;
+}) {
+  if (input.predictedFailure) return "CRITICAL";
+  if (typeof input.healthPercent === "number" && input.healthStatus) {
+    return `${formatNumber(input.healthPercent)}% (${input.healthStatus})`;
+  }
+  if (typeof input.healthPercent === "number") return `${formatNumber(input.healthPercent)}%`;
+  return input.healthStatus ?? "Unknown";
+}
+
+function formatTemperatureC(value: number | null) {
+  return typeof value === "number" ? `${formatNumber(value)}°C` : "-";
+}
+
+function formatHealthSource(value: string | null) {
+  if (!value) return "-";
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "hdsentinel") return "HD Sentinel";
+  if (normalized === "windows") return "Windows";
+  return value;
 }
 
 function StatusBadge({ label, variant }: { label: string; variant: "ok" | "warn" | "crit" | "muted" }) {
@@ -408,9 +444,10 @@ export default async function ObserverAgentDetailPage({
                   <TableHead>Serial</TableHead>
                   <TableHead>Media</TableHead>
                   <TableHead>Bus</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Health</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead className="text-center">Predicted</TableHead>
-                  <TableHead className="text-center">Temp (°C)</TableHead>
+                  <TableHead className="text-center">Suhu</TableHead>
                   <TableHead>Collected</TableHead>
                 </TableRow>
               </TableHeader>
@@ -418,12 +455,16 @@ export default async function ObserverAgentDetailPage({
                 {device.storageHealth.length ? (
                   device.storageHealth.map((row) => {
                     const variant = healthVariant({
+                      healthPercent: row.healthPercent,
                       healthStatus: row.healthStatus,
                       predictedFailure: row.predictedFailure,
                       temperatureC: row.temperatureC,
                     });
-                    const label =
-                      row.predictedFailure ? "CRITICAL" : row.healthStatus ?? "Unknown";
+                    const label = formatStorageHealthLabel({
+                      healthPercent: row.healthPercent,
+                      healthStatus: row.healthStatus,
+                      predictedFailure: row.predictedFailure,
+                    });
                     return (
                       <TableRow key={row.id} className="even:bg-emerald-50/40">
                         <TableCell className="font-medium">
@@ -441,11 +482,12 @@ export default async function ObserverAgentDetailPage({
                             </div>
                           )}
                         </TableCell>
+                        <TableCell>{formatHealthSource(row.healthSource)}</TableCell>
                         <TableCell className="text-center">
                           {row.predictedFailure === null ? "-" : row.predictedFailure ? "YES" : "NO"}
                         </TableCell>
                         <TableCell className="text-center">
-                          {typeof row.temperatureC === "number" ? row.temperatureC : "-"}
+                          {formatTemperatureC(row.temperatureC)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">{formatDateTime(row.collectedAt)}</TableCell>
                       </TableRow>
@@ -453,7 +495,7 @@ export default async function ObserverAgentDetailPage({
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                       Belum ada storage health. Pastikan agent mengirim `storage_health` pada `POST /api/agent/report`.
                     </TableCell>
                   </TableRow>

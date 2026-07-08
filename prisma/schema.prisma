@@ -898,6 +898,8 @@ model ObserverStorageHealth {
   busType               String?   @map("bus_type") @db.VarChar(50)
   firmwareVersion       String?   @map("firmware_version") @db.VarChar(100)
   healthStatus          String?   @map("health_status") @db.VarChar(30)
+  healthPercent         Float?    @map("health_percent")
+  healthSource          String?   @map("health_source") @db.VarChar(40)
   operationalStatus     String?   @map("operational_status") @db.VarChar(30)
   predictedFailure      Boolean?  @map("predicted_failure")
   temperatureC          Float?    @map("temperature_c")
@@ -916,6 +918,7 @@ model ObserverStorageHealth {
   @@unique([deviceRefId, diskDeviceId], map: "observer_storage_health_device_disk_uidx")
   @@index([deviceRefId], map: "observer_storage_health_device_ref_idx")
   @@index([healthStatus], map: "observer_storage_health_health_status_idx")
+  @@index([healthSource], map: "observer_storage_health_health_source_idx")
   @@index([predictedFailure], map: "observer_storage_health_predicted_failure_idx")
   @@map("observer_storage_health")
 }

@@ -213,7 +213,6 @@ export async function POST(req: NextRequest) {
   let versionComparison: number | null = null;
 
   if (latestRelease) {
-    latestVersion = latestRelease.version;
     const semverComparison = compareSemver(
       agentCurrentVersion ?? null,
       latestRelease.version
@@ -225,13 +224,12 @@ export async function POST(req: NextRequest) {
     updateAvailable = semverComparison === null ? true : semverComparison < 0;
 
     if (updateAvailable) {
+      latestVersion = latestRelease.version;
       const baseUrl = resolvePublicBaseUrl(req);
       const downloadPath = getObserverAgentReleaseDownloadPath(latestRelease.storedName);
       downloadUrl = new URL(downloadPath, `${stripTrailingSlash(baseUrl)}/`).toString();
       sha256 = latestRelease.sha256;
     }
-  } else {
-    latestVersion = agentCurrentVersion ?? null;
   }
 
   const heartbeatResponse = {

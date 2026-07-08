@@ -5,11 +5,55 @@ import { Readable } from "stream";
 
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  getRequestIp,
+  unauthorizedResponse,
+  validateAgentToken,
+} from "@/app/api/agent/_shared";
 import { getObserverAgentReleaseAbsolutePath } from "@/lib/observerAgentReleaseStorage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+const EXE_DOWNLOAD_RATE_LIMIT = 5;
+const EXE_DOWNLOAD_RATE_WINDOW_MS = 60 * 60 * 1000;
+const exeDownloadBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function pruneDownloadBuckets(now: number) {
+  for (const [key, bucket] of exeDownloadBuckets) {
+    if (bucket.resetAt <= now) {
+      exeDownloadBuckets.delete(key);
+    }
+  }
+}
+
+function checkExeDownloadRateLimit(req: NextRequest, fileName: string) {
+  const now = Date.now();
+  pruneDownloadBuckets(now);
+
+  const ip = getRequestIp(req) ?? "unknown";
+  const key = `${ip}:${fileName}`;
+  const current = exeDownloadBuckets.get(key);
+
+  if (!current || current.resetAt <= now) {
+    exeDownloadBuckets.set(key, {
+      count: 1,
+      resetAt: now + EXE_DOWNLOAD_RATE_WINDOW_MS,
+    });
+    return { ok: true as const };
+  }
+
+  if (current.count >= EXE_DOWNLOAD_RATE_LIMIT) {
+    return {
+      ok: false as const,
+      retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+    };
+  }
+
+  current.count += 1;
+  return { ok: true as const };
+}
 
 function getContentType(fileName: string) {
   const ext = path.extname(fileName).toLowerCase();
@@ -26,7 +70,7 @@ function getCacheControl(fileName: string) {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ fileName: string }> }
 ) {
   const { fileName: rawFileName } = await params;
@@ -59,7 +103,39 @@ export async function GET(
 
   const filePath = getObserverAgentReleaseAbsolutePath(safeName);
   const isLatestManifest = safeName === "latest.json";
+  const isExeDownload = safeName.toLowerCase().endsWith(".exe");
   const source = "filesystem";
+
+  if (isExeDownload) {
+    const auth = validateAgentToken(req);
+    if (!auth.expectedTokenPresent) {
+      return unauthorizedResponse({
+        message: "Server misconfigured: OBSERVER_AGENT_TOKEN is not set",
+      });
+    }
+
+    if (!auth.ok) {
+      return unauthorizedResponse();
+    }
+
+    const rateLimit = checkExeDownloadRateLimit(req, safeName);
+    if (!rateLimit.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many download requests",
+          retry_after_seconds: rateLimit.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+            "Cache-Control": "no-store",
+          },
+        }
+      );
+    }
+  }
 
   try {
     await access(filePath);

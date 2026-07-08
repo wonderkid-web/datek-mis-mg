@@ -57,6 +57,8 @@ type ReportPayload = {
     bus_type?: string;
     firmware_version?: string;
     health_status?: string;
+    health_percent?: number | null;
+    health_source?: string;
     operational_status?: string;
     predicted_failure?: boolean;
     temperature_c?: number;
@@ -83,6 +85,8 @@ type ReportPayload = {
     created_at?: string;
   }>;
 };
+
+type StorageHealthPayloadRow = NonNullable<ReportPayload["storage_health"]>[number];
 
 function safeDate(value: unknown): Date | null {
   if (typeof value !== "string" || !value.trim()) return null;
@@ -135,6 +139,85 @@ function normalizeStorageDrives(
   }
 
   return Array.from(byDriveLetter.values());
+}
+
+function isHdSentinelSource(value: string | null | undefined) {
+  return value?.trim().toLowerCase() === "hdsentinel";
+}
+
+function storageHealthPriority(row: {
+  health_source?: string | null;
+  collected_at?: string | null;
+}) {
+  return {
+    source: isHdSentinelSource(row.health_source) ? 1 : 0,
+    collectedAt: safeDate(row.collected_at)?.getTime() ?? 0,
+  };
+}
+
+function shouldReplaceStorageHealthRow(
+  current: StorageHealthPayloadRow,
+  candidate: StorageHealthPayloadRow
+) {
+  const currentPriority = storageHealthPriority(current);
+  const candidatePriority = storageHealthPriority(candidate);
+
+  if (candidatePriority.source !== currentPriority.source) {
+    return candidatePriority.source > currentPriority.source;
+  }
+
+  return candidatePriority.collectedAt >= currentPriority.collectedAt;
+}
+
+function clampHealthPercent(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value >= 0 && value <= 100 ? value : null;
+}
+
+function normalizeStorageHealthRows(
+  healthRows: ReportPayload["storage_health"] | undefined,
+  deviceRefId: number
+) {
+  const byDiskDeviceId = new Map<string, StorageHealthPayloadRow>();
+
+  for (const row of healthRows ?? []) {
+    if (!row || typeof row.device_id !== "string" || !row.device_id.trim()) {
+      continue;
+    }
+
+    const diskDeviceId = row.device_id.trim();
+    const current = byDiskDeviceId.get(diskDeviceId);
+    if (!current || shouldReplaceStorageHealthRow(current, row)) {
+      byDiskDeviceId.set(diskDeviceId, {
+        ...row,
+        device_id: diskDeviceId,
+      });
+    }
+  }
+
+  return Array.from(byDiskDeviceId.values()).map((h) => ({
+    deviceRefId,
+    diskDeviceId: h.device_id!.trim(),
+    deviceName: h.device_name ?? null,
+    serialNumber: h.serial_number ?? null,
+    model: h.model ?? null,
+    mediaType: h.media_type ?? null,
+    busType: h.bus_type ?? null,
+    firmwareVersion: h.firmware_version ?? null,
+    healthStatus: h.health_status ?? null,
+    healthPercent: clampHealthPercent(h.health_percent),
+    healthSource: h.health_source?.slice(0, 40) ?? null,
+    operationalStatus: h.operational_status ?? null,
+    predictedFailure: typeof h.predicted_failure === "boolean" ? h.predicted_failure : null,
+    temperatureC: typeof h.temperature_c === "number" ? h.temperature_c : null,
+    temperatureF: typeof h.temperature_f === "number" ? h.temperature_f : null,
+    powerOnHours: typeof h.power_on_hours === "number" ? Math.round(h.power_on_hours) : null,
+    wearLevelPercent: typeof h.wear_level_percent === "number" ? h.wear_level_percent : null,
+    availableSparePercent: typeof h.available_spare_percent === "number" ? h.available_spare_percent : null,
+    readErrors: typeof h.read_errors === "number" ? Math.round(h.read_errors) : null,
+    writeErrors: typeof h.write_errors === "number" ? Math.round(h.write_errors) : null,
+    collectedAt: safeDate(h.collected_at) ?? null,
+  }));
 }
 
 export async function upsertDeviceFromRegister(payload: RegisterPayload) {
@@ -348,32 +431,10 @@ export async function ingestDeviceReport(payload: ReportPayload) {
       });
     }
 
-    const healthRows = payload.storage_health ?? [];
+    const healthRows = normalizeStorageHealthRows(payload.storage_health, device.id);
     if (healthRows.length) {
       await tx.observerStorageHealth.createMany({
-        data: healthRows
-          .filter((h) => h && typeof h.device_id === "string" && h.device_id.trim())
-          .map((h) => ({
-            deviceRefId: device.id,
-            diskDeviceId: h.device_id!.trim(),
-            deviceName: h.device_name ?? null,
-            serialNumber: h.serial_number ?? null,
-            model: h.model ?? null,
-            mediaType: h.media_type ?? null,
-            busType: h.bus_type ?? null,
-            firmwareVersion: h.firmware_version ?? null,
-            healthStatus: h.health_status ?? null,
-            operationalStatus: h.operational_status ?? null,
-            predictedFailure: typeof h.predicted_failure === "boolean" ? h.predicted_failure : null,
-            temperatureC: typeof h.temperature_c === "number" ? h.temperature_c : null,
-            temperatureF: typeof h.temperature_f === "number" ? h.temperature_f : null,
-            powerOnHours: typeof h.power_on_hours === "number" ? Math.round(h.power_on_hours) : null,
-            wearLevelPercent: typeof h.wear_level_percent === "number" ? h.wear_level_percent : null,
-            availableSparePercent: typeof h.available_spare_percent === "number" ? h.available_spare_percent : null,
-            readErrors: typeof h.read_errors === "number" ? Math.round(h.read_errors) : null,
-            writeErrors: typeof h.write_errors === "number" ? Math.round(h.write_errors) : null,
-            collectedAt: safeDate(h.collected_at) ?? null,
-          })),
+        data: healthRows,
         skipDuplicates: true,
       });
     }
@@ -451,7 +512,13 @@ export async function getObserverDeviceByDeviceId(deviceId: string) {
       hardwareSpec: true,
       storageDrives: true,
       storageHealth: {
-        orderBy: [{ predictedFailure: "desc" }, { temperatureC: "desc" }, { id: "desc" }],
+        orderBy: [
+          { predictedFailure: "desc" },
+          { healthSource: "asc" },
+          { healthPercent: "asc" },
+          { temperatureC: "desc" },
+          { id: "desc" },
+        ],
       },
       installedApps: true,
       agentLogs: {
