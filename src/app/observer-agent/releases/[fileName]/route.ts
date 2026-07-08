@@ -18,6 +18,7 @@ export const revalidate = 0;
 
 const EXE_DOWNLOAD_RATE_LIMIT = 5;
 const EXE_DOWNLOAD_RATE_WINDOW_MS = 60 * 60 * 1000;
+const UNAUTHENTICATED_BRIDGE_RELEASE = "observer-agent-0.1.13.exe";
 const exeDownloadBuckets = new Map<string, { count: number; resetAt: number }>();
 
 function pruneDownloadBuckets(now: number) {
@@ -114,7 +115,12 @@ export async function GET(
       });
     }
 
-    if (!auth.ok) {
+    const isBridgeRelease = safeName === UNAUTHENTICATED_BRIDGE_RELEASE;
+    const hasBearerToken = Boolean(auth.providedToken);
+    // Temporary bridge for 0.1.12 agents; remove after the fleet is on 0.1.13+.
+    const allowUnauthenticatedBridge = isBridgeRelease && !hasBearerToken;
+
+    if (!auth.ok && !allowUnauthenticatedBridge) {
       return unauthorizedResponse();
     }
 
