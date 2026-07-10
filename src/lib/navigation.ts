@@ -80,6 +80,7 @@ export const navigationItems: NavigationItem[] = [
       { name: "Tracker Intel NUC", href: "/tracker/intel-nuc" },
       { name: "Tracker PC", href: "/tracker/pc" },
       { name: "Tracker Sparepart", href: "/tracker/sparepart" },
+      { name: "Observer Screenshots", href: "/tracker/observer-agent/screenshots" },
     ],
   },
   {

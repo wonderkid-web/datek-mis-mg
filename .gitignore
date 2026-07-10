@@ -44,3 +44,4 @@ next-env.d.ts
 
 # observer agent uploaded releases
 /storage/observer-agent/releases/
+/storage/observer-agent/screenshots/

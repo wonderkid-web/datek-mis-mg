@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Images } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getObserverDeviceList, computeObserverDeviceStatus } from "@/lib/observerAgentService";
 import {
@@ -156,12 +158,20 @@ export default async function ObserverAgentPage({
             Monitoring dasar request register/heartbeat/report dari Observer Agent.
           </p>
         </div>
-        <RequestFullReportCommandForm
-          action={requestAllAgentSpecsAction}
-          label="Get All Agent Specs Now"
-          confirmMessage="Minta semua agent aktif mengirim full report pada heartbeat berikutnya?"
-          disabled={!canTriggerCommands}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button asChild variant="outline">
+            <Link href="/tracker/observer-agent/screenshots">
+              <Images data-icon="inline-start" />
+              Screenshot Albums
+            </Link>
+          </Button>
+          <RequestFullReportCommandForm
+            action={requestAllAgentSpecsAction}
+            label="Get All Agent Specs Now"
+            confirmMessage="Minta semua agent aktif mengirim full report pada heartbeat berikutnya?"
+            disabled={!canTriggerCommands}
+          />
+        </div>
       </div>
 
       {commandMessage ? (
