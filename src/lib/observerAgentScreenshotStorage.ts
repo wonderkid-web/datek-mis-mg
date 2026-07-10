@@ -7,6 +7,7 @@ import {
   readFile,
   rename,
   rm,
+  rmdir,
   stat,
   writeFile,
 } from "fs/promises";
@@ -301,6 +302,38 @@ export async function saveObserverAgentScreenshot(input: {
     id: `${dateKey}/${fileName}`,
     url: getObserverAgentScreenshotUrl(dateKey, fileName),
   };
+}
+
+export async function deleteObserverAgentScreenshot(input: {
+  dateKey: string;
+  fileName: string;
+}) {
+  const filePath = getObserverAgentScreenshotAbsolutePath(
+    input.dateKey,
+    input.fileName
+  );
+  const dateDir = getScreenshotDateDir(input.dateKey);
+  const metaPath = path.join(dateDir, getScreenshotMetaFileName(input.fileName));
+  let deleted = false;
+
+  try {
+    await rm(filePath);
+    deleted = true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  }
+
+  await rm(metaPath, { force: true });
+
+  try {
+    await rmdir(dateDir);
+  } catch {
+    // Keep non-empty date albums.
+  }
+
+  return deleted;
 }
 
 export async function listObserverAgentScreenshotAlbums(options?: {

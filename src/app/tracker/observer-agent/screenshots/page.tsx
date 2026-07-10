@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   ArrowLeft,
@@ -22,10 +23,12 @@ import {
 } from "@/components/ui/card";
 import { getCurrentSession } from "@/lib/session";
 import {
+  deleteObserverAgentScreenshot,
   getObserverAgentScreenshotsDir,
   listObserverAgentScreenshotAlbums,
   type ObserverAgentScreenshot,
 } from "@/lib/observerAgentScreenshotStorage";
+import { DeleteScreenshotButton } from "./DeleteScreenshotButton";
 
 export const dynamic = "force-dynamic";
 
@@ -84,13 +87,37 @@ function getScreenshotTitle(screenshot: ObserverAgentScreenshot) {
   );
 }
 
+async function deleteScreenshotAction(formData: FormData) {
+  "use server";
+
+  const session = await getCurrentSession();
+  if (!session) {
+    redirect("/login");
+  }
+
+  const user = session.user as { role?: string } | undefined;
+  if (user?.role !== "administrator") {
+    throw new Error("Hanya administrator yang boleh menghapus screenshot.");
+  }
+
+  const dateKey = String(formData.get("date_key") ?? "").trim();
+  const fileName = String(formData.get("file_name") ?? "").trim();
+
+  await deleteObserverAgentScreenshot({ dateKey, fileName });
+  revalidatePath("/tracker/observer-agent/screenshots");
+}
+
 function ScreenshotCard({
   screenshot,
   priority,
+  canDelete,
 }: {
   screenshot: ObserverAgentScreenshot;
   priority: boolean;
+  canDelete: boolean;
 }) {
+  const title = getScreenshotTitle(screenshot);
+
   return (
     <Card className="overflow-hidden py-0">
       <a
@@ -101,7 +128,7 @@ function ScreenshotCard({
       >
         <Image
           src={screenshot.url}
-          alt={`Screenshot ${getScreenshotTitle(screenshot)}`}
+          alt={`Screenshot ${title}`}
           fill
           unoptimized
           priority={priority}
@@ -113,7 +140,7 @@ function ScreenshotCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <CardTitle className="truncate text-sm">
-              {getScreenshotTitle(screenshot)}
+              {title}
             </CardTitle>
             <CardDescription>
               {formatDateTime(screenshot.uploadedAt)}
@@ -133,12 +160,22 @@ function ScreenshotCard({
             <span className="truncate">{screenshot.source ?? "screenshot"}</span>
           </div>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <a href={screenshot.url} target="_blank" rel="noreferrer">
-            <ExternalLink data-icon="inline-start" />
-            Open Image
-          </a>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <a href={screenshot.url} target="_blank" rel="noreferrer">
+              <ExternalLink data-icon="inline-start" />
+              Open Image
+            </a>
+          </Button>
+          {canDelete ? (
+            <DeleteScreenshotButton
+              action={deleteScreenshotAction}
+              dateKey={screenshot.dateKey}
+              fileName={screenshot.fileName}
+              title={title}
+            />
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -149,6 +186,8 @@ export default async function ObserverAgentScreenshotsPage() {
   if (!session) {
     redirect("/login");
   }
+  const isAdmin =
+    (session.user as { role?: string } | undefined)?.role === "administrator";
 
   const albums = await listObserverAgentScreenshotAlbums({
     limitDays: 60,
@@ -258,6 +297,7 @@ export default async function ObserverAgentScreenshotsPage() {
                     key={screenshot.id}
                     screenshot={screenshot}
                     priority={albumIndex === 0 && screenshotIndex < 2}
+                    canDelete={isAdmin}
                   />
                 ))}
               </div>
