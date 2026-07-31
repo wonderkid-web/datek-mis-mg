@@ -5,6 +5,7 @@ import {
   badRequestResponse,
   getRequestIp,
   logAgentRequest,
+  normalizeNumber,
   normalizeString,
   unauthorizedResponse,
   validateAgentToken,
@@ -22,18 +23,39 @@ export const dynamic = "force-dynamic";
 const MAX_REQUEST_BYTES = OBSERVER_AGENT_SCREENSHOT_MAX_BYTES + 1024 * 1024;
 
 type ScreenshotUpload = {
-  buffer: Buffer;
+  buffer: Buffer | null;
   originalName: string | null;
   deviceId: string | null;
   hostname: string | null;
   source: string | null;
   capturedAt: string | null;
+  cpuTemperatureC: number | null;
+  fanRpm: number | null;
 };
+
+const CPU_TEMPERATURE_KEYS = [
+  "cpu_temperature",
+  "cpuTemperature",
+  "cpu_temp",
+  "cpuTemp",
+  "cpu_temperature_c",
+  "cpuTemperatureC",
+];
+
+const FAN_RPM_KEYS = ["fan_speed", "fanSpeed", "fan_rpm", "fanRpm"];
 
 function pickString(obj: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     const value = normalizeString(obj[key]);
     if (value) return value;
+  }
+  return null;
+}
+
+function pickNumber(obj: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = normalizeNumber(obj[key]);
+    if (value !== null) return value;
   }
   return null;
 }
@@ -48,10 +70,28 @@ function pickFormString(formData: FormData, keys: string[]) {
   return null;
 }
 
+function pickFormNumber(formData: FormData, keys: string[]) {
+  for (const key of keys) {
+    const value = formData.get(key);
+    if (typeof value !== "string") continue;
+    const normalized = normalizeNumber(value);
+    if (normalized !== null) return normalized;
+  }
+  return null;
+}
+
 function pickHeaderString(req: NextRequest, keys: string[]) {
   for (const key of keys) {
     const value = normalizeString(req.headers.get(key));
     if (value) return value;
+  }
+  return null;
+}
+
+function pickHeaderNumber(req: NextRequest, keys: string[]) {
+  for (const key of keys) {
+    const value = normalizeNumber(req.headers.get(key));
+    if (value !== null) return value;
   }
   return null;
 }
@@ -91,13 +131,7 @@ async function parseMultipartUpload(req: NextRequest): Promise<ScreenshotUpload>
   }
 
   const file = pickFormFile(formData);
-  if (!file) {
-    throw new ObserverAgentScreenshotError(
-      "Field image wajib dikirim. Gunakan nama field image, file, atau screenshot."
-    );
-  }
-
-  if (file.size > OBSERVER_AGENT_SCREENSHOT_MAX_BYTES) {
+  if (file && file.size > OBSERVER_AGENT_SCREENSHOT_MAX_BYTES) {
     throw new ObserverAgentScreenshotError(
       "Ukuran image melebihi batas 15 MB.",
       413
@@ -105,8 +139,8 @@ async function parseMultipartUpload(req: NextRequest): Promise<ScreenshotUpload>
   }
 
   return {
-    buffer: Buffer.from(await file.arrayBuffer()),
-    originalName: file.name || null,
+    buffer: file ? Buffer.from(await file.arrayBuffer()) : null,
+    originalName: file?.name || null,
     deviceId: pickFormString(formData, ["device_id", "deviceId"]),
     hostname: pickFormString(formData, ["hostname", "host_name", "hostName"]),
     source: pickFormString(formData, ["source", "app", "app_name", "appName"]),
@@ -115,6 +149,8 @@ async function parseMultipartUpload(req: NextRequest): Promise<ScreenshotUpload>
       "capturedAt",
       "timestamp",
     ]),
+    cpuTemperatureC: pickFormNumber(formData, CPU_TEMPERATURE_KEYS),
+    fanRpm: pickFormNumber(formData, FAN_RPM_KEYS),
   };
 }
 
@@ -126,6 +162,11 @@ async function parseRawImageUpload(req: NextRequest): Promise<ScreenshotUpload> 
     hostname: pickHeaderString(req, ["x-hostname", "x-host-name"]),
     source: pickHeaderString(req, ["x-source", "x-app-name"]),
     capturedAt: pickHeaderString(req, ["x-captured-at", "x-timestamp"]),
+    cpuTemperatureC: pickHeaderNumber(req, [
+      "x-cpu-temperature",
+      "x-cpu-temp",
+    ]),
+    fanRpm: pickHeaderNumber(req, ["x-fan-speed", "x-fan-rpm"]),
   };
 }
 
@@ -161,19 +202,15 @@ async function parseJsonUpload(req: NextRequest): Promise<ScreenshotUpload> {
     "image",
   ]);
 
-  if (!imageBase64) {
-    throw new ObserverAgentScreenshotError(
-      "JSON body wajib berisi image_base64 atau screenshot_base64."
-    );
-  }
-
   return {
-    buffer: decodeBase64Image(imageBase64),
+    buffer: imageBase64 ? decodeBase64Image(imageBase64) : null,
     originalName: pickString(body, ["file_name", "fileName", "filename"]),
     deviceId: pickString(body, ["device_id", "deviceId"]),
     hostname: pickString(body, ["hostname", "host_name", "hostName"]),
     source: pickString(body, ["source", "app", "app_name", "appName"]),
     capturedAt: pickString(body, ["captured_at", "capturedAt", "timestamp"]),
+    cpuTemperatureC: pickNumber(body, CPU_TEMPERATURE_KEYS),
+    fanRpm: pickNumber(body, FAN_RPM_KEYS),
   };
 }
 
@@ -197,19 +234,7 @@ async function parseUpload(req: NextRequest) {
   );
 }
 
-const SCREENSHOT_INTAKE_DISABLED = true;
-
 export async function POST(req: NextRequest) {
-  if (SCREENSHOT_INTAKE_DISABLED) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Penerimaan screenshot sudah dinonaktifkan.",
-      },
-      { status: 410 }
-    );
-  }
-
   const auth = validateAgentToken(req);
   const contentType = req.headers.get("content-type") ?? null;
   const contentLength = req.headers.get("content-length") ?? null;
@@ -265,14 +290,28 @@ export async function POST(req: NextRequest) {
     payload: {
       content_type: contentType,
       content_length: contentLength,
-      image_bytes: upload.buffer.length,
+      image_bytes: upload.buffer?.length ?? 0,
       original_name: upload.originalName,
       device_id: upload.deviceId,
       hostname: upload.hostname,
       source: upload.source,
       captured_at: upload.capturedAt,
+      cpu_temperature_c: upload.cpuTemperatureC,
+      fan_rpm: upload.fanRpm,
     },
   });
+
+  const missingFields: string[] = [];
+  if (!upload.deviceId) missingFields.push("device_id");
+  if (!upload.hostname) missingFields.push("hostname");
+  if (upload.cpuTemperatureC === null) missingFields.push("cpu_temperature");
+  if (upload.fanRpm === null) missingFields.push("fan_speed");
+
+  if (missingFields.length) {
+    return badRequestResponse(
+      `Field wajib belum lengkap: ${missingFields.join(", ")}.`
+    );
+  }
 
   try {
     const screenshot = await saveObserverAgentScreenshot({

@@ -7,9 +7,11 @@ import {
   CalendarDays,
   Camera,
   ExternalLink,
+  Fan,
   HardDrive,
   Images,
   Monitor,
+  Thermometer,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -120,22 +122,28 @@ function ScreenshotCard({
 
   return (
     <Card className="overflow-hidden py-0">
-      <a
-        href={screenshot.url}
-        target="_blank"
-        rel="noreferrer"
-        className="relative block aspect-video bg-muted"
-      >
-        <Image
-          src={screenshot.url}
-          alt={`Screenshot ${title}`}
-          fill
-          unoptimized
-          priority={priority}
-          sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-          className="object-contain"
-        />
-      </a>
+      {screenshot.url ? (
+        <a
+          href={screenshot.url}
+          target="_blank"
+          rel="noreferrer"
+          className="relative block aspect-video bg-muted"
+        >
+          <Image
+            src={screenshot.url}
+            alt={`Screenshot ${title}`}
+            fill
+            unoptimized
+            priority={priority}
+            sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+            className="object-contain"
+          />
+        </a>
+      ) : (
+        <div className="flex aspect-video items-center justify-center bg-muted text-muted-foreground">
+          <Thermometer className="size-10" />
+        </div>
+      )}
       <CardHeader className="px-4 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -146,7 +154,9 @@ function ScreenshotCard({
               {formatDateTime(screenshot.uploadedAt)}
             </CardDescription>
           </div>
-          <Badge variant="outline">{formatBytes(screenshot.sizeBytes)}</Badge>
+          {screenshot.hasImage ? (
+            <Badge variant="outline">{formatBytes(screenshot.sizeBytes)}</Badge>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 pb-4 text-sm">
@@ -156,17 +166,33 @@ function ScreenshotCard({
             <span className="truncate">{screenshot.deviceId ?? "-"}</span>
           </div>
           <div className="flex items-center gap-2">
+            <Thermometer className="size-4 shrink-0" />
+            <span className="truncate">
+              {screenshot.cpuTemperatureC !== null
+                ? `${screenshot.cpuTemperatureC}°C`
+                : "-"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Fan className="size-4 shrink-0" />
+            <span className="truncate">
+              {screenshot.fanRpm !== null ? `${screenshot.fanRpm} RPM` : "-"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
             <Camera className="size-4 shrink-0" />
             <span className="truncate">{screenshot.source ?? "screenshot"}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm">
-            <a href={screenshot.url} target="_blank" rel="noreferrer">
-              <ExternalLink data-icon="inline-start" />
-              Open Image
-            </a>
-          </Button>
+          {screenshot.url ? (
+            <Button asChild variant="outline" size="sm">
+              <a href={screenshot.url} target="_blank" rel="noreferrer">
+                <ExternalLink data-icon="inline-start" />
+                Open Image
+              </a>
+            </Button>
+          ) : null}
           {canDelete ? (
             <DeleteScreenshotButton
               action={deleteScreenshotAction}

@@ -37,8 +37,11 @@ type DiskScreenshotMeta = {
   hostname: string | null;
   source: string | null;
   capturedAt: string | null;
+  cpuTemperatureC: number | null;
+  fanRpm: number | null;
+  hasImage: boolean;
   uploadedAt: string;
-  mimeType: ImageKind["mimeType"];
+  mimeType: ImageKind["mimeType"] | null;
   sizeBytes: number;
   sha256: string;
   requestIp: string | null;
@@ -47,7 +50,7 @@ type DiskScreenshotMeta = {
 
 export type ObserverAgentScreenshot = DiskScreenshotMeta & {
   id: string;
-  url: string;
+  url: string | null;
 };
 
 export type ObserverAgentScreenshotAlbum = {
@@ -149,7 +152,7 @@ function isDiskScreenshotMeta(value: unknown): value is DiskScreenshotMeta {
     typeof row.fileName === "string" &&
     typeof row.dateKey === "string" &&
     typeof row.uploadedAt === "string" &&
-    typeof row.mimeType === "string" &&
+    (row.mimeType === null || typeof row.mimeType === "string") &&
     typeof row.sizeBytes === "number" &&
     typeof row.sha256 === "string"
   );
@@ -169,20 +172,6 @@ async function pathExists(filePath: string) {
     return true;
   } catch {
     return false;
-  }
-}
-
-async function readDiskScreenshotMeta(dateKey: string, fileName: string) {
-  try {
-    const metaPath = path.join(
-      getScreenshotDateDir(dateKey),
-      getScreenshotMetaFileName(fileName)
-    );
-    const raw = await readFile(metaPath, "utf8");
-    const parsed = JSON.parse(raw) as unknown;
-    return isDiskScreenshotMeta(parsed) ? parsed : null;
-  } catch {
-    return null;
   }
 }
 
@@ -227,29 +216,33 @@ export function getObserverAgentScreenshotAbsolutePath(
   return path.join(getScreenshotDateDir(dateKey), fileName);
 }
 
+function sanitizeNumber(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 export async function saveObserverAgentScreenshot(input: {
-  buffer: Buffer;
+  buffer?: Buffer | null;
   originalName?: string | null;
   deviceId?: string | null;
   hostname?: string | null;
   source?: string | null;
   capturedAt?: string | null;
+  cpuTemperatureC?: number | null;
+  fanRpm?: number | null;
   requestIp?: string | null;
   userAgent?: string | null;
 }) {
-  if (!input.buffer.length) {
-    throw new ObserverAgentScreenshotError("File image kosong.");
-  }
+  const buffer = input.buffer && input.buffer.length ? input.buffer : null;
 
-  if (input.buffer.length > OBSERVER_AGENT_SCREENSHOT_MAX_BYTES) {
+  if (buffer && buffer.length > OBSERVER_AGENT_SCREENSHOT_MAX_BYTES) {
     throw new ObserverAgentScreenshotError(
       "Ukuran image melebihi batas 15 MB.",
       413
     );
   }
 
-  const kind = detectImageKind(input.buffer);
-  if (!kind) {
+  const kind = buffer ? detectImageKind(buffer) : null;
+  if (buffer && !kind) {
     throw new ObserverAgentScreenshotError(
       "Format image tidak didukung. Gunakan PNG, JPG, atau WEBP."
     );
@@ -265,11 +258,10 @@ export async function saveObserverAgentScreenshot(input: {
     "unknown-device"
   );
   const timestampToken = uploadedAt.toISOString().replace(/[:.]/g, "-");
-  const fileName = `${timestampToken}_${deviceToken}_${randomUUID()}.${kind.extension}`;
-  const filePath = path.join(dir, fileName);
-  const tempPath = `${filePath}.${randomUUID()}.uploading`;
+  const baseName = `${timestampToken}_${deviceToken}_${randomUUID()}`;
+  const fileName = kind ? `${baseName}.${kind.extension}` : baseName;
   const metaPath = path.join(dir, getScreenshotMetaFileName(fileName));
-  const sha256 = createHash("sha256").update(input.buffer).digest("hex");
+  const sha256 = buffer ? createHash("sha256").update(buffer).digest("hex") : "";
 
   const meta: DiskScreenshotMeta = {
     fileName,
@@ -279,28 +271,37 @@ export async function saveObserverAgentScreenshot(input: {
     hostname: cleanNullableString(input.hostname, 180),
     source: cleanNullableString(input.source, 80),
     capturedAt: cleanNullableString(input.capturedAt, 80),
+    cpuTemperatureC: sanitizeNumber(input.cpuTemperatureC),
+    fanRpm: sanitizeNumber(input.fanRpm),
+    hasImage: Boolean(kind),
     uploadedAt: uploadedAt.toISOString(),
-    mimeType: kind.mimeType,
-    sizeBytes: input.buffer.length,
+    mimeType: kind?.mimeType ?? null,
+    sizeBytes: buffer?.length ?? 0,
     sha256,
     requestIp: cleanNullableString(input.requestIp, 80),
     userAgent: cleanNullableString(input.userAgent, 300),
   };
 
-  try {
-    await writeFile(tempPath, input.buffer);
-    await rename(tempPath, filePath);
+  if (kind && buffer) {
+    const filePath = path.join(dir, fileName);
+    const tempPath = `${filePath}.${randomUUID()}.uploading`;
+    try {
+      await writeFile(tempPath, buffer);
+      await rename(tempPath, filePath);
+      await writeFile(metaPath, JSON.stringify(meta, null, 2), "utf8");
+    } catch (error) {
+      await rm(tempPath, { force: true });
+      await rm(filePath, { force: true });
+      throw error;
+    }
+  } else {
     await writeFile(metaPath, JSON.stringify(meta, null, 2), "utf8");
-  } catch (error) {
-    await rm(tempPath, { force: true });
-    await rm(filePath, { force: true });
-    throw error;
   }
 
   return {
     ...meta,
     id: `${dateKey}/${fileName}`,
-    url: getObserverAgentScreenshotUrl(dateKey, fileName),
+    url: kind ? getObserverAgentScreenshotUrl(dateKey, fileName) : null,
   };
 }
 
@@ -364,45 +365,87 @@ export async function listObserverAgentScreenshotAlbums(options?: {
       const dateEntries = await readdir(dateDir, { withFileTypes: true }).catch(
         () => []
       );
-      const imageFiles = dateEntries
+      const fileNames = dateEntries
         .filter((entry) => entry.isFile())
-        .map((entry) => entry.name)
-        .filter(isAllowedObserverAgentScreenshotFileName);
+        .map((entry) => entry.name);
+      const metaFileNames = fileNames.filter((name) => name.endsWith(".json"));
+      const imageFileNames = fileNames.filter(
+        isAllowedObserverAgentScreenshotFileName
+      );
+      const recordedImageFileNames = new Set<string>();
 
-      const screenshots = await Promise.all(
-        imageFiles.map(async (fileName) => {
+      const fromMeta = await Promise.all(
+        metaFileNames.map(async (metaFileName) => {
+          const baseName = metaFileName.slice(0, -".json".length);
+          const raw = await readFile(path.join(dateDir, metaFileName), "utf8").catch(
+            () => null
+          );
+          if (!raw) return null;
+
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(raw);
+          } catch {
+            return null;
+          }
+          if (!isDiskScreenshotMeta(parsed) || parsed.fileName !== baseName) {
+            return null;
+          }
+
+          let meta = parsed;
+          if (meta.hasImage) {
+            const imagePath = path.join(dateDir, meta.fileName);
+            const fileStat = await stat(imagePath).catch(() => null);
+            if (!fileStat) return null;
+            recordedImageFileNames.add(meta.fileName);
+            meta = { ...meta, sizeBytes: fileStat.size };
+          }
+
+          return {
+            ...meta,
+            id: `${dateKey}/${meta.fileName}`,
+            url: meta.hasImage
+              ? getObserverAgentScreenshotUrl(dateKey, meta.fileName)
+              : null,
+          };
+        })
+      );
+
+      const orphanImageFileNames = imageFileNames.filter(
+        (fileName) => !recordedImageFileNames.has(fileName)
+      );
+
+      const fromOrphanImages = await Promise.all(
+        orphanImageFileNames.map(async (fileName) => {
           const filePath = path.join(dateDir, fileName);
           if (!(await pathExists(filePath))) return null;
 
-          const [diskMeta, fileStat] = await Promise.all([
-            readDiskScreenshotMeta(dateKey, fileName),
-            stat(filePath).catch(() => null),
-          ]);
+          const fileStat = await stat(filePath).catch(() => null);
           if (!fileStat) return null;
 
-          const meta: DiskScreenshotMeta =
-            diskMeta && diskMeta.fileName === fileName
-              ? diskMeta
-              : {
-                  fileName,
-                  dateKey,
-                  originalName: null,
-                  deviceId: null,
-                  hostname: null,
-                  source: null,
-                  capturedAt: null,
-                  uploadedAt: fileStat.mtime.toISOString(),
-                  mimeType:
-                    path.extname(fileName).toLowerCase() === ".webp"
-                      ? "image/webp"
-                      : path.extname(fileName).toLowerCase() === ".png"
-                      ? "image/png"
-                      : "image/jpeg",
-                  sizeBytes: fileStat.size,
-                  sha256: "",
-                  requestIp: null,
-                  userAgent: null,
-                };
+          const meta: DiskScreenshotMeta = {
+            fileName,
+            dateKey,
+            originalName: null,
+            deviceId: null,
+            hostname: null,
+            source: null,
+            capturedAt: null,
+            cpuTemperatureC: null,
+            fanRpm: null,
+            hasImage: true,
+            uploadedAt: fileStat.mtime.toISOString(),
+            mimeType:
+              path.extname(fileName).toLowerCase() === ".webp"
+                ? "image/webp"
+                : path.extname(fileName).toLowerCase() === ".png"
+                ? "image/png"
+                : "image/jpeg",
+            sizeBytes: fileStat.size,
+            sha256: "",
+            requestIp: null,
+            userAgent: null,
+          };
 
           return {
             ...meta,
@@ -412,17 +455,14 @@ export async function listObserverAgentScreenshotAlbums(options?: {
         })
       );
 
+      const screenshots = [...fromMeta, ...fromOrphanImages].filter(
+        (screenshot): screenshot is ObserverAgentScreenshot => screenshot !== null
+      );
+
       return {
         dateKey,
-        count: screenshots.filter(
-          (screenshot): screenshot is ObserverAgentScreenshot =>
-            screenshot !== null
-        ).length,
+        count: screenshots.length,
         screenshots: screenshots
-          .filter(
-            (screenshot): screenshot is ObserverAgentScreenshot =>
-              screenshot !== null
-          )
           .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt))
           .slice(0, limitPerDay),
       };
