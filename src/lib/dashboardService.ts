@@ -64,6 +64,49 @@ const toCurrencyNumber = (value: unknown) => {
   return Number.isFinite(numeric) ? numeric : 0;
 };
 
+const MONTH_KEY_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+const parseMonthKey = (value: string) => {
+  if (!MONTH_KEY_PATTERN.test(value)) {
+    throw new Error("Invalid month format. Use YYYY-MM.");
+  }
+
+  const [year, month] = value.split("-").map(Number);
+  return new Date(year, month - 1, 1);
+};
+
+const toMonthKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+const buildMonthRange = (start: Date, endExclusive: Date) => {
+  const months: string[] = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+
+  while (cursor < endExclusive) {
+    months.push(toMonthKey(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return months;
+};
+
+const incrementCount = <TKey extends string>(
+  map: Map<TKey, number>,
+  key: TKey,
+  increment = 1
+) => {
+  map.set(key, (map.get(key) ?? 0) + increment);
+};
+
+const mapCountsToRows = (map: Map<string, number>, total: number) =>
+  Array.from(map.entries())
+    .map(([name, count]) => ({
+      name,
+      count,
+      percentage: total > 0 ? (count / total) * 100 : 0,
+    }))
+    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
+
 export async function getDashboardData() {
   noStore();
 
@@ -751,5 +794,151 @@ export async function getDashboardData() {
           durationLabel: formatDurationShort(longestProblemEntry.durationMs),
         }
       : null,
+  };
+}
+
+export async function getDashboardPresentationData({
+  startMonth,
+  endMonth,
+}: {
+  startMonth: string;
+  endMonth?: string;
+}) {
+  noStore();
+
+  const periodStart = parseMonthKey(startMonth);
+  const resolvedEndMonth = endMonth ?? startMonth;
+  const periodEndMonthStart = parseMonthKey(resolvedEndMonth);
+
+  if (periodEndMonthStart < periodStart) {
+    throw new Error("End month must be after or equal to start month.");
+  }
+
+  const periodEndExclusive = new Date(
+    periodEndMonthStart.getFullYear(),
+    periodEndMonthStart.getMonth() + 1,
+    1
+  );
+
+  const [dashboardSnapshot, addedAssets] = await Promise.all([
+    getDashboardData(),
+    prisma.asset.findMany({
+      where: {
+        createdAt: {
+          gte: periodStart,
+          lt: periodEndExclusive,
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      select: {
+        id: true,
+        namaAsset: true,
+        nomorSeri: true,
+        statusAsset: true,
+        createdAt: true,
+        category: {
+          select: {
+            id: true,
+            nama: true,
+            slug: true,
+          },
+        },
+        assignments: {
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 1,
+          select: {
+            nomorAsset: true,
+            user: {
+              select: {
+                namaLengkap: true,
+                lokasiKantor: true,
+                jabatan: true,
+              },
+            },
+          },
+        },
+        cctvSpecs: {
+          select: {
+            sbu: true,
+            channelCamera: {
+              select: {
+                sbu: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const monthKeys = buildMonthRange(periodStart, periodEndExclusive);
+  const additionsByMonth = new Map(monthKeys.map((month) => [month, 0]));
+  const additionsByBucket = new Map<string, number>(
+    ASSET_SUMMARY_BUCKET_ORDER.map((key) => [key, 0])
+  );
+  const additionsByCategory = new Map<string, number>();
+  const additionsByCompany = new Map<string, number>();
+
+  const addedAssetRows = addedAssets.map((asset) => {
+    const company = resolveAssetCompany(asset);
+    const bucket = resolveAssetSummaryBucketKey(asset.category.slug);
+    const month = toMonthKey(asset.createdAt);
+
+    incrementCount(additionsByMonth, month);
+    incrementCount(additionsByBucket, bucket);
+    incrementCount(additionsByCategory, asset.category.nama);
+    incrementCount(additionsByCompany, company);
+
+    const assignment = asset.assignments[0];
+
+    return {
+      id: asset.id,
+      assetName: asset.namaAsset,
+      serialNumber: asset.nomorSeri,
+      assetNumber: assignment?.nomorAsset ?? null,
+      category: asset.category.nama,
+      categorySlug: asset.category.slug,
+      bucket,
+      company,
+      assignedTo: assignment?.user.namaLengkap ?? null,
+      homebase: assignment?.user.jabatan ?? null,
+      status: asset.statusAsset,
+      createdAt: asset.createdAt.toISOString(),
+    };
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    period: {
+      startMonth,
+      endMonth: resolvedEndMonth,
+      startDate: periodStart.toISOString(),
+      endExclusiveDate: periodEndExclusive.toISOString(),
+      monthKeys,
+    },
+    accuracyNote:
+      "Data penghapusan asset tidak disertakan karena sistem tidak menyimpan histori penghapusan asset.",
+    snapshot: {
+      generatedAt: dashboardSnapshot.generatedAt,
+      metrics: dashboardSnapshot.metrics,
+      assetDistributionByBucket: dashboardSnapshot.assetDistributionByBucket,
+      assetDistributionByCompany: dashboardSnapshot.assetDistributionByCompany,
+      operatingSystemDistribution: dashboardSnapshot.operatingSystemDistribution,
+    },
+    additions: {
+      total: addedAssetRows.length,
+      byMonth: monthKeys.map((month) => ({
+        month,
+        count: additionsByMonth.get(month) ?? 0,
+      })),
+      byBucket: mapCountsToRows(additionsByBucket, addedAssetRows.length),
+      byCategory: mapCountsToRows(additionsByCategory, addedAssetRows.length),
+      byCompany: mapCountsToRows(additionsByCompany, addedAssetRows.length),
+      details: addedAssetRows,
+    },
   };
 }

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export const OBSERVER_AGENT_COMMAND_TYPES = {
   sendFullReportNow: "send_full_report_now",
+  runScreenshotToolNow: "run_screenshot_tool_now",
 } as const;
 
 export const OBSERVER_AGENT_COMMAND_STATUS = {
@@ -25,6 +26,9 @@ type Requester = {
   name?: string | null;
   email?: string | null;
 };
+
+type ObserverAgentCommandType =
+  (typeof OBSERVER_AGENT_COMMAND_TYPES)[keyof typeof OBSERVER_AGENT_COMMAND_TYPES];
 
 export class ObserverAgentCommandError extends Error {
   constructor(message: string) {
@@ -74,6 +78,7 @@ async function expireStaleCommands(now = new Date()) {
 }
 
 async function getRecentlyRequestedDeviceIds(input: {
+  commandType: ObserverAgentCommandType;
   deviceIds: string[];
   targetScope: string;
   now: Date;
@@ -83,7 +88,7 @@ async function getRecentlyRequestedDeviceIds(input: {
   const duplicateSince = new Date(input.now.getTime() - DUPLICATE_WINDOW_MS);
   const rows = await prisma.observerAgentCommand.findMany({
     where: {
-      commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+      commandType: input.commandType,
       targetScope: input.targetScope,
       targetDeviceId: {
         in: input.deviceIds,
@@ -113,7 +118,9 @@ async function getRecentlyRequestedDeviceIds(input: {
   );
 }
 
-export async function createSendFullReportCommandForDevice(input: {
+async function createCommandForDevice(input: {
+  commandType: ObserverAgentCommandType;
+  duplicateMessage: string;
   deviceId: string;
   requester: Requester;
 }) {
@@ -130,21 +137,20 @@ export async function createSendFullReportCommandForDevice(input: {
   }
 
   const duplicates = await getRecentlyRequestedDeviceIds({
+    commandType: input.commandType,
     deviceIds: [device.deviceId],
     targetScope: TARGET_SCOPE_DEVICE,
     now,
   });
 
   if (duplicates.has(device.deviceId)) {
-    throw new ObserverAgentCommandError(
-      "Command full report untuk device ini baru saja dibuat."
-    );
+    throw new ObserverAgentCommandError(input.duplicateMessage);
   }
 
   const command = await prisma.observerAgentCommand.create({
     data: {
       id: commandId("cmd", now),
-      commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+      commandType: input.commandType,
       targetScope: TARGET_SCOPE_DEVICE,
       targetDeviceId: device.deviceId,
       requestedBy: requesterLabel(input.requester),
@@ -163,7 +169,9 @@ export async function createSendFullReportCommandForDevice(input: {
   };
 }
 
-export async function createSendFullReportCommandsForActiveDevices(input: {
+async function createCommandsForActiveDevices(input: {
+  commandType: ObserverAgentCommandType;
+  duplicateMessage: string;
   requester: Requester;
 }) {
   const now = new Date();
@@ -190,6 +198,7 @@ export async function createSendFullReportCommandsForActiveDevices(input: {
 
   const deviceIds = devices.map((device) => device.deviceId);
   const duplicateIds = await getRecentlyRequestedDeviceIds({
+    commandType: input.commandType,
     deviceIds,
     targetScope: TARGET_SCOPE_ALL,
     now,
@@ -197,9 +206,7 @@ export async function createSendFullReportCommandsForActiveDevices(input: {
   const targetDeviceIds = deviceIds.filter((deviceId) => !duplicateIds.has(deviceId));
 
   if (!targetDeviceIds.length) {
-    throw new ObserverAgentCommandError(
-      "Command global full report baru saja dibuat untuk semua agent aktif."
-    );
+    throw new ObserverAgentCommandError(input.duplicateMessage);
   }
 
   const batchId = commandId("batch", now);
@@ -208,7 +215,7 @@ export async function createSendFullReportCommandsForActiveDevices(input: {
   await prisma.observerAgentCommand.createMany({
     data: targetDeviceIds.map((deviceId) => ({
       id: commandId("cmd", now),
-      commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+      commandType: input.commandType,
       targetScope: TARGET_SCOPE_ALL,
       targetDeviceId: deviceId,
       requestedBy: requesterLabel(input.requester),
@@ -228,6 +235,51 @@ export async function createSendFullReportCommandsForActiveDevices(input: {
   };
 }
 
+export async function createSendFullReportCommandForDevice(input: {
+  deviceId: string;
+  requester: Requester;
+}) {
+  return createCommandForDevice({
+    ...input,
+    commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+    duplicateMessage: "Command full report untuk device ini baru saja dibuat.",
+  });
+}
+
+export async function createSendFullReportCommandsForActiveDevices(input: {
+  requester: Requester;
+}) {
+  return createCommandsForActiveDevices({
+    ...input,
+    commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+    duplicateMessage:
+      "Command global full report baru saja dibuat untuk semua agent aktif.",
+  });
+}
+
+export async function createRunScreenshotToolCommandForDevice(input: {
+  deviceId: string;
+  requester: Requester;
+}) {
+  return createCommandForDevice({
+    ...input,
+    commandType: OBSERVER_AGENT_COMMAND_TYPES.runScreenshotToolNow,
+    duplicateMessage:
+      "Command screenshot untuk device ini baru saja dibuat.",
+  });
+}
+
+export async function createRunScreenshotToolCommandsForActiveDevices(input: {
+  requester: Requester;
+}) {
+  return createCommandsForActiveDevices({
+    ...input,
+    commandType: OBSERVER_AGENT_COMMAND_TYPES.runScreenshotToolNow,
+    duplicateMessage:
+      "Command global screenshot baru saja dibuat untuk semua agent aktif.",
+  });
+}
+
 export async function getPendingCommandsForHeartbeat(input: {
   deviceId: string;
 }) {
@@ -236,7 +288,9 @@ export async function getPendingCommandsForHeartbeat(input: {
 
   const commands = await prisma.observerAgentCommand.findMany({
     where: {
-      commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+      commandType: {
+        in: Object.values(OBSERVER_AGENT_COMMAND_TYPES),
+      },
       targetDeviceId: input.deviceId,
       status: OBSERVER_AGENT_COMMAND_STATUS.pending,
       expiresAt: {
@@ -274,7 +328,8 @@ export async function getPendingCommandsForHeartbeat(input: {
   }));
 }
 
-export async function completeSendFullReportCommandsForDevice(input: {
+async function completeCommandsForDevice(input: {
+  commandType: ObserverAgentCommandType;
   deviceId: string;
   collectedAt: Date;
 }) {
@@ -283,7 +338,7 @@ export async function completeSendFullReportCommandsForDevice(input: {
 
   await prisma.observerAgentCommand.updateMany({
     where: {
-      commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+      commandType: input.commandType,
       targetDeviceId: input.deviceId,
       status: {
         in: [
@@ -302,6 +357,26 @@ export async function completeSendFullReportCommandsForDevice(input: {
       status: OBSERVER_AGENT_COMMAND_STATUS.completed,
       completedAt: now,
     },
+  });
+}
+
+export async function completeSendFullReportCommandsForDevice(input: {
+  deviceId: string;
+  collectedAt: Date;
+}) {
+  await completeCommandsForDevice({
+    ...input,
+    commandType: OBSERVER_AGENT_COMMAND_TYPES.sendFullReportNow,
+  });
+}
+
+export async function completeRunScreenshotToolCommandsForDevice(input: {
+  deviceId: string;
+  collectedAt: Date;
+}) {
+  await completeCommandsForDevice({
+    ...input,
+    commandType: OBSERVER_AGENT_COMMAND_TYPES.runScreenshotToolNow,
   });
 }
 

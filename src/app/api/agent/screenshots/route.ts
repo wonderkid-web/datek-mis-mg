@@ -14,6 +14,7 @@ import {
   ObserverAgentScreenshotError,
   saveObserverAgentScreenshot,
 } from "@/lib/observerAgentScreenshotStorage";
+import { completeRunScreenshotToolCommandsForDevice } from "@/lib/observerAgentCommandService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -134,6 +135,12 @@ function decodeBase64Image(value: string) {
   return Buffer.from(base64.replace(/\s/g, ""), "base64");
 }
 
+function safeDate(value: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 async function parseJsonUpload(req: NextRequest): Promise<ScreenshotUpload> {
   let body: unknown;
   try {
@@ -190,7 +197,19 @@ async function parseUpload(req: NextRequest) {
   );
 }
 
+const SCREENSHOT_INTAKE_DISABLED = true;
+
 export async function POST(req: NextRequest) {
+  if (SCREENSHOT_INTAKE_DISABLED) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Penerimaan screenshot sudah dinonaktifkan.",
+      },
+      { status: 410 }
+    );
+  }
+
   const auth = validateAgentToken(req);
   const contentType = req.headers.get("content-type") ?? null;
   const contentLength = req.headers.get("content-length") ?? null;
@@ -261,6 +280,18 @@ export async function POST(req: NextRequest) {
       requestIp: getRequestIp(req),
       userAgent: req.headers.get("user-agent"),
     });
+
+    if (upload.deviceId) {
+      await completeRunScreenshotToolCommandsForDevice({
+        deviceId: upload.deviceId,
+        collectedAt:
+          safeDate(upload.capturedAt) ??
+          safeDate(screenshot.uploadedAt) ??
+          new Date(),
+      }).catch((error) => {
+        console.error("Failed to complete observer screenshot commands:", error);
+      });
+    }
 
     return NextResponse.json(
       {

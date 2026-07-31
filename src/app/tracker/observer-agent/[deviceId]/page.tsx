@@ -14,6 +14,7 @@ import {
   updateObserverDeviceAliasByDeviceId,
 } from "@/lib/observerAgentService";
 import {
+  createRunScreenshotToolCommandForDevice,
   createSendFullReportCommandForDevice,
   listObserverAgentCommandsForDevice,
   ObserverAgentCommandError,
@@ -209,6 +210,51 @@ export default async function ObserverAgentDetailPage({
     );
   }
 
+  async function requestDeviceScreenshotAction() {
+    "use server";
+
+    const session = await getCurrentSession();
+    const user = session?.user as
+      | { role?: string; name?: string | null; email?: string | null }
+      | undefined;
+
+    if (user?.role !== "administrator") {
+      redirect(
+        commandMessageUrl(
+          observerDevice.deviceId,
+          "command_error",
+          "Hanya administrator yang boleh trigger screenshot tool."
+        )
+      );
+    }
+
+    try {
+      await createRunScreenshotToolCommandForDevice({
+        deviceId: observerDevice.deviceId,
+        requester: {
+          name: user?.name,
+          email: user?.email,
+        },
+      });
+    } catch (error) {
+      const message =
+        error instanceof ObserverAgentCommandError
+          ? error.message
+          : "Gagal membuat command screenshot untuk device ini.";
+      redirect(commandMessageUrl(observerDevice.deviceId, "command_error", message));
+    }
+
+    revalidatePath("/tracker/observer-agent");
+    revalidatePath(`/tracker/observer-agent/${observerDevice.deviceId}`);
+    redirect(
+      commandMessageUrl(
+        observerDevice.deviceId,
+        "command_saved",
+        "Command screenshot dibuat untuk device ini."
+      )
+    );
+  }
+
   const status = computeObserverDeviceStatus({
     lastSeen: device.lastSeen,
     lastReportAt: device.lastReportAt,
@@ -237,6 +283,12 @@ export default async function ObserverAgentDetailPage({
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
+          <RequestFullReportCommandForm
+            action={requestDeviceScreenshotAction}
+            label="Run Screenshot Tool"
+            confirmMessage={`Minta device "${device.hostname}" menjalankan screenshot tool pada heartbeat berikutnya?`}
+            disabled={!canTriggerCommands}
+          />
           <RequestFullReportCommandForm
             action={requestDeviceSpecsAction}
             label="Get Latest Spec Now"
@@ -324,7 +376,7 @@ export default async function ObserverAgentDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Full Report Commands</CardTitle>
+          <CardTitle>Agent Commands</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
@@ -376,7 +428,7 @@ export default async function ObserverAgentDetailPage({
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
-                      Belum ada command full report untuk device ini.
+                      Belum ada command agent untuk device ini.
                     </TableCell>
                   </TableRow>
                 )}

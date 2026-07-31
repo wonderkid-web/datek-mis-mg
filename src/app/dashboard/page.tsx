@@ -24,6 +24,7 @@ import { IpAddressesDetailDialog } from "@/components/dialogs/IpAddressDetailDia
 import AssetBucketOverviewChart from "@/components/charts/AssetBucketOverviewChart";
 import AssetDistributionByCompanyChart from "@/components/charts/AssetDistributionByCompanyChart";
 import OperatingSystemSpreadChart from "@/components/charts/OperatingSystemSpreadChart";
+import { DashboardPresentationExportDialog } from "@/components/dashboard/DashboardPresentationExportDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -379,15 +380,18 @@ function DashboardPage() {
             <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_60%)]" />
             <div className="absolute -right-20 top-8 h-52 w-52 rounded-full bg-white/10 blur-3xl" />
             <CardContent className="relative space-y-6 p-6 sm:p-8">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge className="border-white/20 bg-white/10 text-white">
-                  {t("dashboard.hero.liveSnapshot")}
-                </Badge>
-                <Badge className="border-emerald-200/30 bg-emerald-100/10 text-emerald-50">
-                  {t("dashboard.hero.updatedAt", {
-                    value: dateTimeFormatter.format(new Date(data.generatedAt)),
-                  })}
-                </Badge>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Badge className="border-white/20 bg-white/10 text-white">
+                    {t("dashboard.hero.liveSnapshot")}
+                  </Badge>
+                  <Badge className="border-emerald-200/30 bg-emerald-100/10 text-emerald-50">
+                    {t("dashboard.hero.updatedAt", {
+                      value: dateTimeFormatter.format(new Date(data.generatedAt)),
+                    })}
+                  </Badge>
+                </div>
+                <DashboardPresentationExportDialog />
               </div>
 
               <div className="max-w-3xl space-y-3">

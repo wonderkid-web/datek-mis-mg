@@ -127,6 +127,7 @@ export default async function LandingPage() {
             </Button>
           </div>
 
+
           <div className="mt-14 grid w-full gap-6 rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur dark:border-white/10 dark:bg-white/5">
             <div className="grid gap-4 text-left sm:grid-cols-3">
               {stats.map((stat) => (
