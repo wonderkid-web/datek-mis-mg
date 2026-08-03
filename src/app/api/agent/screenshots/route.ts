@@ -274,6 +274,16 @@ export async function POST(req: NextRequest) {
       error instanceof Error && error.message
         ? error.message
         : "Gagal membaca upload screenshot.";
+    logAgentRequest({
+      endpoint: "POST /api/agent/screenshots",
+      req,
+      tokenOk: auth.ok,
+      payload: {
+        parse_error: message,
+        content_type: contentType,
+        content_length: contentLength,
+      },
+    });
     return NextResponse.json(
       {
         success: false,

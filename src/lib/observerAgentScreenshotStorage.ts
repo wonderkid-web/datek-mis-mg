@@ -241,12 +241,9 @@ export async function saveObserverAgentScreenshot(input: {
     );
   }
 
+  // Agent sensor mengirim payload non-image (JSON kecil) di field file.
+  // Perlakukan sebagai kiriman tanpa gambar, bukan error.
   const kind = buffer ? detectImageKind(buffer) : null;
-  if (buffer && !kind) {
-    throw new ObserverAgentScreenshotError(
-      "Format image tidak didukung. Gunakan PNG, JPG, atau WEBP."
-    );
-  }
 
   const uploadedAt = new Date();
   const dateKey = formatJakartaDateKey(uploadedAt);
@@ -261,7 +258,7 @@ export async function saveObserverAgentScreenshot(input: {
   const baseName = `${timestampToken}_${deviceToken}_${randomUUID()}`;
   const fileName = kind ? `${baseName}.${kind.extension}` : baseName;
   const metaPath = path.join(dir, getScreenshotMetaFileName(fileName));
-  const sha256 = buffer ? createHash("sha256").update(buffer).digest("hex") : "";
+  const sha256 = kind && buffer ? createHash("sha256").update(buffer).digest("hex") : "";
 
   const meta: DiskScreenshotMeta = {
     fileName,
@@ -276,7 +273,7 @@ export async function saveObserverAgentScreenshot(input: {
     hasImage: Boolean(kind),
     uploadedAt: uploadedAt.toISOString(),
     mimeType: kind?.mimeType ?? null,
-    sizeBytes: buffer?.length ?? 0,
+    sizeBytes: kind && buffer ? buffer.length : 0,
     sha256,
     requestIp: cleanNullableString(input.requestIp, 80),
     userAgent: cleanNullableString(input.userAgent, 300),
