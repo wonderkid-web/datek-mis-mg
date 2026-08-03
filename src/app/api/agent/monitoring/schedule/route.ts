@@ -9,6 +9,7 @@ import {
   createRunScreenshotToolCommandsForActiveDevices,
   ObserverAgentCommandError,
 } from "@/lib/observerAgentCommandService";
+import { pruneObserverAgentMonitoringData } from "@/lib/observerAgentScreenshotStorage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +52,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Retensi dijalankan di sini karena cron harian ini sudah pasti berkala.
+    const pruned = await pruneObserverAgentMonitoringData().catch((error) => {
+      console.error("Failed to prune monitoring data:", error);
+      return null;
+    });
+
     logAgentRequest({
       endpoint: "POST /api/agent/monitoring/schedule",
       req,
@@ -58,6 +65,8 @@ export async function POST(req: NextRequest) {
       payload: {
         created_count: result.createdCount,
         duplicate_count: result.duplicateCount,
+        pruned_days: pruned?.removedDays ?? 0,
+        retention_days: pruned?.retentionDays ?? null,
       },
     });
 
@@ -65,6 +74,7 @@ export async function POST(req: NextRequest) {
       success: true,
       created_count: result.createdCount,
       duplicate_count: result.duplicateCount,
+      pruned_days: pruned?.removedDays ?? 0,
     });
   } catch (error) {
     const message =

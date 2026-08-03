@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { Images } from "lucide-react";
+import { ChevronLeft, ChevronRight, Images, Search } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
   listObserverAgentCommands,
   ObserverAgentCommandError,
 } from "@/lib/observerAgentCommandService";
+import { getLatestObserverAgentRelease } from "@/lib/observerAgentReleaseStorage";
+import { compareSemver } from "@/lib/semver";
 import { getCurrentSession } from "@/lib/session";
 import { RequestFullReportCommandForm } from "./RequestFullReportCommandForm";
 
@@ -63,6 +65,37 @@ function CommandStatusBadge({ status }: { status: string }) {
       ? "crit"
       : "muted";
   return <StatusBadge label={status.toUpperCase()} variant={variant} />;
+}
+
+type DeviceRow = Awaited<ReturnType<typeof getObserverDeviceList>>[number];
+
+function getDeviceAgentVersion(device: DeviceRow) {
+  return device.currentVersion ?? device.agentVersion ?? null;
+}
+
+function matchesDeviceQuery(device: DeviceRow, query: string) {
+  const haystack = [
+    device.hostname,
+    (device as { aliasName?: string | null }).aliasName,
+    device.username,
+    device.deviceId,
+    device.ipAddress,
+    device.publicIp,
+    device.lanMacAddress,
+    device.wlanMacAddress,
+    device.osName,
+    getDeviceAgentVersion(device),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  // Semua kata harus cocok, jadi "alwin 0.1.15" mempersempit hasil.
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((term) => haystack.includes(term));
 }
 
 function commandMessageUrl(type: "command_saved" | "command_error", message: string) {
@@ -151,17 +184,26 @@ async function requestAllAgentMonitoringAction() {
   );
 }
 
+const DEVICES_PER_PAGE = 20;
+
 export default async function ObserverAgentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ command_saved?: string; command_error?: string }>;
+  searchParams: Promise<{
+    command_saved?: string;
+    command_error?: string;
+    q?: string;
+    page?: string;
+  }>;
 }) {
-  const [devices, commandHistory, session, params] = await Promise.all([
-    getObserverDeviceList(),
-    listObserverAgentCommands(20),
-    getCurrentSession(),
-    searchParams,
-  ]);
+  const [devices, commandHistory, session, latestRelease, params] =
+    await Promise.all([
+      getObserverDeviceList(),
+      listObserverAgentCommands(20),
+      getCurrentSession(),
+      getLatestObserverAgentRelease().catch(() => null),
+      searchParams,
+    ]);
   const user = session?.user as { role?: string } | undefined;
   const canTriggerCommands = user?.role === "administrator";
   const commandMessage = params.command_error ?? params.command_saved ?? null;
@@ -191,6 +233,30 @@ export default async function ObserverAgentPage({
     },
     { total: 0, online: 0, offline: 0, diskCritical: 0, ramBelowStandard: 0, stale: 0 }
   );
+
+  // Ringkasan di atas tetap menghitung seluruh device; pencarian dan paginasi
+  // hanya memengaruhi isi tabel.
+  const query = params.q?.trim() ?? "";
+  const filtered = query ? derived.filter((row) => matchesDeviceQuery(row.device, query)) : derived;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / DEVICES_PER_PAGE));
+  const requestedPage = Number(params.page);
+  const currentPage = Math.min(
+    Math.max(Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1, 1),
+    totalPages
+  );
+  const pageRows = filtered.slice(
+    (currentPage - 1) * DEVICES_PER_PAGE,
+    currentPage * DEVICES_PER_PAGE
+  );
+
+  const buildPageHref = (page: number) => {
+    const search = new URLSearchParams();
+    if (query) search.set("q", query);
+    if (page > 1) search.set("page", String(page));
+    const qs = search.toString();
+    return qs ? `/tracker/observer-agent?${qs}` : "/tracker/observer-agent";
+  };
 
   return (
     <div className="space-y-6">
@@ -346,8 +412,33 @@ export default async function ObserverAgentPage({
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Devices</CardTitle>
+        <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Devices</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {query
+                ? `${filtered.length} dari ${derived.length} device cocok dengan "${query}".`
+                : `${derived.length} device terdaftar.`}
+            </p>
+          </div>
+          <form method="GET" className="flex items-center gap-2">
+            <input
+              type="search"
+              name="q"
+              defaultValue={query}
+              placeholder="Cari hostname, user, IP, MAC, versi…"
+              className="h-9 w-full rounded-md border bg-transparent px-3 text-sm sm:w-72"
+            />
+            <Button type="submit" size="sm" variant="outline">
+              <Search data-icon="inline-start" />
+              Cari
+            </Button>
+            {query ? (
+              <Button asChild size="sm" variant="ghost">
+                <Link href="/tracker/observer-agent">Reset</Link>
+              </Button>
+            ) : null}
+          </form>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
@@ -362,6 +453,7 @@ export default async function ObserverAgentPage({
                   <TableHead className="w-[150px]">MAC LAN</TableHead>
                   <TableHead className="w-[150px]">MAC WLAN</TableHead>
                   <TableHead className="w-[170px]">OS</TableHead>
+                  <TableHead className="w-[120px] text-center">Version</TableHead>
                   <TableHead className="text-center">RAM</TableHead>
                   <TableHead className="text-center">Disk</TableHead>
                   <TableHead className="w-[130px]">Last seen</TableHead>
@@ -371,10 +463,15 @@ export default async function ObserverAgentPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {derived.length ? (
-                  derived.map(({ device, status }, index) => {
+                {pageRows.length ? (
+                  pageRows.map(({ device, status }, index) => {
                     const aliasName =
                       (device as { aliasName?: string | null }).aliasName ?? null;
+                    const agentVersion = getDeviceAgentVersion(device);
+                    const isOutdated =
+                      Boolean(agentVersion) &&
+                      Boolean(latestRelease) &&
+                      compareSemver(agentVersion, latestRelease!.version) === -1;
                     const overallVariant = status.diskCritical || status.offline ? "crit" : status.diskWarning || status.stale || status.ramBelowStandard ? "warn" : status.online ? "ok" : "muted";
                     const overallLabel = status.offline
                       ? "OFFLINE"
@@ -408,6 +505,20 @@ export default async function ObserverAgentPage({
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
+                          {agentVersion ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="font-mono text-xs">{agentVersion}</span>
+                              {isOutdated ? (
+                                <Badge className="border-amber-300 bg-amber-100 text-amber-800">
+                                  OUTDATED
+                                </Badge>
+                              ) : null}
+                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
                           {device.hardwareSpec?.ramGb ?? "-"}
                         </TableCell>
                         <TableCell className="text-center">
@@ -431,14 +542,67 @@ export default async function ObserverAgentPage({
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={12} className="h-24 text-center text-muted-foreground">
-                      Belum ada device masuk. Coba jalankan agent dan cek endpoint `POST /api/agent/*`.
+                    <TableCell colSpan={13} className="h-24 text-center text-muted-foreground">
+                      {query
+                        ? `Tidak ada device yang cocok dengan "${query}".`
+                        : "Belum ada device masuk. Coba jalankan agent dan cek endpoint `POST /api/agent/*`."}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
+
+          {filtered.length > DEVICES_PER_PAGE ? (
+            <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+              <p className="text-sm text-muted-foreground">
+                Menampilkan {(currentPage - 1) * DEVICES_PER_PAGE + 1}–
+                {Math.min(currentPage * DEVICES_PER_PAGE, filtered.length)} dari{" "}
+                {filtered.length} device
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  asChild={currentPage > 1}
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPage <= 1}
+                >
+                  {currentPage > 1 ? (
+                    <Link href={buildPageHref(currentPage - 1)}>
+                      <ChevronLeft data-icon="inline-start" />
+                      Sebelumnya
+                    </Link>
+                  ) : (
+                    <span>
+                      <ChevronLeft data-icon="inline-start" />
+                      Sebelumnya
+                    </span>
+                  )}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Halaman {currentPage} / {totalPages}
+                </span>
+                <Button
+                  asChild={currentPage < totalPages}
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPage >= totalPages}
+                >
+                  {currentPage < totalPages ? (
+                    <Link href={buildPageHref(currentPage + 1)}>
+                      Berikutnya
+                      <ChevronRight data-icon="inline-end" />
+                    </Link>
+                  ) : (
+                    <span>
+                      Berikutnya
+                      <ChevronRight data-icon="inline-end" />
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

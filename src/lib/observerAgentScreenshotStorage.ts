@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from "crypto";
-import type { Dirent } from "fs";
 import {
   access,
   mkdir,
@@ -375,27 +374,33 @@ export async function deleteObserverAgentScreenshot(input: {
   return deleted;
 }
 
-export async function listObserverAgentScreenshotAlbums(options?: {
-  limitDays?: number;
-  limitPerDay?: number;
-}) {
-  const limitDays = options?.limitDays ?? 60;
-  const limitPerDay = options?.limitPerDay ?? 60;
+/** Semua tanggal yang punya record, terbaru dulu. */
+export async function listObserverAgentMonitoringDateKeys() {
   const root = getObserverAgentScreenshotsDir();
 
-  let entries: Dirent<string>[];
   try {
-    entries = await readdir(root, { withFileTypes: true });
+    const entries = await readdir(root, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .filter(isValidObserverAgentScreenshotDateKey)
+      .sort((a, b) => b.localeCompare(a));
   } catch {
     return [];
   }
+}
 
-  const dateKeys = entries
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .filter(isValidObserverAgentScreenshotDateKey)
-    .sort((a, b) => b.localeCompare(a))
-    .slice(0, limitDays);
+export async function listObserverAgentScreenshotAlbums(options?: {
+  limitDays?: number;
+  limitPerDay?: number;
+  dateKeys?: string[];
+}) {
+  const limitDays = options?.limitDays ?? 60;
+  const limitPerDay = options?.limitPerDay ?? 60;
+
+  const dateKeys = (
+    options?.dateKeys ?? (await listObserverAgentMonitoringDateKeys())
+  ).slice(0, limitDays);
 
   const albums = await Promise.all(
     dateKeys.map(async (dateKey): Promise<ObserverAgentScreenshotAlbum> => {
@@ -529,4 +534,122 @@ export async function listObserverAgentScreenshotAlbums(options?: {
   );
 
   return albums.filter((album) => album.count > 0);
+}
+
+/**
+ * Retensi otomatis.
+ *
+ * Satu record per device per hari berarti jumlah file tumbuh linear, dan fungsi
+ * listing membaca seluruh meta per tanggal. Membuang album lama menjaga halaman
+ * tetap ringan. Pemangkasan dilakukan per direktori tanggal, jadi biayanya
+ * sebanding dengan jumlah hari, bukan jumlah record.
+ */
+export function getObserverAgentMonitoringRetentionDays() {
+  const raw = Number(process.env.OBSERVER_MONITORING_RETENTION_DAYS);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 90;
+}
+
+export async function pruneObserverAgentMonitoringData(options?: {
+  retentionDays?: number;
+}) {
+  const retentionDays =
+    options?.retentionDays ?? getObserverAgentMonitoringRetentionDays();
+
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
+  const cutoffKey = formatJakartaDateKey(cutoff);
+
+  const dateKeys = await listObserverAgentMonitoringDateKeys();
+  const expired = dateKeys.filter((dateKey) => dateKey < cutoffKey);
+
+  let removedDays = 0;
+  for (const dateKey of expired) {
+    try {
+      await rm(getScreenshotDateDir(dateKey), { recursive: true, force: true });
+      removedDays += 1;
+    } catch (error) {
+      console.error(`Failed to prune monitoring album ${dateKey}:`, error);
+    }
+  }
+
+  return { removedDays, retentionDays, cutoffKey };
+}
+
+export type ObserverAgentMonitoringMonthlyRow = {
+  deviceId: string | null;
+  hostname: string;
+  recordCount: number;
+  cpuTemperatureC: number | null;
+  cpuTemperatureMaxC: number | null;
+  cpuLoadPercent: number | null;
+  fanRpm: number | null;
+  memoryAvailableGb: number | null;
+  memoryLoadPercent: number | null;
+  batteryChargePercent: number | null;
+  lastSeenAt: string;
+};
+
+function averageOf(values: number[]) {
+  if (!values.length) return null;
+  const sum = values.reduce((total, value) => total + value, 0);
+  return Math.round((sum / values.length) * 10) / 10;
+}
+
+/** Rata-rata metrik per device untuk satu bulan (`monthKey` = "YYYY-MM"). */
+export async function summarizeObserverAgentMonitoringByMonth(monthKey: string) {
+  const allDateKeys = await listObserverAgentMonitoringDateKeys();
+  const dateKeys = allDateKeys.filter((dateKey) => dateKey.startsWith(monthKey));
+  if (!dateKeys.length) return [];
+
+  const albums = await listObserverAgentScreenshotAlbums({
+    dateKeys,
+    limitDays: dateKeys.length,
+    limitPerDay: Number.MAX_SAFE_INTEGER,
+  });
+
+  const grouped = new Map<string, ObserverAgentScreenshot[]>();
+  for (const album of albums) {
+    for (const record of album.screenshots) {
+      const key = record.hostname?.trim() || record.deviceId?.trim() || "unknown";
+      const bucket = grouped.get(key);
+      if (bucket) bucket.push(record);
+      else grouped.set(key, [record]);
+    }
+  }
+
+  const rows: ObserverAgentMonitoringMonthlyRow[] = [];
+  for (const [hostname, records] of grouped) {
+    const pick = (selector: (row: ObserverAgentScreenshot) => number | null) =>
+      records
+        .map(selector)
+        .filter((value): value is number => value !== null);
+
+    const temperatures = pick((row) => row.cpuTemperatureC);
+
+    rows.push({
+      deviceId: records.find((row) => row.deviceId)?.deviceId ?? null,
+      hostname,
+      recordCount: records.length,
+      cpuTemperatureC: averageOf(temperatures),
+      cpuTemperatureMaxC: temperatures.length ? Math.max(...temperatures) : null,
+      cpuLoadPercent: averageOf(pick((row) => row.cpuLoadPercent)),
+      fanRpm: averageOf(pick((row) => row.fanRpm)),
+      memoryAvailableGb: averageOf(pick((row) => row.memoryAvailableGb)),
+      memoryLoadPercent: averageOf(pick((row) => row.memoryLoadPercent)),
+      batteryChargePercent: averageOf(pick((row) => row.batteryChargePercent)),
+      lastSeenAt: records
+        .map((row) => row.uploadedAt)
+        .sort((a, b) => b.localeCompare(a))[0],
+    });
+  }
+
+  return rows.sort((a, b) => a.hostname.localeCompare(b.hostname));
+}
+
+/** Bulan yang punya data, terbaru dulu (format "YYYY-MM"). */
+export async function listObserverAgentMonitoringMonthKeys() {
+  const dateKeys = await listObserverAgentMonitoringDateKeys();
+  return Array.from(new Set(dateKeys.map((dateKey) => dateKey.slice(0, 7)))).sort(
+    (a, b) => b.localeCompare(a)
+  );
 }

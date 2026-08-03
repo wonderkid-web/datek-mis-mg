@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM oven/bun:1 AS base
 
 WORKDIR /app
@@ -14,7 +15,8 @@ COPY package.json bun.lockb ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-RUN bun install --frozen-lockfile \
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  bun install --frozen-lockfile \
   && bunx prisma generate
 
 
@@ -27,7 +29,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN bun run build
+# .next/cache dipertahankan antar-build supaya Next bisa compile inkremental.
+RUN --mount=type=cache,target=/app/.next/cache \
+  bun run build
 
 
 FROM base AS prod-deps
@@ -39,7 +43,8 @@ COPY package.json bun.lockb ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-RUN bun install --frozen-lockfile --production \
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  bun install --frozen-lockfile --production \
   && bunx prisma generate
 
 
@@ -50,16 +55,23 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3001
 
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.ts ./next.config.ts
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+# Kepemilikan file diset langsung saat COPY.
+#
+# Sebelumnya dipakai `chown -R bun:bun /app` setelah semua file disalin. Karena
+# chown menyentuh setiap file, seluruh node_modules ditulis ulang jadi satu layer
+# baru — terukur 267 detik, hampir separuh waktu build. `COPY --chown` melakukan
+# hal yang sama tanpa layer tambahan.
+COPY --chown=bun:bun --from=prod-deps /app/node_modules ./node_modules
+COPY --chown=bun:bun --from=builder /app/.next ./.next
+COPY --chown=bun:bun --from=builder /app/public ./public
+COPY --chown=bun:bun --from=builder /app/package.json ./package.json
+COPY --chown=bun:bun --from=builder /app/next.config.ts ./next.config.ts
+COPY --chown=bun:bun --from=builder /app/prisma ./prisma
+COPY --chown=bun:bun --from=builder /app/prisma.config.ts ./prisma.config.ts
 
+# Hanya direktori storage yang perlu di-chown, dan isinya kecil.
 RUN mkdir -p /app/storage/observer-agent/releases \
-  && chown -R bun:bun /app
+  && chown -R bun:bun /app/storage
 
 USER bun
 

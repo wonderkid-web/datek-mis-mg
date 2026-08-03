@@ -11,7 +11,7 @@ const navLinks = [
   { href: '/tracker/pc', label: 'Tracker PC' },
   { href: '/tracker/sparepart', label: 'Tracker Sparepart' },
   { href: '/tracker/observer-agent', label: 'Observer Agents' },
-  { href: '/tracker/observer-agent/screenshots', label: 'Observer Screenshots' },
+  { href: '/tracker/observer-agent/screenshots', label: 'Observer Monitoring' },
   { href: '/tracker/observer-agent/smart-analytics', label: 'Smart Analytics' },
   { href: '/tracker/observer-agent/disk-issues', label: 'Disk Issues' },
   { href: '/tracker/observer-agent/hardware', label: 'Observer Hardware' },
