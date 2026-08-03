@@ -53,7 +53,33 @@ function formatBytes(value: number) {
 }
 
 function formatMetric(value: number | null, suffix: string) {
-  return value !== null ? `${value}${suffix}` : "-";
+  return value !== null ? `${value}${suffix}` : null;
+}
+
+function MetricRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | null;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <dt className="flex min-w-0 items-center gap-2 text-muted-foreground">
+        {icon}
+        <span className="truncate">{label}</span>
+      </dt>
+      <dd
+        className={
+          value ? "shrink-0 font-medium tabular-nums" : "shrink-0 text-xs italic text-muted-foreground/70"
+        }
+      >
+        {value ?? "tidak tersedia"}
+      </dd>
+    </div>
+  );
 }
 
 function parseJakartaDateKey(dateKey: string) {
@@ -126,6 +152,14 @@ function ScreenshotCard({
   canDelete: boolean;
 }) {
   const title = getScreenshotTitle(screenshot);
+  const sensorCount = [
+    screenshot.cpuTemperatureC,
+    screenshot.cpuLoadPercent,
+    screenshot.fanRpm,
+    screenshot.memoryAvailableGb,
+    screenshot.memoryLoadPercent,
+    screenshot.batteryChargePercent,
+  ].filter((value) => value !== null).length + screenshot.gpu.length;
 
   return (
     <Card className="overflow-hidden py-0">
@@ -146,11 +180,7 @@ function ScreenshotCard({
             className="object-contain"
           />
         </a>
-      ) : (
-        <div className="flex aspect-video items-center justify-center bg-muted text-muted-foreground">
-          <Thermometer className="size-10" />
-        </div>
-      )}
+      ) : null}
       <CardHeader className="px-4 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -167,63 +197,74 @@ function ScreenshotCard({
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 pb-4 text-sm">
-        <div className="grid gap-2 text-muted-foreground">
+        {sensorCount === 0 ? (
+          <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+            Agent terhubung, tapi probe sensor tidak mengirim satu pun nilai.
+            Cek apakah sensor_agent.exe jalan dengan hak administrator di device ini.
+          </p>
+        ) : null}
+
+        <dl className="grid gap-1.5">
+          <MetricRow
+            icon={<Thermometer className="size-4 shrink-0" />}
+            label="Suhu CPU"
+            value={formatMetric(screenshot.cpuTemperatureC, " °C")}
+          />
+          <MetricRow
+            icon={<Cpu className="size-4 shrink-0" />}
+            label="Load CPU"
+            value={formatMetric(screenshot.cpuLoadPercent, " %")}
+          />
+          <MetricRow
+            icon={<Fan className="size-4 shrink-0" />}
+            label="Fan"
+            value={formatMetric(screenshot.fanRpm, " RPM")}
+          />
+          <MetricRow
+            icon={<MemoryStick className="size-4 shrink-0" />}
+            label="RAM sisa"
+            value={formatMetric(screenshot.memoryAvailableGb, " GB")}
+          />
+          <MetricRow
+            icon={<MemoryStick className="size-4 shrink-0" />}
+            label="RAM terpakai"
+            value={formatMetric(screenshot.memoryLoadPercent, " %")}
+          />
+          <MetricRow
+            icon={<BatteryCharging className="size-4 shrink-0" />}
+            label="Baterai"
+            value={formatMetric(screenshot.batteryChargePercent, " %")}
+          />
+          {screenshot.gpu.map((gpu, index) => (
+            <MetricRow
+              key={`${gpu.name ?? "gpu"}-${index}`}
+              icon={<Monitor className="size-4 shrink-0" />}
+              label={gpu.name ?? `GPU ${index + 1}`}
+              value={
+                [
+                  gpu.temperature !== null ? `${gpu.temperature} °C` : null,
+                  gpu.load !== null ? `${gpu.load} %` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || null
+              }
+            />
+          ))}
+        </dl>
+
+        <div className="grid gap-1 border-t pt-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Monitor className="size-4 shrink-0" />
-            <span className="truncate">{screenshot.deviceId ?? "-"}</span>
+            <Monitor className="size-3.5 shrink-0" />
+            <span className="truncate font-mono">{screenshot.deviceId ?? "-"}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Thermometer className="size-4 shrink-0" />
+            <Camera className="size-3.5 shrink-0" />
             <span className="truncate">
-              {formatMetric(screenshot.cpuTemperatureC, "°C")}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Cpu className="size-4 shrink-0" />
-            <span className="truncate">
-              {formatMetric(screenshot.cpuLoadPercent, "%")} load
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Fan className="size-4 shrink-0" />
-            <span className="truncate">
-              {formatMetric(screenshot.fanRpm, " RPM")}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MemoryStick className="size-4 shrink-0" />
-            <span className="truncate">
-              {formatMetric(screenshot.memoryAvailableGb, " GB")} free
-              {screenshot.memoryLoadPercent !== null
-                ? ` · ${screenshot.memoryLoadPercent}% used`
+              {screenshot.source ?? "-"}
+              {screenshot.capturedAt
+                ? ` · diambil ${formatDateTime(screenshot.capturedAt)}`
                 : ""}
             </span>
-          </div>
-          {screenshot.batteryChargePercent !== null ? (
-            <div className="flex items-center gap-2">
-              <BatteryCharging className="size-4 shrink-0" />
-              <span className="truncate">
-                {screenshot.batteryChargePercent}%
-              </span>
-            </div>
-          ) : null}
-          {screenshot.gpu.length ? (
-            <div className="flex items-start gap-2">
-              <Images className="mt-0.5 size-4 shrink-0" />
-              <div className="min-w-0 space-y-0.5">
-                {screenshot.gpu.map((gpu, index) => (
-                  <div key={`${gpu.name ?? "gpu"}-${index}`} className="truncate">
-                    {gpu.name ?? "GPU"}
-                    {gpu.temperature !== null ? ` · ${gpu.temperature}°C` : ""}
-                    {gpu.load !== null ? ` · ${gpu.load}%` : ""}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          <div className="flex items-center gap-2">
-            <Camera className="size-4 shrink-0" />
-            <span className="truncate">{screenshot.source ?? "-"}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

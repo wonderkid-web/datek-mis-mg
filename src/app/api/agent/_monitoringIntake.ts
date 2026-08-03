@@ -36,6 +36,10 @@ export type MonitoringUpload = {
   batteryChargePercent: number | null;
   batteryRemainingCapacity: number | null;
   gpu: ObserverAgentGpuReading[];
+  /** Nama + isi field mentah yang benar-benar diterima, untuk diagnosa. */
+  rawFields: Record<string, string>;
+  /** Isi field `file` kalau ternyata JSON payload, bukan gambar. */
+  filePayload: Record<string, unknown> | null;
 };
 
 const FIELD_ALIASES = {
@@ -193,8 +197,23 @@ async function parseMultipartUpload(req: NextRequest): Promise<MonitoringUpload>
     throw new ObserverAgentScreenshotError("Ukuran file melebihi batas 15 MB.", 413);
   }
 
-  return {
-    buffer: file ? Buffer.from(await file.arrayBuffer()) : null,
+  const rawFields: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    rawFields[key] =
+      typeof value === "string"
+        ? value.length > 300
+          ? `${value.slice(0, 300)}…`
+          : value
+        : `<file ${value.name} ${value.size}B>`;
+  }
+
+  const buffer = file ? Buffer.from(await file.arrayBuffer()) : null;
+  const filePayload = readJsonPayload(buffer);
+
+  const parsed: MonitoringUpload = {
+    rawFields,
+    filePayload,
+    buffer,
     originalName: file?.name || null,
     deviceId: pickFormString(formData, FIELD_ALIASES.deviceId),
     hostname: pickFormString(formData, FIELD_ALIASES.hostname),
@@ -216,6 +235,58 @@ async function parseMultipartUpload(req: NextRequest): Promise<MonitoringUpload>
     ),
     gpu: parseGpuField(pickFormString(formData, FIELD_ALIASES.gpu)),
   };
+
+  return applyPayloadFallback(parsed);
+}
+
+/**
+ * Agent menyertakan salinan JSON lengkap di field `file`. Kalau field top-level
+ * ternyata kosong (nama field beda, atau agent hanya mengisi salinan JSON-nya),
+ * ambil nilainya dari sana supaya data tidak hilang percuma.
+ */
+function applyPayloadFallback(upload: MonitoringUpload): MonitoringUpload {
+  const payload = upload.filePayload;
+  if (!payload) return upload;
+
+  return {
+    ...upload,
+    deviceId: upload.deviceId ?? pickString(payload, FIELD_ALIASES.deviceId),
+    hostname: upload.hostname ?? pickString(payload, FIELD_ALIASES.hostname),
+    source: upload.source ?? pickString(payload, FIELD_ALIASES.source),
+    commandId: upload.commandId ?? pickString(payload, FIELD_ALIASES.commandId),
+    capturedAt: upload.capturedAt ?? pickString(payload, FIELD_ALIASES.capturedAt),
+    cpuTemperatureC:
+      upload.cpuTemperatureC ?? pickNumber(payload, FIELD_ALIASES.cpuTemperature),
+    cpuLoadPercent:
+      upload.cpuLoadPercent ?? pickNumber(payload, FIELD_ALIASES.cpuLoad),
+    fanRpm: upload.fanRpm ?? pickNumber(payload, FIELD_ALIASES.fanSpeed),
+    memoryAvailableGb:
+      upload.memoryAvailableGb ??
+      pickNumber(payload, FIELD_ALIASES.memoryAvailableGb),
+    memoryLoadPercent:
+      upload.memoryLoadPercent ??
+      pickNumber(payload, FIELD_ALIASES.memoryLoadPercent),
+    batteryChargePercent:
+      upload.batteryChargePercent ??
+      pickNumber(payload, FIELD_ALIASES.batteryChargePercent),
+    batteryRemainingCapacity:
+      upload.batteryRemainingCapacity ??
+      pickNumber(payload, FIELD_ALIASES.batteryRemainingCapacity),
+    gpu: upload.gpu.length
+      ? upload.gpu
+      : parseGpuField(payload.gpu ?? payload.gpus),
+  };
+}
+
+function readJsonPayload(buffer: Buffer | null): Record<string, unknown> | null {
+  if (!buffer || !buffer.length || buffer.length > 512 * 1024) return null;
+
+  try {
+    const parsed = JSON.parse(buffer.toString("utf8"));
+    return assertObject(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 async function parseJsonUpload(req: NextRequest): Promise<MonitoringUpload> {
@@ -238,6 +309,10 @@ async function parseJsonUpload(req: NextRequest): Promise<MonitoringUpload> {
   ]);
 
   return {
+    rawFields: Object.fromEntries(
+      Object.entries(body).map(([key, value]) => [key, String(value).slice(0, 300)])
+    ),
+    filePayload: null,
     buffer: imageBase64 ? decodeBase64Image(imageBase64) : null,
     originalName: pickString(body, FIELD_ALIASES.fileName),
     deviceId: pickString(body, FIELD_ALIASES.deviceId),
@@ -261,6 +336,8 @@ async function parseJsonUpload(req: NextRequest): Promise<MonitoringUpload> {
 
 async function parseRawImageUpload(req: NextRequest): Promise<MonitoringUpload> {
   return {
+    rawFields: {},
+    filePayload: null,
     buffer: Buffer.from(await req.arrayBuffer()),
     originalName: pickHeaderString(req, ["x-file-name", "x-filename"]),
     deviceId: pickHeaderString(req, ["x-device-id"]),
@@ -389,6 +466,10 @@ export async function handleMonitoringIntake(req: NextRequest, endpoint: string)
       battery_remaining_capacity: upload.batteryRemainingCapacity,
       gpu_count: upload.gpu.length,
       file_bytes: upload.buffer?.length ?? 0,
+      // Field mentah apa adanya: kalau angka sensor kosong, di sinilah kelihatan
+      // apakah agent memang mengirim "" atau memakai nama field yang berbeda.
+      raw_fields: upload.rawFields,
+      file_payload: upload.filePayload,
     },
   });
 
