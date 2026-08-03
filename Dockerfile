@@ -15,8 +15,7 @@ COPY package.json bun.lockb ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  bun install --frozen-lockfile \
+RUN bun install --frozen-lockfile \
   && bunx prisma generate
 
 
@@ -43,8 +42,7 @@ COPY package.json bun.lockb ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  bun install --frozen-lockfile --production \
+RUN bun install --frozen-lockfile --production \
   && bunx prisma generate
 
 
