@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getObserverDeviceList, computeObserverDeviceStatus } from "@/lib/observerAgentService";
 import {
+  createRunScreenshotToolCommandsForActiveDevices,
   createSendFullReportCommandsForActiveDevices,
   listObserverAgentCommands,
   ObserverAgentCommandError,
@@ -108,6 +109,48 @@ async function requestAllAgentSpecsAction() {
   );
 }
 
+async function requestAllAgentMonitoringAction() {
+  "use server";
+
+  const session = await getCurrentSession();
+  const user = session?.user as
+    | { role?: string; name?: string | null; email?: string | null }
+    | undefined;
+
+  if (user?.role !== "administrator") {
+    redirect(
+      commandMessageUrl("command_error", "Hanya administrator yang boleh trigger monitoring.")
+    );
+  }
+
+  let result: Awaited<ReturnType<typeof createRunScreenshotToolCommandsForActiveDevices>>;
+  try {
+    result = await createRunScreenshotToolCommandsForActiveDevices({
+      requester: {
+        name: user?.name,
+        email: user?.email,
+      },
+    });
+  } catch (error) {
+    const message =
+      error instanceof ObserverAgentCommandError
+        ? error.message
+        : "Gagal membuat command monitoring global.";
+    redirect(commandMessageUrl("command_error", message));
+  }
+
+  revalidatePath("/tracker/observer-agent");
+  const skipped = result.duplicateCount
+    ? ` ${result.duplicateCount} duplicate dilewati.`
+    : "";
+  redirect(
+    commandMessageUrl(
+      "command_saved",
+      `${result.createdCount} command monitoring dibuat.${skipped}`
+    )
+  );
+}
+
 export default async function ObserverAgentPage({
   searchParams,
 }: {
@@ -162,9 +205,15 @@ export default async function ObserverAgentPage({
           <Button asChild variant="outline">
             <Link href="/tracker/observer-agent/screenshots">
               <Images data-icon="inline-start" />
-              Screenshot Albums
+              Monitoring Data
             </Link>
           </Button>
+          <RequestFullReportCommandForm
+            action={requestAllAgentMonitoringAction}
+            label="Get Monitoring All Agents"
+            confirmMessage="Minta semua agent aktif mengirim data sensor (suhu/fan/GPU/RAM/baterai) pada heartbeat berikutnya?"
+            disabled={!canTriggerCommands}
+          />
           <RequestFullReportCommandForm
             action={requestAllAgentSpecsAction}
             label="Get All Agent Specs Now"

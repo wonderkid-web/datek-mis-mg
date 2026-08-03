@@ -33,5 +33,21 @@ jobs:
           cd ~/datek-mis-mg
           docker compose up --build -d
 
+      - name: Install daily monitoring cron
+        env:
+          OBSERVER_AGENT_TOKEN: ${{ secrets.OBSERVER_AGENT_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Idempoten: entri lama dibuang dulu lewat marker, lalu dipasang ulang.
+          # Jadi kalau VPS dibangun ulang, cron ikut terpasang otomatis saat deploy.
+          MARKER="# datek-monitoring-daily"
+          # Server ini jalan di UTC (cek: timedatectl), jadi 08:00 UTC = 15:00 WIB.
+          # Kalau timezone server suatu saat diubah ke Asia/Jakarta, jam di bawah
+          # harus ikut disesuaikan jadi 15.
+          LINE="0 8 * * * curl -fsS -X POST -H \"Authorization: Bearer ${OBSERVER_AGENT_TOKEN}\" http://localhost:3001/api/agent/monitoring/schedule >> /tmp/datek-monitoring-cron.log 2>&1 ${MARKER}"
+          ( crontab -l 2>/dev/null | grep -vF "${MARKER}" || true; echo "${LINE}" ) | crontab -
+          echo "Cron terpasang:"
+          crontab -l | grep -F "${MARKER}"
+
       - name: Cleanup unused Docker images
         run: docker image prune -f

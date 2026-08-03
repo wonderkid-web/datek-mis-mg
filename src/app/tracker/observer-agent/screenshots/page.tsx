@@ -4,12 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   ArrowLeft,
+  BatteryCharging,
   CalendarDays,
   Camera,
+  Cpu,
   ExternalLink,
   Fan,
   HardDrive,
   Images,
+  MemoryStick,
   Monitor,
   Thermometer,
 } from "lucide-react";
@@ -47,6 +50,10 @@ function formatBytes(value: number) {
   }
 
   return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function formatMetric(value: number | null, suffix: string) {
+  return value !== null ? `${value}${suffix}` : "-";
 }
 
 function parseJakartaDateKey(dateKey: string) {
@@ -168,20 +175,55 @@ function ScreenshotCard({
           <div className="flex items-center gap-2">
             <Thermometer className="size-4 shrink-0" />
             <span className="truncate">
-              {screenshot.cpuTemperatureC !== null
-                ? `${screenshot.cpuTemperatureC}°C`
-                : "-"}
+              {formatMetric(screenshot.cpuTemperatureC, "°C")}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Cpu className="size-4 shrink-0" />
+            <span className="truncate">
+              {formatMetric(screenshot.cpuLoadPercent, "%")} load
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Fan className="size-4 shrink-0" />
             <span className="truncate">
-              {screenshot.fanRpm !== null ? `${screenshot.fanRpm} RPM` : "-"}
+              {formatMetric(screenshot.fanRpm, " RPM")}
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <MemoryStick className="size-4 shrink-0" />
+            <span className="truncate">
+              {formatMetric(screenshot.memoryAvailableGb, " GB")} free
+              {screenshot.memoryLoadPercent !== null
+                ? ` · ${screenshot.memoryLoadPercent}% used`
+                : ""}
+            </span>
+          </div>
+          {screenshot.batteryChargePercent !== null ? (
+            <div className="flex items-center gap-2">
+              <BatteryCharging className="size-4 shrink-0" />
+              <span className="truncate">
+                {screenshot.batteryChargePercent}%
+              </span>
+            </div>
+          ) : null}
+          {screenshot.gpu.length ? (
+            <div className="flex items-start gap-2">
+              <Images className="mt-0.5 size-4 shrink-0" />
+              <div className="min-w-0 space-y-0.5">
+                {screenshot.gpu.map((gpu, index) => (
+                  <div key={`${gpu.name ?? "gpu"}-${index}`} className="truncate">
+                    {gpu.name ?? "GPU"}
+                    {gpu.temperature !== null ? ` · ${gpu.temperature}°C` : ""}
+                    {gpu.load !== null ? ` · ${gpu.load}%` : ""}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="flex items-center gap-2">
             <Camera className="size-4 shrink-0" />
-            <span className="truncate">{screenshot.source ?? "screenshot"}</span>
+            <span className="truncate">{screenshot.source ?? "-"}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -235,9 +277,9 @@ export default async function ObserverAgentScreenshotsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
         <div>
-          <h2 className="text-xl font-semibold">Observer Screenshot Albums</h2>
+          <h2 className="text-xl font-semibold">Observer Monitoring</h2>
           <p className="text-sm text-muted-foreground">
-            Album image hasil POST agent, dikelompokkan berdasarkan tanggal diterima server.
+            Data sensor hardware hasil POST agent, dikelompokkan berdasarkan tanggal diterima server.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -253,7 +295,7 @@ export default async function ObserverAgentScreenshotsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
               <Images className="size-4" />
-              Total Images
+              Total Records
             </CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{totalImages}</CardContent>
@@ -314,7 +356,7 @@ export default async function ObserverAgentScreenshotsPage() {
                   </h3>
                   <p className="text-sm text-muted-foreground">{album.dateKey}</p>
                 </div>
-                <Badge variant="secondary">{album.count} image</Badge>
+                <Badge variant="secondary">{album.count} record</Badge>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -333,9 +375,9 @@ export default async function ObserverAgentScreenshotsPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Belum Ada Screenshot</CardTitle>
+            <CardTitle>Belum Ada Data Monitoring</CardTitle>
             <CardDescription>
-              Album akan muncul setelah agent mengirim image ke endpoint screenshot.
+              Data akan muncul setelah agent mengirim sensor ke endpoint monitoring.
             </CardDescription>
           </CardHeader>
         </Card>

@@ -29,6 +29,12 @@ type ImageKind = {
   mimeType: "image/png" | "image/jpeg" | "image/webp";
 };
 
+export type ObserverAgentGpuReading = {
+  name: string | null;
+  temperature: number | null;
+  load: number | null;
+};
+
 type DiskScreenshotMeta = {
   fileName: string;
   dateKey: string;
@@ -36,9 +42,16 @@ type DiskScreenshotMeta = {
   deviceId: string | null;
   hostname: string | null;
   source: string | null;
+  commandId: string | null;
   capturedAt: string | null;
   cpuTemperatureC: number | null;
+  cpuLoadPercent: number | null;
   fanRpm: number | null;
+  memoryAvailableGb: number | null;
+  memoryLoadPercent: number | null;
+  batteryChargePercent: number | null;
+  batteryRemainingCapacity: number | null;
+  gpu: ObserverAgentGpuReading[];
   hasImage: boolean;
   uploadedAt: string;
   mimeType: ImageKind["mimeType"] | null;
@@ -75,9 +88,11 @@ function cleanNullableString(value: string | null | undefined, maxLength: number
 }
 
 function sanitizeFileToken(value: string | null | undefined, fallback: string) {
+  // Titik sengaja ikut dibuang: record tanpa gambar tidak punya ekstensi, dan
+  // titik di tengah nama akan dianggap ekstensi saat menurunkan nama file meta.
   const cleaned = value
     ?.trim()
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 
@@ -220,15 +235,34 @@ function sanitizeNumber(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function sanitizeGpuReadings(
+  value: ObserverAgentGpuReading[] | null | undefined
+): ObserverAgentGpuReading[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.slice(0, 8).map((entry) => ({
+    name: cleanNullableString(entry?.name, 120),
+    temperature: sanitizeNumber(entry?.temperature),
+    load: sanitizeNumber(entry?.load),
+  }));
+}
+
 export async function saveObserverAgentScreenshot(input: {
   buffer?: Buffer | null;
   originalName?: string | null;
   deviceId?: string | null;
   hostname?: string | null;
   source?: string | null;
+  commandId?: string | null;
   capturedAt?: string | null;
   cpuTemperatureC?: number | null;
+  cpuLoadPercent?: number | null;
   fanRpm?: number | null;
+  memoryAvailableGb?: number | null;
+  memoryLoadPercent?: number | null;
+  batteryChargePercent?: number | null;
+  batteryRemainingCapacity?: number | null;
+  gpu?: ObserverAgentGpuReading[] | null;
   requestIp?: string | null;
   userAgent?: string | null;
 }) {
@@ -267,9 +301,16 @@ export async function saveObserverAgentScreenshot(input: {
     deviceId: cleanNullableString(input.deviceId, 120),
     hostname: cleanNullableString(input.hostname, 180),
     source: cleanNullableString(input.source, 80),
+    commandId: cleanNullableString(input.commandId, 120),
     capturedAt: cleanNullableString(input.capturedAt, 80),
     cpuTemperatureC: sanitizeNumber(input.cpuTemperatureC),
+    cpuLoadPercent: sanitizeNumber(input.cpuLoadPercent),
     fanRpm: sanitizeNumber(input.fanRpm),
+    memoryAvailableGb: sanitizeNumber(input.memoryAvailableGb),
+    memoryLoadPercent: sanitizeNumber(input.memoryLoadPercent),
+    batteryChargePercent: sanitizeNumber(input.batteryChargePercent),
+    batteryRemainingCapacity: sanitizeNumber(input.batteryRemainingCapacity),
+    gpu: sanitizeGpuReadings(input.gpu),
     hasImage: Boolean(kind),
     uploadedAt: uploadedAt.toISOString(),
     mimeType: kind?.mimeType ?? null,
@@ -389,7 +430,21 @@ export async function listObserverAgentScreenshotAlbums(options?: {
             return null;
           }
 
-          let meta = parsed;
+          // Record lama ditulis sebelum field sensor ada; isi default agar
+          // konsumen tidak perlu menangani undefined.
+          let meta: DiskScreenshotMeta = {
+            ...parsed,
+            commandId: parsed.commandId ?? null,
+            cpuTemperatureC: parsed.cpuTemperatureC ?? null,
+            cpuLoadPercent: parsed.cpuLoadPercent ?? null,
+            fanRpm: parsed.fanRpm ?? null,
+            memoryAvailableGb: parsed.memoryAvailableGb ?? null,
+            memoryLoadPercent: parsed.memoryLoadPercent ?? null,
+            batteryChargePercent: parsed.batteryChargePercent ?? null,
+            batteryRemainingCapacity: parsed.batteryRemainingCapacity ?? null,
+            gpu: Array.isArray(parsed.gpu) ? parsed.gpu : [],
+            hasImage: parsed.hasImage ?? true,
+          };
           if (meta.hasImage) {
             const imagePath = path.join(dateDir, meta.fileName);
             const fileStat = await stat(imagePath).catch(() => null);
@@ -427,9 +482,16 @@ export async function listObserverAgentScreenshotAlbums(options?: {
             deviceId: null,
             hostname: null,
             source: null,
+            commandId: null,
             capturedAt: null,
             cpuTemperatureC: null,
+            cpuLoadPercent: null,
             fanRpm: null,
+            memoryAvailableGb: null,
+            memoryLoadPercent: null,
+            batteryChargePercent: null,
+            batteryRemainingCapacity: null,
+            gpu: [],
             hasImage: true,
             uploadedAt: fileStat.mtime.toISOString(),
             mimeType:
