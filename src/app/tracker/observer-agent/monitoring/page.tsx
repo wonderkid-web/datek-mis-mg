@@ -36,6 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCurrentSession } from "@/lib/session";
+import { getObserverDeviceList } from "@/lib/observerAgentService";
 import {
   deleteObserverAgentScreenshot,
   getObserverAgentMonitoringRetentionDays,
@@ -126,11 +127,12 @@ function formatDateTime(value: string | null) {
   }).format(date);
 }
 
-function getScreenshotTitle(screenshot: ObserverAgentScreenshot) {
+function getScreenshotTitle(
+  screenshot: ObserverAgentScreenshot,
+  aliasName: string | null
+) {
   return (
-    screenshot.hostname?.trim() ||
-    screenshot.deviceId?.trim() ||
-    screenshot.originalName?.trim() ||
+    aliasName?.trim() || screenshot.hostname?.trim() || screenshot.originalName?.trim() ||
     "Unknown device"
   );
 }
@@ -152,19 +154,21 @@ async function deleteScreenshotAction(formData: FormData) {
   const fileName = String(formData.get("file_name") ?? "").trim();
 
   await deleteObserverAgentScreenshot({ dateKey, fileName });
-  revalidatePath("/tracker/observer-agent/screenshots");
+  revalidatePath("/tracker/observer-agent/monitoring");
 }
 
 function ScreenshotCard({
   screenshot,
+  aliasName,
   priority,
   canDelete,
 }: {
   screenshot: ObserverAgentScreenshot;
+  aliasName: string | null;
   priority: boolean;
   canDelete: boolean;
 }) {
-  const title = getScreenshotTitle(screenshot);
+  const title = getScreenshotTitle(screenshot, aliasName);
   const sensorCount = [
     screenshot.cpuTemperatureC,
     screenshot.cpuLoadPercent,
@@ -268,7 +272,7 @@ function ScreenshotCard({
         <div className="grid gap-1 border-t pt-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <Monitor className="size-3.5 shrink-0" />
-            <span className="truncate font-mono">{screenshot.deviceId ?? "-"}</span>
+            <span className="truncate">Alias: {aliasName ?? "-"}</span>
           </div>
           <div className="flex items-center gap-2">
             <Camera className="size-3.5 shrink-0" />
@@ -415,10 +419,14 @@ export default async function ObserverAgentScreenshotsPage({
   const params = await searchParams;
   const isMonthly = params.view === "monthly";
 
-  const [availableDates, availableMonths] = await Promise.all([
+  const [availableDates, availableMonths, observerDevices] = await Promise.all([
     listObserverAgentMonitoringDateKeys(),
     listObserverAgentMonitoringMonthKeys(),
+    getObserverDeviceList(),
   ]);
+  const aliasByDeviceId = new Map(
+    observerDevices.map((device) => [device.deviceId, device.aliasName?.trim() || null])
+  );
 
   const selectedDate =
     params.date && availableDates.includes(params.date)
@@ -469,13 +477,13 @@ export default async function ObserverAgentScreenshotsPage({
 
       <div className="flex flex-wrap items-center gap-2 border-b pb-4">
         <Button asChild variant={isMonthly ? "outline" : "default"} size="sm">
-          <Link href="/tracker/observer-agent/screenshots">
+          <Link href="/tracker/observer-agent/monitoring">
             <CalendarDays data-icon="inline-start" />
             Daily
           </Link>
         </Button>
         <Button asChild variant={isMonthly ? "default" : "outline"} size="sm">
-          <Link href="/tracker/observer-agent/screenshots?view=monthly">
+          <Link href="/tracker/observer-agent/monitoring?view=monthly">
             <TrendingUp data-icon="inline-start" />
             Monthly
           </Link>
@@ -633,6 +641,7 @@ export default async function ObserverAgentScreenshotsPage({
                     <ScreenshotCard
                       key={screenshot.id}
                       screenshot={screenshot}
+                      aliasName={aliasByDeviceId.get(screenshot.deviceId ?? "") ?? null}
                       priority={screenshotIndex < 2}
                       canDelete={isAdmin}
                     />

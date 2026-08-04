@@ -269,7 +269,7 @@ export default async function ObserverAgentPage({
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button asChild variant="outline">
-            <Link href="/tracker/observer-agent/screenshots">
+            <Link href="/tracker/observer-agent/monitoring">
               <Images data-icon="inline-start" />
               Monitoring Data
             </Link>
