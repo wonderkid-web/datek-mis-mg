@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Fragment } from "react";
 import { ChevronLeft, ChevronRight, Images, Search } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,9 +69,36 @@ function CommandStatusBadge({ status }: { status: string }) {
 }
 
 type DeviceRow = Awaited<ReturnType<typeof getObserverDeviceList>>[number];
+type DeviceGroupBy = "none" | "version" | "location";
+
+function getDeviceAlias(device: DeviceRow) {
+  return device.aliasName?.trim() || null;
+}
 
 function getDeviceAgentVersion(device: DeviceRow) {
   return device.currentVersion ?? device.agentVersion ?? null;
+}
+
+function getDeviceLocation(device: DeviceRow) {
+  const aliasParts = getDeviceAlias(device)
+    ?.split("-")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!aliasParts?.length) return "Tanpa lokasi";
+  if (aliasParts.length < 3) return "HO";
+
+  return aliasParts[aliasParts.length - 1].toUpperCase();
+}
+
+function parseDeviceGroupBy(value: string | undefined): DeviceGroupBy {
+  return value === "version" || value === "location" ? value : "none";
+}
+
+function getDeviceGroupLabel(device: DeviceRow, groupBy: DeviceGroupBy) {
+  if (groupBy === "version") return getDeviceAgentVersion(device) ?? "Tanpa versi";
+  if (groupBy === "location") return getDeviceLocation(device);
+  return null;
 }
 
 function matchesDeviceQuery(device: DeviceRow, query: string) {
@@ -85,6 +113,7 @@ function matchesDeviceQuery(device: DeviceRow, query: string) {
     device.wlanMacAddress,
     device.osName,
     getDeviceAgentVersion(device),
+    getDeviceLocation(device),
   ]
     .filter(Boolean)
     .join(" ")
@@ -194,6 +223,7 @@ export default async function ObserverAgentPage({
     command_error?: string;
     q?: string;
     page?: string;
+    groupBy?: string;
   }>;
 }) {
   const [devices, commandHistory, session, latestRelease, params] =
@@ -237,15 +267,28 @@ export default async function ObserverAgentPage({
   // Ringkasan di atas tetap menghitung seluruh device; pencarian dan paginasi
   // hanya memengaruhi isi tabel.
   const query = params.q?.trim() ?? "";
+  const groupBy = parseDeviceGroupBy(params.groupBy);
   const filtered = query ? derived.filter((row) => matchesDeviceQuery(row.device, query)) : derived;
+  const sortedForDisplay =
+    groupBy === "none"
+      ? filtered
+      : [...filtered].sort((a, b) => {
+          const groupComparison = (getDeviceGroupLabel(a.device, groupBy) ?? "").localeCompare(
+            getDeviceGroupLabel(b.device, groupBy) ?? "",
+            "id"
+          );
+          if (groupComparison !== 0) return groupComparison;
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / DEVICES_PER_PAGE));
+          return (b.device.lastSeen?.getTime() ?? 0) - (a.device.lastSeen?.getTime() ?? 0);
+        });
+
+  const totalPages = Math.max(1, Math.ceil(sortedForDisplay.length / DEVICES_PER_PAGE));
   const requestedPage = Number(params.page);
   const currentPage = Math.min(
     Math.max(Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1, 1),
     totalPages
   );
-  const pageRows = filtered.slice(
+  const pageRows = sortedForDisplay.slice(
     (currentPage - 1) * DEVICES_PER_PAGE,
     currentPage * DEVICES_PER_PAGE
   );
@@ -253,6 +296,7 @@ export default async function ObserverAgentPage({
   const buildPageHref = (page: number) => {
     const search = new URLSearchParams();
     if (query) search.set("q", query);
+    if (groupBy !== "none") search.set("groupBy", groupBy);
     if (page > 1) search.set("page", String(page));
     const qs = search.toString();
     return qs ? `/tracker/observer-agent?${qs}` : "/tracker/observer-agent";
@@ -421,7 +465,7 @@ export default async function ObserverAgentPage({
                 : `${derived.length} device terdaftar.`}
             </p>
           </div>
-          <form method="GET" className="flex items-center gap-2">
+          <form method="GET" className="flex flex-wrap items-end justify-end gap-2">
             <input
               type="search"
               name="q"
@@ -429,6 +473,21 @@ export default async function ObserverAgentPage({
               placeholder="Cari hostname, user, IP, MAC, versi…"
               className="h-9 w-full rounded-md border bg-transparent px-3 text-sm sm:w-72"
             />
+            <div className="grid gap-1">
+              <label htmlFor="device-group-by" className="text-xs text-muted-foreground">
+                Grouping
+              </label>
+              <select
+                id="device-group-by"
+                name="groupBy"
+                defaultValue={groupBy}
+                className="h-9 rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="none">Tanpa grouping</option>
+                <option value="version">Version</option>
+                <option value="location">Location</option>
+              </select>
+            </div>
             <Button type="submit" size="sm" variant="outline">
               <Search data-icon="inline-start" />
               Cari
@@ -442,11 +501,12 @@ export default async function ObserverAgentPage({
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
-            <Table className="min-w-[1420px]">
+            <Table className="min-w-[1530px]">
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="w-[220px]">Hostname</TableHead>
                   <TableHead className="w-[140px]">Alias</TableHead>
+                  <TableHead className="w-[110px]">Location</TableHead>
                   <TableHead className="w-[140px]">User</TableHead>
                   <TableHead className="w-[130px]">IP Local</TableHead>
                   <TableHead className="w-[130px]">IP Public</TableHead>
@@ -465,8 +525,8 @@ export default async function ObserverAgentPage({
               <TableBody>
                 {pageRows.length ? (
                   pageRows.map(({ device, status }, index) => {
-                    const aliasName =
-                      (device as { aliasName?: string | null }).aliasName ?? null;
+                    const aliasName = getDeviceAlias(device);
+                    const location = getDeviceLocation(device);
                     const agentVersion = getDeviceAgentVersion(device);
                     const isOutdated =
                       Boolean(agentVersion) &&
@@ -483,66 +543,80 @@ export default async function ObserverAgentPage({
                     const diskVariant = status.diskCritical ? "crit" : status.diskWarning ? "warn" : "ok";
                     const rowBgClass = index % 2 === 0 ? "bg-white" : "bg-emerald-50/40";
                     const stickyStatusBgClass = index % 2 === 0 ? "bg-white" : "bg-emerald-50";
+                    const groupLabel = getDeviceGroupLabel(device, groupBy);
+                    const previousGroupLabel =
+                      index > 0 ? getDeviceGroupLabel(pageRows[index - 1].device, groupBy) : null;
+                    const isGroupStart = groupBy !== "none" && groupLabel !== previousGroupLabel;
 
                     return (
-                      <TableRow key={device.id} className={`group ${rowBgClass}`}>
-                        <TableCell className="font-medium">
-                          <Link className="underline underline-offset-4" href={`/tracker/observer-agent/${device.deviceId}`}>
-                            {device.hostname}
-                          </Link>
-                          <div className="break-all text-xs text-muted-foreground">{device.deviceId}</div>
-                        </TableCell>
-                        <TableCell className="break-words">{aliasName ?? "-"}</TableCell>
-                        <TableCell className="break-words">{device.username ?? "-"}</TableCell>
-                        <TableCell className="break-all">{device.ipAddress ?? "-"}</TableCell>
-                        <TableCell className="break-all">{device.publicIp ?? "-"}</TableCell>
-                        <TableCell className="break-all font-mono text-xs">{device.lanMacAddress ?? "-"}</TableCell>
-                        <TableCell className="break-all font-mono text-xs">{device.wlanMacAddress ?? "-"}</TableCell>
-                        <TableCell>
-                          <div className="break-words font-medium">{device.osName ?? "-"}</div>
-                          <div className="break-words text-xs text-muted-foreground">
-                            {device.osVersion ?? ""}{device.osBuild ? ` (${device.osBuild})` : ""}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {agentVersion ? (
-                            <div className="flex flex-col items-center gap-1">
-                              <span className="font-mono text-xs">{agentVersion}</span>
-                              {isOutdated ? (
-                                <Badge className="border-amber-300 bg-amber-100 text-amber-800">
-                                  OUTDATED
-                                </Badge>
-                              ) : null}
+                      <Fragment key={device.id}>
+                        {isGroupStart ? (
+                          <TableRow className="bg-slate-100">
+                            <TableCell colSpan={14} className="py-2 font-semibold">
+                              {groupLabel}
+                            </TableCell>
+                          </TableRow>
+                        ) : null}
+                        <TableRow className={`group ${rowBgClass}`}>
+                          <TableCell className="font-medium">
+                            <Link className="underline underline-offset-4" href={`/tracker/observer-agent/${device.deviceId}`}>
+                              {device.hostname}
+                            </Link>
+                            <div className="break-all text-xs text-muted-foreground">{device.deviceId}</div>
+                          </TableCell>
+                          <TableCell className="break-words">{aliasName ?? "-"}</TableCell>
+                          <TableCell>{location}</TableCell>
+                          <TableCell className="break-words">{device.username ?? "-"}</TableCell>
+                          <TableCell className="break-all">{device.ipAddress ?? "-"}</TableCell>
+                          <TableCell className="break-all">{device.publicIp ?? "-"}</TableCell>
+                          <TableCell className="break-all font-mono text-xs">{device.lanMacAddress ?? "-"}</TableCell>
+                          <TableCell className="break-all font-mono text-xs">{device.wlanMacAddress ?? "-"}</TableCell>
+                          <TableCell>
+                            <div className="break-words font-medium">{device.osName ?? "-"}</div>
+                            <div className="break-words text-xs text-muted-foreground">
+                              {device.osVersion ?? ""}{device.osBuild ? ` (${device.osBuild})` : ""}
                             </div>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {device.hardwareSpec?.ramGb ?? "-"}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <StatusBadge label={diskLabel} variant={diskVariant} />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{formatRelative(device.lastSeen)}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {device.lastSeen ? formatDateTime(device.lastSeen) : ""}
-                          </div>
-                        </TableCell>
-                        <TableCell className={`sticky right-0 z-10 border-l text-center shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.12)] group-hover:bg-muted ${stickyStatusBgClass}`}>
-                          <StatusBadge label={overallLabel} variant={overallVariant} />
-                          <div className="mt-1 flex flex-wrap justify-center gap-1">
-                            {status.ramBelowStandard && <Badge variant="outline">RAM</Badge>}
-                            {status.stale && <Badge variant="outline">STALE</Badge>}
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {agentVersion ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="font-mono text-xs">{agentVersion}</span>
+                                {isOutdated ? (
+                                  <Badge className="border-amber-300 bg-amber-100 text-amber-800">
+                                    OUTDATED
+                                  </Badge>
+                                ) : null}
+                              </div>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {device.hardwareSpec?.ramGb ?? "-"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <StatusBadge label={diskLabel} variant={diskVariant} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{formatRelative(device.lastSeen)}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {device.lastSeen ? formatDateTime(device.lastSeen) : ""}
+                            </div>
+                          </TableCell>
+                          <TableCell className={`sticky right-0 z-10 border-l text-center shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.12)] group-hover:bg-muted ${stickyStatusBgClass}`}>
+                            <StatusBadge label={overallLabel} variant={overallVariant} />
+                            <div className="mt-1 flex flex-wrap justify-center gap-1">
+                              {status.ramBelowStandard && <Badge variant="outline">RAM</Badge>}
+                              {status.stale && <Badge variant="outline">STALE</Badge>}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      </Fragment>
                     );
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={13} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={14} className="h-24 text-center text-muted-foreground">
                       {query
                         ? `Tidak ada device yang cocok dengan "${query}".`
                         : "Belum ada device masuk. Coba jalankan agent dan cek endpoint `POST /api/agent/*`."}
