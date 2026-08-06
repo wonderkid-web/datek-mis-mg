@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowLeft,
   BatteryCharging,
+  Building2,
   CalendarDays,
   Camera,
   Cpu,
@@ -37,6 +38,13 @@ import {
 } from "@/components/ui/table";
 import { getCurrentSession } from "@/lib/session";
 import { getObserverDeviceList } from "@/lib/observerAgentService";
+import {
+  ALL_COMPANY_VALUE,
+  compareObserverCompanyCode,
+  getObserverAliasCompanyLabel,
+  parseObserverAgentAlias,
+  type ParsedObserverAlias,
+} from "@/lib/observerAgentAlias";
 import {
   deleteObserverAgentScreenshot,
   getObserverAgentMonitoringRetentionDays,
@@ -160,11 +168,13 @@ async function deleteScreenshotAction(formData: FormData) {
 function ScreenshotCard({
   screenshot,
   aliasName,
+  alias,
   priority,
   canDelete,
 }: {
   screenshot: ObserverAgentScreenshot;
   aliasName: string | null;
+  alias: ParsedObserverAlias;
   priority: boolean;
   canDelete: boolean;
 }) {
@@ -202,15 +212,18 @@ function ScreenshotCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <CardTitle className="truncate text-sm">
-              {title}
+              {alias.userName ?? title}
             </CardTitle>
             <CardDescription>
               {formatDateTime(screenshot.uploadedAt)}
             </CardDescription>
           </div>
-          {screenshot.hasImage ? (
-            <Badge variant="outline">{formatBytes(screenshot.sizeBytes)}</Badge>
-          ) : null}
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant="secondary">{alias.companyLabel}</Badge>
+            {screenshot.hasImage ? (
+              <Badge variant="outline">{formatBytes(screenshot.sizeBytes)}</Badge>
+            ) : null}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 pb-4 text-sm">
@@ -270,6 +283,13 @@ function ScreenshotCard({
         </dl>
 
         <div className="grid gap-1 border-t pt-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Building2 className="size-3.5 shrink-0" />
+            <span className="truncate">
+              {alias.companyLabel}
+              {alias.department ? ` · ${alias.department}` : ""}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <Monitor className="size-3.5 shrink-0" />
             <span className="truncate">Alias: {aliasName ?? "-"}</span>
@@ -404,10 +424,46 @@ function MonthlyTable({ rows }: { rows: ObserverAgentMonitoringMonthlyRow[] }) {
   );
 }
 
+type MonitoringEntry = {
+  screenshot: ObserverAgentScreenshot;
+  aliasName: string | null;
+  alias: ParsedObserverAlias;
+};
+
+type MonitoringCompanyGroup = {
+  companyCode: string;
+  companyLabel: string;
+  entries: MonitoringEntry[];
+};
+
+function groupEntriesByCompany(entries: MonitoringEntry[]): MonitoringCompanyGroup[] {
+  const groups = new Map<string, MonitoringEntry[]>();
+
+  for (const entry of entries) {
+    const bucket = groups.get(entry.alias.companyCode);
+    if (bucket) bucket.push(entry);
+    else groups.set(entry.alias.companyCode, [entry]);
+  }
+
+  return [...groups.entries()]
+    .sort(([a], [b]) => compareObserverCompanyCode(a, b))
+    .map(([companyCode, groupEntries]) => ({
+      companyCode,
+      companyLabel: getObserverAliasCompanyLabel(companyCode),
+      entries: groupEntries,
+    }));
+}
+
 export default async function ObserverAgentScreenshotsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; date?: string; month?: string }>;
+  searchParams: Promise<{
+    view?: string;
+    date?: string;
+    month?: string;
+    company?: string;
+    group?: string;
+  }>;
 }) {
   const session = await getCurrentSession();
   if (!session) {
@@ -450,6 +506,45 @@ export default async function ObserverAgentScreenshotsPage({
     isMonthly && selectedMonth
       ? await summarizeObserverAgentMonitoringByMonth(selectedMonth)
       : [];
+
+  const entries: MonitoringEntry[] = albums.flatMap((album) =>
+    album.screenshots.map((screenshot) => {
+      const aliasName = aliasByDeviceId.get(screenshot.deviceId ?? "") ?? null;
+      return { screenshot, aliasName, alias: parseObserverAgentAlias(aliasName) };
+    })
+  );
+
+  const companyCounts = new Map<string, number>();
+  for (const entry of entries) {
+    const code = entry.alias.companyCode;
+    companyCounts.set(code, (companyCounts.get(code) ?? 0) + 1);
+  }
+
+  const requestedCompany = params.company?.trim().toUpperCase() || "";
+  const companyOptions = [...companyCounts.keys()].sort(compareObserverCompanyCode);
+  // Perusahaan yang dipilih tetap ditampilkan walau hari itu belum ada record.
+  if (requestedCompany && !companyOptions.includes(requestedCompany)) {
+    companyOptions.push(requestedCompany);
+  }
+
+  const selectedCompany = companyOptions.includes(requestedCompany)
+    ? requestedCompany
+    : ALL_COMPANY_VALUE;
+  const isCompanyFiltered = selectedCompany !== ALL_COMPANY_VALUE;
+  const groupByCompany = params.group !== "none";
+
+  const filteredEntries = isCompanyFiltered
+    ? entries.filter((entry) => entry.alias.companyCode === selectedCompany)
+    : entries;
+  const companyGroups = groupByCompany
+    ? groupEntriesByCompany(filteredEntries)
+    : [
+        {
+          companyCode: ALL_COMPANY_VALUE,
+          companyLabel: "Semua perusahaan",
+          entries: filteredEntries,
+        },
+      ];
 
   const dayRecordCount = albums[0]?.count ?? 0;
   const monthlyRecordCount = monthlyRows.reduce(
@@ -582,12 +677,59 @@ export default async function ObserverAgentScreenshotsPage({
                 )}
               </select>
             </div>
+            <div className="grid gap-1.5">
+              <label htmlFor="company" className="text-sm font-medium">
+                Perusahaan
+              </label>
+              <select
+                id="company"
+                name="company"
+                defaultValue={selectedCompany}
+                className="h-9 rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value={ALL_COMPANY_VALUE}>
+                  Semua perusahaan ({entries.length})
+                </option>
+                {companyOptions.map((companyCode) => (
+                  <option key={companyCode} value={companyCode}>
+                    {getObserverAliasCompanyLabel(companyCode)} (
+                    {companyCounts.get(companyCode) ?? 0})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <label htmlFor="group" className="text-sm font-medium">
+                Grouping
+              </label>
+              <select
+                id="group"
+                name="group"
+                defaultValue={groupByCompany ? "company" : "none"}
+                className="h-9 rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="company">Per perusahaan</option>
+                <option value="none">Tanpa grouping</option>
+              </select>
+            </div>
             <Button type="submit" size="sm" disabled={!availableDates.length}>
               Tampilkan
             </Button>
+            {isCompanyFiltered ? (
+              <Button asChild size="sm" variant="ghost">
+                <Link
+                  href={`/tracker/observer-agent/monitoring?${new URLSearchParams({
+                    ...(selectedDate ? { date: selectedDate } : {}),
+                    ...(groupByCompany ? {} : { group: "none" }),
+                  }).toString()}`}
+                >
+                  Reset filter
+                </Link>
+              </Button>
+            ) : null}
           </form>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -607,7 +749,25 @@ export default async function ObserverAgentScreenshotsPage({
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-2xl font-semibold">
-                {dayRecordCount}
+                {filteredEntries.length}
+                {isCompanyFiltered ? (
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    dari {dayRecordCount}
+                  </span>
+                ) : null}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Building2 className="size-4" />
+                  Perusahaan
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-2xl font-semibold">
+                {isCompanyFiltered
+                  ? getObserverAliasCompanyLabel(selectedCompany)
+                  : companyCounts.size}
               </CardContent>
             </Card>
             <Card>
@@ -623,39 +783,62 @@ export default async function ObserverAgentScreenshotsPage({
             </Card>
           </div>
 
-          {albums.length ? (
-            albums.map((album) => (
-              <section key={album.dateKey} className="flex flex-col gap-4">
-                <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                  <div>
-                    <h3 className="text-lg font-semibold">
-                      {formatDateGroupTitle(album.dateKey)}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{album.dateKey}</p>
-                  </div>
-                  <Badge variant="secondary">{album.count} record</Badge>
+          {filteredEntries.length ? (
+            <section className="flex flex-col gap-4">
+              <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {selectedDate ? formatDateGroupTitle(selectedDate) : "-"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedDate ?? "-"}
+                    {isCompanyFiltered
+                      ? ` · ${getObserverAliasCompanyLabel(selectedCompany)}`
+                      : ""}
+                  </p>
                 </div>
+                <Badge variant="secondary">{filteredEntries.length} record</Badge>
+              </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {album.screenshots.map((screenshot, screenshotIndex) => (
-                    <ScreenshotCard
-                      key={screenshot.id}
-                      screenshot={screenshot}
-                      aliasName={aliasByDeviceId.get(screenshot.deviceId ?? "") ?? null}
-                      priority={screenshotIndex < 2}
-                      canDelete={isAdmin}
-                    />
-                  ))}
+              {companyGroups.map((group) => (
+                <div key={group.companyCode} className="flex flex-col gap-3">
+                  {groupByCompany ? (
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <Building2 className="size-4 text-muted-foreground" />
+                      <h4 className="font-semibold">{group.companyLabel}</h4>
+                      <Badge variant="outline">{group.entries.length} record</Badge>
+                    </div>
+                  ) : null}
+
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {group.entries.map((entry, entryIndex) => (
+                      <ScreenshotCard
+                        key={entry.screenshot.id}
+                        screenshot={entry.screenshot}
+                        aliasName={entry.aliasName}
+                        alias={entry.alias}
+                        priority={entryIndex < 2}
+                        canDelete={isAdmin}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </section>
-            ))
+              ))}
+            </section>
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Belum Ada Data Monitoring</CardTitle>
+                <CardTitle>
+                  {isCompanyFiltered
+                    ? "Tidak Ada Record untuk Filter Ini"
+                    : "Belum Ada Data Monitoring"}
+                </CardTitle>
                 <CardDescription>
-                  Data akan muncul setelah agent mengirim sensor ke endpoint
-                  monitoring.
+                  {isCompanyFiltered
+                    ? `Tidak ada record ${getObserverAliasCompanyLabel(
+                        selectedCompany
+                      )} pada tanggal ini. Coba tanggal lain atau reset filter.`
+                    : "Data akan muncul setelah agent mengirim sensor ke endpoint monitoring."}
                 </CardDescription>
               </CardHeader>
             </Card>
