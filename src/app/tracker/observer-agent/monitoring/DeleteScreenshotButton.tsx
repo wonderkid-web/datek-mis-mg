@@ -20,6 +20,8 @@ export function DeleteScreenshotButton(props: {
   dateKey: string;
   fileName: string;
   title: string;
+  company: string;
+  group: string;
 }) {
   return (
     <AlertDialog>
@@ -41,6 +43,8 @@ export function DeleteScreenshotButton(props: {
           <form action={props.action}>
             <input type="hidden" name="date_key" value={props.dateKey} />
             <input type="hidden" name="file_name" value={props.fileName} />
+            <input type="hidden" name="company" value={props.company} />
+            <input type="hidden" name="group" value={props.group} />
             <AlertDialogAction type="submit">Delete</AlertDialogAction>
           </form>
         </AlertDialogFooter>

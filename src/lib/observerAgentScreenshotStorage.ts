@@ -200,11 +200,18 @@ export function isValidObserverAgentScreenshotDateKey(dateKey: string) {
   return DATE_KEY_PATTERN.test(dateKey);
 }
 
-export function isAllowedObserverAgentScreenshotFileName(fileName: string) {
+/** Nama file aman dipakai di dalam folder tanggal (tanpa traversal). */
+function isSafeObserverAgentScreenshotFileName(fileName: string) {
   const safeName = path.basename(fileName);
   if (!safeName || safeName !== fileName || fileName.includes("\\")) {
     return false;
   }
+
+  return safeName !== "." && safeName !== "..";
+}
+
+export function isAllowedObserverAgentScreenshotFileName(fileName: string) {
+  if (!isSafeObserverAgentScreenshotFileName(fileName)) return false;
 
   return ALLOWED_IMAGE_EXTENSIONS.has(path.extname(fileName).toLowerCase());
 }
@@ -346,24 +353,40 @@ export async function deleteObserverAgentScreenshot(input: {
   dateKey: string;
   fileName: string;
 }) {
-  const filePath = getObserverAgentScreenshotAbsolutePath(
-    input.dateKey,
-    input.fileName
-  );
+  if (!isValidObserverAgentScreenshotDateKey(input.dateKey)) {
+    throw new ObserverAgentScreenshotError("Tanggal screenshot tidak valid.");
+  }
+
+  // Sengaja tidak memakai validasi ekstensi image: record sensor tanpa gambar
+  // punya fileName tanpa ekstensi, dan record itu tetap harus bisa dihapus.
+  if (!isSafeObserverAgentScreenshotFileName(input.fileName)) {
+    throw new ObserverAgentScreenshotError("Nama file screenshot tidak valid.");
+  }
+
   const dateDir = getScreenshotDateDir(input.dateKey);
   const metaPath = path.join(dateDir, getScreenshotMetaFileName(input.fileName));
+  const hasImageFile = isAllowedObserverAgentScreenshotFileName(input.fileName);
   let deleted = false;
 
+  if (hasImageFile) {
+    try {
+      await rm(path.join(dateDir, input.fileName));
+      deleted = true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw error;
+      }
+    }
+  }
+
   try {
-    await rm(filePath);
+    await rm(metaPath);
     deleted = true;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       throw error;
     }
   }
-
-  await rm(metaPath, { force: true });
 
   try {
     await rmdir(dateDir);

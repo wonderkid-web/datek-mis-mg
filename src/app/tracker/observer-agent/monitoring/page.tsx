@@ -17,6 +17,7 @@ import {
   Monitor,
   Thermometer,
   TrendingUp,
+  TriangleAlert,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ import {
   listObserverAgentMonitoringDateKeys,
   listObserverAgentMonitoringMonthKeys,
   listObserverAgentScreenshotAlbums,
+  ObserverAgentScreenshotError,
   summarizeObserverAgentMonitoringByMonth,
   type ObserverAgentMonitoringMonthlyRow,
   type ObserverAgentScreenshot,
@@ -145,8 +147,37 @@ function getScreenshotTitle(
   );
 }
 
+const MONITORING_PATH = "/tracker/observer-agent/monitoring";
+
+/** URL kembali ke daily view dengan filter yang sedang aktif tetap terpasang. */
+function buildMonitoringUrl(params: {
+  date?: string | null;
+  company?: string | null;
+  group?: string | null;
+  deleteError?: string | null;
+}) {
+  const query = new URLSearchParams();
+  if (params.date) query.set("date", params.date);
+  if (params.company && params.company !== ALL_COMPANY_VALUE) {
+    query.set("company", params.company);
+  }
+  if (params.group === "none") query.set("group", "none");
+  if (params.deleteError) query.set("delete_error", params.deleteError);
+
+  const search = query.toString();
+  return search ? `${MONITORING_PATH}?${search}` : MONITORING_PATH;
+}
+
 async function deleteScreenshotAction(formData: FormData) {
   "use server";
+
+  const dateKey = String(formData.get("date_key") ?? "").trim();
+  const fileName = String(formData.get("file_name") ?? "").trim();
+  const company = String(formData.get("company") ?? "").trim();
+  const group = String(formData.get("group") ?? "").trim();
+
+  const backTo = (deleteError?: string) =>
+    buildMonitoringUrl({ date: dateKey, company, group, deleteError });
 
   const session = await getCurrentSession();
   if (!session) {
@@ -155,14 +186,24 @@ async function deleteScreenshotAction(formData: FormData) {
 
   const user = session.user as { role?: string } | undefined;
   if (user?.role !== "administrator") {
-    throw new Error("Hanya administrator yang boleh menghapus screenshot.");
+    redirect(backTo("Hanya administrator yang boleh menghapus screenshot."));
   }
 
-  const dateKey = String(formData.get("date_key") ?? "").trim();
-  const fileName = String(formData.get("file_name") ?? "").trim();
+  try {
+    await deleteObserverAgentScreenshot({ dateKey, fileName });
+  } catch (error) {
+    // Kegagalan hapus (nama file aneh, permission storage) ditampilkan sebagai
+    // banner, bukan halaman error 500.
+    const message =
+      error instanceof ObserverAgentScreenshotError
+        ? error.message
+        : "Gagal menghapus record monitoring. Cek permission folder storage di server.";
+    redirect(backTo(message));
+  }
 
-  await deleteObserverAgentScreenshot({ dateKey, fileName });
-  revalidatePath("/tracker/observer-agent/monitoring");
+  revalidatePath(MONITORING_PATH);
+  // Balik ke URL tanpa delete_error supaya banner error lama ikut hilang.
+  redirect(backTo());
 }
 
 function ScreenshotCard({
@@ -171,12 +212,16 @@ function ScreenshotCard({
   alias,
   priority,
   canDelete,
+  company,
+  group,
 }: {
   screenshot: ObserverAgentScreenshot;
   aliasName: string | null;
   alias: ParsedObserverAlias;
   priority: boolean;
   canDelete: boolean;
+  company: string;
+  group: string;
 }) {
   const title = getScreenshotTitle(screenshot, aliasName);
   const sensorCount = [
@@ -319,6 +364,8 @@ function ScreenshotCard({
               dateKey={screenshot.dateKey}
               fileName={screenshot.fileName}
               title={title}
+              company={company}
+              group={group}
             />
           ) : null}
         </div>
@@ -463,6 +510,7 @@ export default async function ObserverAgentScreenshotsPage({
     month?: string;
     company?: string;
     group?: string;
+    delete_error?: string;
   }>;
 }) {
   const session = await getCurrentSession();
@@ -551,6 +599,7 @@ export default async function ObserverAgentScreenshotsPage({
     (sum, row) => sum + row.recordCount,
     0
   );
+  const deleteError = params.delete_error?.trim() || null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -569,6 +618,13 @@ export default async function ObserverAgentScreenshotsPage({
           </Link>
         </Button>
       </div>
+
+      {deleteError ? (
+        <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+          <span>{deleteError}</span>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-2 border-b pb-4">
         <Button asChild variant={isMonthly ? "outline" : "default"} size="sm">
@@ -718,10 +774,10 @@ export default async function ObserverAgentScreenshotsPage({
             {isCompanyFiltered ? (
               <Button asChild size="sm" variant="ghost">
                 <Link
-                  href={`/tracker/observer-agent/monitoring?${new URLSearchParams({
-                    ...(selectedDate ? { date: selectedDate } : {}),
-                    ...(groupByCompany ? {} : { group: "none" }),
-                  }).toString()}`}
+                  href={buildMonitoringUrl({
+                    date: selectedDate,
+                    group: groupByCompany ? "company" : "none",
+                  })}
                 >
                   Reset filter
                 </Link>
@@ -819,6 +875,8 @@ export default async function ObserverAgentScreenshotsPage({
                         alias={entry.alias}
                         priority={entryIndex < 2}
                         canDelete={isAdmin}
+                        company={selectedCompany}
+                        group={groupByCompany ? "company" : "none"}
                       />
                     ))}
                   </div>
