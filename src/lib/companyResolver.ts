@@ -37,6 +37,15 @@ export function resolveCanonicalCompanyName(
   return companyNameByNormalizedKey.get(normalizeToken(trimmed)) ?? trimmed;
 }
 
+export function isKnownCompanyName(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  return companyNameByNormalizedKey.has(normalizeToken(trimmed));
+}
+
 function toUnderscoreVariant(value: string) {
   return value.replace(/\s*-\s*/g, "_").replace(/\s+/g, "_");
 }

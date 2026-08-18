@@ -15,7 +15,18 @@ import { getAssetCategories } from "@/lib/assetCategoryService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExportActions } from "@/components/ExportActions";
+import { DateRangeFilter } from "@/components/filters/DateRangeFilter";
+import {
+  createDateRangeFilter,
+  matchesDateRange,
+} from "@/lib/dateRangeFilter";
 
+
+const ASSIGNMENT_DATE_OPTIONS = [
+  { value: "createdAt", label: "Tanggal Assign" },
+  { value: "tanggalPembelian", label: "Tanggal Pembelian" },
+  { value: "tanggalGaransi", label: "Tanggal Garansi" },
+];
 
 export default function AssignedAssetsPage() {
   const [activeTabs, setActiveTabs] = useState<
@@ -27,6 +38,9 @@ export default function AssignedAssetsPage() {
   const [selectedAssignment, setSelectedAssignment] =
     useState<AssetAssignment | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState(
+    createDateRangeFilter("createdAt")
+  );
 
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: ["assetCategories"],
@@ -223,50 +237,38 @@ export default function AssignedAssetsPage() {
     isRefetchingPcAssignments ||
     isRefetchingPrinterAssignments;
 
-  const filteredAllAssignments =
-    allAssignments?.filter(
-      (assignment) =>
-        assignment.nomorAsset
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.asset.namaAsset
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.user.namaLengkap
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.catatan?.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+  type AssignmentRow = NonNullable<typeof allAssignments>[number];
 
-  const filteredPrinterAssignments =
-    printerAssignments?.filter(
-      (assignment) =>
-        assignment.nomorAsset
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.asset.namaAsset
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.user.namaLengkap
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.catatan?.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+  const getAssignmentDateValue = (assignment: AssignmentRow) => {
+    if (dateFilter.basis === "tanggalPembelian") {
+      return assignment.asset.tanggalPembelian;
+    }
+    if (dateFilter.basis === "tanggalGaransi") {
+      return assignment.asset.tanggalGaransi;
+    }
+    return assignment.createdAt;
+  };
 
-  const filteredPcAssignments =
-    pcAssignments?.filter(
-      (assignment) =>
-        assignment.nomorAsset
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.asset.namaAsset
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.user.namaLengkap
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        assignment.catatan?.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+  const filterAssignments = (data: AssignmentRow[] | undefined) => {
+    const term = searchTerm.toLowerCase();
+
+    return (data ?? []).filter((assignment) => {
+      if (!matchesDateRange(getAssignmentDateValue(assignment), dateFilter)) {
+        return false;
+      }
+
+      return (
+        assignment.nomorAsset?.toLowerCase().includes(term) ||
+        assignment.asset.namaAsset.toLowerCase().includes(term) ||
+        assignment.user.namaLengkap.toLowerCase().includes(term) ||
+        assignment.catatan?.toLowerCase().includes(term)
+      );
+    });
+  };
+
+  const filteredAllAssignments = filterAssignments(allAssignments);
+  const filteredPrinterAssignments = filterAssignments(printerAssignments);
+  const filteredPcAssignments = filterAssignments(pcAssignments);
 
 
   const exportColumns = [
@@ -304,12 +306,18 @@ export default function AssignedAssetsPage() {
           <span className="text-sm text-gray-500">(Updating...)</span>
         )}
       </h1>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <Input
           placeholder="Search assignments..."
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           className="max-w-sm"
+        />
+        <DateRangeFilter
+          idPrefix="assigned-assets"
+          value={dateFilter}
+          onChange={setDateFilter}
+          options={ASSIGNMENT_DATE_OPTIONS}
         />
       </div>
       {/* @ts-expect-error its okay */}

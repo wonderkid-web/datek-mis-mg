@@ -18,7 +18,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAssetCategories } from "@/lib/assetCategoryService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExportActions } from "@/components/ExportActions";
+import { DateRangeFilter } from "@/components/filters/DateRangeFilter";
+import {
+  createDateRangeFilter,
+  matchesDateRange,
+} from "@/lib/dateRangeFilter";
 import { toast } from "sonner";
+
+const ASSET_DATE_OPTIONS = [
+  { value: "tanggalPembelian", label: "Tanggal Pembelian" },
+  { value: "tanggalGaransi", label: "Tanggal Garansi" },
+  { value: "createdAt", label: "Tanggal Input" },
+];
 
 export default function AssetsPage() {
   const { data: session } = useSession();
@@ -28,6 +39,9 @@ export default function AssetsPage() {
 
   // --- STATE BARU UNTUK SEARCH ---
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState(
+    createDateRangeFilter("tanggalPembelian")
+  );
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -213,13 +227,24 @@ export default function AssetsPage() {
   ];
 
   // --- LOGIC PENCARIAN ---
-  // Fungsi untuk memfilter asset berdasarkan nama, serial number, atau brand
+  const getAssetDateValue = (asset: Asset) => {
+    if (dateFilter.basis === "tanggalGaransi") return asset.tanggalGaransi;
+    if (dateFilter.basis === "createdAt") return asset.createdAt;
+    return asset.tanggalPembelian;
+  };
+
+  // Fungsi untuk memfilter asset berdasarkan nama, serial number, brand, dan tanggal
   const filterData = (data: Asset[] | undefined) => {
     if (!data) return [];
-    if (!searchTerm) return data;
+
+    const byDate = data.filter((asset) =>
+      matchesDateRange(getAssetDateValue(asset), dateFilter)
+    );
+
+    if (!searchTerm) return byDate;
 
     const lowerTerm = searchTerm.toLowerCase();
-    return data.filter((asset) => {
+    return byDate.filter((asset) => {
       const inName = asset.namaAsset?.toLowerCase().includes(lowerTerm);
       const inSerial = asset.nomorSeri?.toLowerCase().includes(lowerTerm);
       const inCategory = asset.category?.nama?.toLowerCase().includes(lowerTerm);
@@ -285,12 +310,20 @@ export default function AssetsPage() {
         <TabsContent value="all-assets">
           {/* BARIS ACTION: Search Input & Buttons */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <Input
-              placeholder="Search by Name, SN, Brand..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:max-w-sm"
-            />
+            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-end">
+              <Input
+                placeholder="Search by Name, SN, Brand..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full md:max-w-sm"
+              />
+              <DateRangeFilter
+                idPrefix="assets"
+                value={dateFilter}
+                onChange={setDateFilter}
+                options={ASSET_DATE_OPTIONS}
+              />
+            </div>
             <div className="flex items-center gap-2 w-full md:w-auto justify-end">
               <ExportActions
                 columns={exportColumns}
@@ -328,12 +361,20 @@ export default function AssetsPage() {
 
         <TabsContent value="pc-assets">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <Input
-              placeholder="Search by Name, SN, Monitor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:max-w-sm"
-            />
+            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-end">
+              <Input
+                placeholder="Search by Name, SN, Monitor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full md:max-w-sm"
+              />
+              <DateRangeFilter
+                idPrefix="pc-assets"
+                value={dateFilter}
+                onChange={setDateFilter}
+                options={ASSET_DATE_OPTIONS}
+              />
+            </div>
             <div className="flex items-center gap-2 w-full md:w-auto justify-end">
               <ExportActions
                 columns={exportColumns}
@@ -372,12 +413,20 @@ export default function AssetsPage() {
         <TabsContent value="printer-assets">
           {/* BARIS ACTION: Search Input & Buttons */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <Input
-              placeholder="Search by Name, SN, Brand..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:max-w-sm"
-            />
+            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-end">
+              <Input
+                placeholder="Search by Name, SN, Brand..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full md:max-w-sm"
+              />
+              <DateRangeFilter
+                idPrefix="printer-assets"
+                value={dateFilter}
+                onChange={setDateFilter}
+                options={ASSET_DATE_OPTIONS}
+              />
+            </div>
             <div className="flex items-center gap-2 w-full md:w-auto justify-end">
               <ExportActions
                 columns={exportColumns}

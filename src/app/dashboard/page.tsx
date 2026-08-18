@@ -21,6 +21,8 @@ import {
 
 import { AssetsDetailDialog } from "@/components/dialogs/AssetDetailDialog";
 import { IpAddressesDetailDialog } from "@/components/dialogs/IpAddressDetailDialog";
+import { ServiceRecordsDetailDialog } from "@/components/dialogs/ServiceRecordDetailDialog";
+import type { DashboardRecordType } from "@/lib/dashboardRecordsService";
 import AssetBucketOverviewChart from "@/components/charts/AssetBucketOverviewChart";
 import AssetDistributionByCompanyChart from "@/components/charts/AssetDistributionByCompanyChart";
 import OperatingSystemSpreadChart from "@/components/charts/OperatingSystemSpreadChart";
@@ -156,6 +158,11 @@ function DashboardSkeleton() {
 
 function DashboardPage() {
   const { locale, t } = useI18n();
+  const [isRecordDialogOpen, setRecordDialogOpen] = useState(false);
+  const [recordDialogTitle, setRecordDialogTitle] = useState("");
+  const [recordDialogDescription, setRecordDialogDescription] = useState("");
+  const [recordDialogType, setRecordDialogType] =
+    useState<DashboardRecordType | null>(null);
   const [isAssetDialogOpen, setAssetDialogOpen] = useState(false);
   const [assetDialogTitle, setAssetDialogTitle] = useState("");
   const [assetDialogFilters, setAssetDialogFilters] = useState<Record<string, string | boolean | number>>({});
@@ -209,6 +216,17 @@ function DashboardPage() {
           "intel-nuc": "Intel NUC",
           other: "Asset lainnya",
         };
+
+  const openRecordDialog = (
+    type: DashboardRecordType,
+    title: string,
+    description: string
+  ) => {
+    setRecordDialogType(type);
+    setRecordDialogTitle(title);
+    setRecordDialogDescription(description);
+    setRecordDialogOpen(true);
+  };
 
   const openAssetDialog = (
     title: string,
@@ -597,6 +615,7 @@ function DashboardPage() {
           {[
             {
               icon: Wrench,
+              recordType: "service-record" as const,
               label: t("dashboard.serviceCards.serviceRecord"),
               value: metrics.serviceRecordsLast30Days,
               description: t("dashboard.serviceCards.serviceRecordDescription"),
@@ -604,6 +623,7 @@ function DashboardPage() {
             },
             {
               icon: Router,
+              recordType: "computer-maintenance" as const,
               label: t("dashboard.serviceCards.computerMaintenance"),
               value: metrics.computerMaintenancesLast30Days,
               description: t("dashboard.serviceCards.computerMaintenanceDescription"),
@@ -611,6 +631,7 @@ function DashboardPage() {
             },
             {
               icon: BadgeAlert,
+              recordType: "printer-maintenance" as const,
               label: t("dashboard.serviceCards.printerMaintenance"),
               value: metrics.printerMaintenancesLast30Days,
               description: t("dashboard.serviceCards.printerMaintenanceDescription"),
@@ -618,6 +639,7 @@ function DashboardPage() {
             },
             {
               icon: ShieldCheck,
+              recordType: "cctv-maintenance" as const,
               label: t("dashboard.serviceCards.cctvMaintenance"),
               value: metrics.cctvMaintenancesLast30Days,
               description: t("dashboard.serviceCards.cctvMaintenanceDescription"),
@@ -625,6 +647,7 @@ function DashboardPage() {
             },
             {
               icon: Wifi,
+              recordType: "isp-report" as const,
               label: t("dashboard.serviceCards.ispSpeedTest"),
               value: metrics.ispReportsLast30Days,
               description: t("dashboard.serviceCards.ispSpeedTestDescription"),
@@ -633,20 +656,35 @@ function DashboardPage() {
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <Card key={item.label} className="border-slate-200/80 shadow-sm">
-                <CardContent className="space-y-3 p-5">
-                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", item.accent)}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">{item.label}</p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-950">
-                      {integerFormatter.format(item.value)}
-                    </p>
-                  </div>
-                  <p className="text-sm text-slate-500">{item.description}</p>
-                </CardContent>
-              </Card>
+              <button
+                key={item.label}
+                type="button"
+                className="h-full w-full text-left"
+                onClick={() =>
+                  openRecordDialog(
+                    item.recordType,
+                    item.label,
+                    t("dashboard.dialogs.last30DaysRecords", {
+                      label: item.label,
+                    })
+                  )
+                }
+              >
+                <Card className="h-full border-slate-200/80 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                  <CardContent className="space-y-3 p-5">
+                    <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", item.accent)}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">{item.label}</p>
+                      <p className="mt-1 text-2xl font-semibold text-slate-950">
+                        {integerFormatter.format(item.value)}
+                      </p>
+                    </div>
+                    <p className="text-sm text-slate-500">{item.description}</p>
+                  </CardContent>
+                </Card>
+              </button>
             );
           })}
         </section>
@@ -781,6 +819,14 @@ function DashboardPage() {
         filters={assetDialogFilters}
         categoryOptions={data.locationSummaryFilters.categories}
         homebaseOptions={data.locationSummaryFilters.homebases}
+      />
+      <ServiceRecordsDetailDialog
+        isOpen={isRecordDialogOpen}
+        onOpenChange={setRecordDialogOpen}
+        title={recordDialogTitle}
+        description={recordDialogDescription}
+        type={recordDialogType}
+        days={30}
       />
       <IpAddressesDetailDialog
         isOpen={isIpDialogOpen}

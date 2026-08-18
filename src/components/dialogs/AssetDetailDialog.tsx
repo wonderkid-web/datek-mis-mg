@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Asset } from "@/lib/types";
+import { resolveAssetCompanyLabel } from "@/lib/assetCompany";
 import { ArrowUpDown } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { ExportActions } from "../ExportActions";
@@ -107,6 +108,11 @@ const columns: ColumnDef<Asset>[] = [
     header: "Status",
   },
   {
+    accessorKey: "company",
+    header: "Company",
+    cell: ({ row }) => resolveAssetCompanyLabel(row.original),
+  },
+  {
     accessorKey: "assignedTo",
     header: "Assigned To",
     cell: ({ row }) =>
@@ -116,12 +122,16 @@ const columns: ColumnDef<Asset>[] = [
 ];
 
 interface AssetTableProps {
+  title: string;
   filters: Record<string, any>;
   categoryOptions: Array<{ id: number; name: string }>;
   homebaseOptions: string[];
 }
 
+const EXPORT_CHUNK_SIZE = 500;
+
 function AssetTable({
+  title,
   filters,
   categoryOptions,
   homebaseOptions,
@@ -174,7 +184,55 @@ function AssetTable({
       return res.json();
     },
   });
-  
+
+  // Export harus mengambil seluruh data hasil filter, bukan hanya halaman aktif.
+  const getExportData = async () => {
+    const rows: Asset[] = [];
+    let page = 1;
+    let pageCount = 1;
+
+    do {
+      const exportParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: EXPORT_CHUNK_SIZE.toString(),
+        namaAsset: globalFilter,
+        ...requestFilters,
+      });
+
+      const res = await fetch(`/api/assets?${exportParams.toString()}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch assets for export");
+      }
+
+      const payload = await res.json();
+      rows.push(...((payload?.data ?? []) as Asset[]));
+      pageCount = payload?.pageCount ?? 1;
+      page += 1;
+    } while (page <= pageCount);
+
+    return rows;
+  };
+
+
+  const exportSubtitle = useMemo(() => {
+    const parts: string[] = [];
+    if (globalFilter.trim()) {
+      parts.push(`Nama asset: "${globalFilter.trim()}"`);
+    }
+    parts.push(
+      `Homebase: ${selectedHomebase === "all" ? "Semua" : selectedHomebase}`
+    );
+    parts.push(
+      `Category: ${
+        selectedCategoryId === "all"
+          ? "Semua"
+          : categoryOptions.find(
+              (category) => String(category.id) === selectedCategoryId
+            )?.name ?? selectedCategoryId
+      }`
+    );
+    return parts.join("  |  ");
+  }, [categoryOptions, globalFilter, selectedCategoryId, selectedHomebase]);
 
   const table = useReactTable({
     data: data?.data ?? [],
@@ -272,10 +330,12 @@ function AssetTable({
           </Select>
         </div>
         <ExportActions
-        // @ts-expect-error its okay
           columns={exportColumns}
           data={data?.data ?? []}
+          getExportData={getExportData}
           fileName="assets_export"
+          title={title}
+          subtitle={exportSubtitle}
         />
       </div>
       <div className="rounded-md border">
@@ -409,6 +469,7 @@ export function AssetsDetailDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <AssetTable
+          title={title}
           filters={filters}
           categoryOptions={categoryOptions}
           homebaseOptions={homebaseOptions}

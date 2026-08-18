@@ -11,10 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { ExportActions } from "@/components/ExportActions";
+import { DateRangeFilter } from "@/components/filters/DateRangeFilter";
+import {
+  createDateRangeFilter,
+  matchesDateRange,
+} from "@/lib/dateRangeFilter";
 import { CreateIpDialog } from "./create-ip-dialog";
 import { EditIpDialog } from "./edit-ip-dialog";
 import { ViewAssetDialog } from "./view-asset-dialog";
 import { toast } from "sonner";
+
+const IP_DATE_OPTIONS = [{ value: "createdAt", label: "Tanggal Input" }];
 
 export default function IpAddressPage() {
     const { data: session } = useSession();
@@ -22,6 +29,9 @@ export default function IpAddressPage() {
     const queryClient = useQueryClient();
 
     const [search, setSearch] = useState("");
+    const [dateFilter, setDateFilter] = useState(
+        createDateRangeFilter("createdAt")
+    );
     const [openCreate, setOpenCreate] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
     const [openView, setOpenView] = useState(false);
@@ -58,6 +68,7 @@ export default function IpAddressPage() {
     const filtered = useMemo(() => {
         const s = search.toLowerCase();
         return (data || []).filter((row) => {
+            if (!matchesDateRange(row.createdAt, dateFilter)) return false;
             const inUser = row.user?.namaLengkap?.toLowerCase().includes(s);
             const inIp = row.ip.toLowerCase().includes(s);
             const inMacWlan = (row.resolvedMacWlan || "").toLowerCase().includes(s);
@@ -77,7 +88,7 @@ export default function IpAddressPage() {
             const inAsset = assetLabel.includes(s);
             return inUser || inIp || inMacWlan || inMacLan || inConn || inRole || inStatus || inCompany || inAsset;
         });
-    }, [data, search]);
+    }, [data, dateFilter, search]);
 
     const exportColumns = [
         { header: "User", accessorKey: "user.namaLengkap" },
@@ -110,13 +121,21 @@ export default function IpAddressPage() {
             <h1 className="text-3xl font-bold mb-6">
                 IP Address Users {isRefetching && <span className="text-sm text-gray-500">(Updating...)</span>}
             </h1>
-            <div className="flex items-center justify-between mb-4">
-                <Input
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="max-w-sm"
-                />
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                    <Input
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="max-w-sm"
+                    />
+                    <DateRangeFilter
+                        idPrefix="ip-address"
+                        value={dateFilter}
+                        onChange={setDateFilter}
+                        options={IP_DATE_OPTIONS}
+                    />
+                </div>
                 <div className="flex items-center gap-2">
                     <ExportActions columns={exportColumns} data={filtered} fileName="IP_Addresses" />
                     {isAdmin && (

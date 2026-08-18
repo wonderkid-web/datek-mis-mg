@@ -893,9 +893,11 @@ export async function getPaginatedAssets({
         cctvSpecs: {
           select: {
             viewCamera: true,
+            sbu: true,
             channelCamera: {
               select: {
                 lokasi: true,
+                sbu: true,
               },
             },
           },
@@ -906,7 +908,9 @@ export async function getPaginatedAssets({
         assignments: {
           orderBy: { createdAt: "desc" },
           take: 1,
-          select: { user: { select: { namaLengkap: true } } },
+          select: {
+            user: { select: { namaLengkap: true, lokasiKantor: true } },
+          },
         },
       },
     }),

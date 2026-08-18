@@ -1,38 +1,51 @@
-import { ColumnDef } from "@tanstack/react-table";
 import { Asset } from "@/lib/types";
+import { resolveAssetCompanyLabel } from "@/lib/assetCompany";
 
-// Read-only columns definition for export
-export const exportColumns: ColumnDef<Asset>[] = [
+type AssetWithAssignment = Asset & {
+  assignments?: Array<{ user?: { namaLengkap?: string | null } | null }>;
+};
+
+// Read-only columns definition for export (Excel & PDF)
+export const exportColumns: Array<{
+  header: string;
+  accessorKey?: string;
+  accessorFn?: (row: Asset, index: number) => unknown;
+}> = [
   {
-    accessorKey: "id",
     header: "No.",
-    cell: ({ row, table }) => {
-      const { pageIndex, pageSize } = table.getState().pagination;
-      return pageIndex * pageSize + row.index + 1;
-    },
+    accessorFn: (_row, index) => index + 1,
   },
   {
-    accessorKey: "namaAsset",
     header: "Asset Name",
+    accessorFn: (row) =>
+      row.category?.slug === "cctv"
+        ? row.cctvSpecs?.channelCamera?.lokasi ?? row.namaAsset
+        : row.namaAsset,
   },
   {
-    accessorKey: "category.nama",
     header: "Category",
-    cell: ({ row }) => row.original.category?.nama || "N/A",
+    accessorFn: (row) => row.category?.nama || "N/A",
   },
   {
-    accessorKey: "nomorSeri",
     header: "Serial Number",
+    accessorKey: "nomorSeri",
   },
   {
-    accessorKey: "statusAsset",
     header: "Status",
+    accessorKey: "statusAsset",
   },
   {
-    accessorKey: "assignedTo",
+    header: "Lokasi Fisik",
+    accessorFn: (row) => row.lokasiFisik || "-",
+  },
+  {
+    header: "Company",
+    accessorFn: (row) => resolveAssetCompanyLabel(row),
+  },
+  {
     header: "Assigned To",
-    cell: ({ row }) =>
-      // @ts-expect-error its okay
-      row.original.assignments?.[0]?.user?.namaLengkap || "Not Assigned",
+    accessorFn: (row) =>
+      (row as AssetWithAssignment).assignments?.[0]?.user?.namaLengkap ||
+      "Not Assigned",
   },
 ];
