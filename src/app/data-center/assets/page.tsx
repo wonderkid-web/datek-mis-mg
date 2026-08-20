@@ -11,14 +11,13 @@ import { AssignAssetDialog } from "./assign-asset-dialog";
 // Update import Asset agar mendukung relasi (category, specs, dll)
 import { Asset } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Import Input Component
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAssetCategories } from "@/lib/assetCategoryService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExportActions } from "@/components/ExportActions";
-import { DateRangeFilter } from "@/components/filters/DateRangeFilter";
+import { AssetsToolbar } from "./assets-toolbar";
 import {
   createDateRangeFilter,
   matchesDateRange,
@@ -308,35 +307,31 @@ export default function AssetsPage() {
         </TabsList>
 
         <TabsContent value="all-assets">
-          {/* BARIS ACTION: Search Input & Buttons */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-end">
-              <Input
-                placeholder="Search by Name, SN, Brand..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:max-w-sm"
-              />
-              <DateRangeFilter
-                idPrefix="assets"
-                value={dateFilter}
-                onChange={setDateFilter}
-                options={ASSET_DATE_OPTIONS}
-              />
-            </div>
-            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-              <ExportActions
-                columns={exportColumns}
-                data={filteredAllAssets || []} // Export filtered data
-                fileName="Laptop_IntelNUC_Assets"
-              />
-              {isAdmin && (
-                <Button onClick={() => setIsAssignDialogOpen(true)}>
-                  Assign Asset
-                </Button>
-              )}
-            </div>
-          </div>
+          <AssetsToolbar
+            idPrefix="assets"
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Cari nama, SN, brand..."
+            dateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+            dateOptions={ASSET_DATE_OPTIONS}
+            resultCount={filteredAllAssets.length}
+            totalCount={allAssets?.length ?? 0}
+            actions={
+              <>
+                <ExportActions
+                  columns={exportColumns}
+                  data={filteredAllAssets || []}
+                  fileName="Laptop_IntelNUC_Assets"
+                />
+                {isAdmin && (
+                  <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
+                    Assign Asset
+                  </Button>
+                )}
+              </>
+            }
+          />
 
           {isAdmin && (
             <AssignAssetDialog
@@ -360,34 +355,31 @@ export default function AssetsPage() {
         </TabsContent>
 
         <TabsContent value="pc-assets">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-end">
-              <Input
-                placeholder="Search by Name, SN, Monitor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:max-w-sm"
-              />
-              <DateRangeFilter
-                idPrefix="pc-assets"
-                value={dateFilter}
-                onChange={setDateFilter}
-                options={ASSET_DATE_OPTIONS}
-              />
-            </div>
-            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-              <ExportActions
-                columns={exportColumns}
-                data={filteredPcAssets || []}
-                fileName="PC_Assets"
-              />
-              {isAdmin && (
-                <Button onClick={() => setIsAssignDialogOpen(true)}>
-                  Assign PC Asset
-                </Button>
-              )}
-            </div>
-          </div>
+          <AssetsToolbar
+            idPrefix="pc-assets"
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Cari nama, SN, monitor..."
+            dateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+            dateOptions={ASSET_DATE_OPTIONS}
+            resultCount={filteredPcAssets.length}
+            totalCount={pcAssets?.length ?? 0}
+            actions={
+              <>
+                <ExportActions
+                  columns={exportColumns}
+                  data={filteredPcAssets || []}
+                  fileName="PC_Assets"
+                />
+                {isAdmin && (
+                  <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
+                    Assign PC Asset
+                  </Button>
+                )}
+              </>
+            }
+          />
 
           {isAdmin && (
             <AssignAssetDialog
@@ -411,35 +403,31 @@ export default function AssetsPage() {
         </TabsContent>
 
         <TabsContent value="printer-assets">
-          {/* BARIS ACTION: Search Input & Buttons */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-end">
-              <Input
-                placeholder="Search by Name, SN, Brand..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:max-w-sm"
-              />
-              <DateRangeFilter
-                idPrefix="printer-assets"
-                value={dateFilter}
-                onChange={setDateFilter}
-                options={ASSET_DATE_OPTIONS}
-              />
-            </div>
-            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-              <ExportActions
-                columns={exportColumns}
-                data={filteredPrinterAssets || []} // Export filtered data
-                fileName="Printer_Assets"
-              />
-              {isAdmin && (
-                <Button onClick={() => setIsAssignDialogOpen(true)}>
-                  Assign Printer Asset
-                </Button>
-              )}
-            </div>
-          </div>
+          <AssetsToolbar
+            idPrefix="printer-assets"
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Cari nama, SN, brand..."
+            dateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+            dateOptions={ASSET_DATE_OPTIONS}
+            resultCount={filteredPrinterAssets.length}
+            totalCount={printerAssets?.length ?? 0}
+            actions={
+              <>
+                <ExportActions
+                  columns={exportColumns}
+                  data={filteredPrinterAssets || []}
+                  fileName="Printer_Assets"
+                />
+                {isAdmin && (
+                  <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
+                    Assign Printer Asset
+                  </Button>
+                )}
+              </>
+            }
+          />
 
           {isAdmin && (
             <AssignAssetDialog

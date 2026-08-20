@@ -64,3 +64,36 @@ export function matchesDateRange(
 
   return true;
 }
+
+/** Tampilkan yyyy-mm-dd sebagai "01 Jan 2026". */
+export const formatInputDateLabel = (value: string) => {
+  const date = parseInputDate(value, false);
+  if (!date) {
+    return value;
+  }
+
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+/** Ringkasan rentang untuk ditampilkan di tombol/chip filter. */
+export const formatDateRangeLabel = (filter: DateRangeFilterValue) => {
+  if (filter.from && filter.to) {
+    return `${formatInputDateLabel(filter.from)} - ${formatInputDateLabel(
+      filter.to
+    )}`;
+  }
+
+  if (filter.from) {
+    return `Dari ${formatInputDateLabel(filter.from)}`;
+  }
+
+  if (filter.to) {
+    return `Sampai ${formatInputDateLabel(filter.to)}`;
+  }
+
+  return "";
+};
