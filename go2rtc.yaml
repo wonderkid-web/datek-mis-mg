@@ -1,0 +1,11 @@
+api:
+  listen: ":1984"
+
+log:
+  level: info
+
+# Daftar stream sengaja dikosongkan.
+# datek mendaftarkan kamera secara otomatis lewat PUT /api/streams
+# memakai IP dan kredensial dari tabel cctv_specs, jadi tidak ada
+# kredensial kamera yang disimpan di file ini.
+streams: {}
