@@ -126,10 +126,23 @@ export async function ensureStream(assetId: number): Promise<string | null> {
 
   const name = streamNameFor(assetId);
 
-  const res = await fetch(
-    `${GO2RTC_URL}/api/streams?name=${encodeURIComponent(name)}&src=${encodeURIComponent(rtsp)}`,
-    { method: "PUT", cache: "no-store" }
-  );
+  // Stream didaftarkan dengan DUA sumber:
+  //   1. RTSP langsung — dipakai kalau kamera sudah H.264 (CP Plus, Hikvision).
+  //   2. ffmpeg:<name>#video=h264 — fallback transcode untuk kamera H.265 (Dahua, Hiview, Tiandy).
+  //
+  // Parameter "video=h264" pada endpoint stream hanya MENEGOSIASI codec, tidak
+  // memicu transcode. Tanpa sumber ffmpeg eksplisit, kamera H.265 gagal dengan
+  // "codecs not matched: video:H265 => video:H264". go2rtc memilih sumber
+  // pertama yang sanggup memenuhi codec yang diminta, jadi kamera H.264 tidak
+  // pernah menyentuh ffmpeg dan tetap nol biaya CPU.
+  const params = new URLSearchParams({ name });
+  params.append("src", rtsp);
+  params.append("src", `ffmpeg:${name}#video=h264`);
+
+  const res = await fetch(`${GO2RTC_URL}/api/streams?${params.toString()}`, {
+    method: "PUT",
+    cache: "no-store",
+  });
 
   // go2rtc membalas 4xx kalau stream dengan nama itu sudah terdaftar — bukan kegagalan.
   if (!res.ok && res.status !== 400 && res.status !== 409) {
@@ -142,4 +155,52 @@ export async function ensureStream(assetId: number): Promise<string | null> {
 export function go2rtcEndpoint(path: string, params: Record<string, string>): string {
   const qs = new URLSearchParams(params).toString();
   return `${GO2RTC_URL}${path}?${qs}`;
+}
+
+export type Go2rtcFailure = { status: number; detail: string };
+
+/**
+ * Menerjemahkan pesan mentah go2rtc menjadi sebab yang bisa ditindaklanjuti.
+ *
+ * Saat sumber RTSP tak terjangkau, go2rtc juga melaporkan kegagalan ffmpeg
+ * ("404 Not Found" pada pipeline transcode internal) sebagai akibat lanjutan.
+ * Tanpa klasifikasi ini, kamera mati terlihat seperti kegagalan transcode.
+ */
+export function describeFailure(detail: string): string {
+  if (/dial tcp .*(i\/o timeout|connection refused|no route to host)/i.test(detail)) {
+    return "Kamera tidak dapat dijangkau dari jaringan server";
+  }
+  if (/401|unauthorized|auth/i.test(detail)) {
+    return "Kredensial kamera ditolak";
+  }
+  if (/codecs not matched/i.test(detail)) {
+    return "Format video kamera tidak didukung dan transcode gagal";
+  }
+  return "Kamera tidak merespons";
+}
+
+/**
+ * Mengambil data dari go2rtc sambil mempertahankan alasan kegagalannya.
+ * Tanpa ini, kegagalan transcode atau kamera tak terjangkau sama-sama tampil
+ * sebagai "kamera tidak merespons" dan mustahil didiagnosis dari log.
+ */
+export async function fetchFromGo2rtc(
+  path: string,
+  params: Record<string, string>,
+  init: RequestInit
+): Promise<{ response: Response } | { failure: Go2rtcFailure }> {
+  const url = go2rtcEndpoint(path, params);
+  const response = await fetch(url, init);
+
+  if (response.ok && response.body) return { response };
+
+  // Body error go2rtc berisi pesan ffmpeg/RTSP yang sebenarnya.
+  let detail = "";
+  try {
+    detail = (await response.text()).trim().slice(0, 400);
+  } catch {
+    detail = "(body tidak terbaca)";
+  }
+
+  return { failure: { status: response.status, detail: detail || "(body kosong)" } };
 }

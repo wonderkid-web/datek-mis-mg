@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/session";
-import { ensureStream, go2rtcEndpoint } from "@/lib/cctvStream";
+import { describeFailure, ensureStream, fetchFromGo2rtc } from "@/lib/cctvStream";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,7 +26,8 @@ export async function GET(
   let name: string | null;
   try {
     name = await ensureStream(assetId);
-  } catch {
+  } catch (err) {
+    console.error(`[cctv] go2rtc tidak terjangkau (asset ${assetId}):`, err);
     return NextResponse.json(
       { message: "Tidak bisa menghubungi go2rtc" },
       { status: 502 }
@@ -40,21 +41,30 @@ export async function GET(
     );
   }
 
-  const upstream = await fetch(
+  const result = await fetchFromGo2rtc(
+    "/api/stream.mp4",
     // video=h264 memaksa keluaran H.264; go2rtc transcode sendiri kalau kamera masih H.265.
-    go2rtcEndpoint("/api/stream.mp4", { src: name, video: "h264" }),
+    { src: name, video: "h264" },
     // Ikut membatalkan koneksi ke go2rtc begitu penonton menutup tab.
     { signal: request.signal, cache: "no-store" }
   );
 
-  if (!upstream.ok || !upstream.body) {
+  if ("failure" in result) {
+    // Detail ini biasanya pesan ffmpeg atau RTSP dari go2rtc — kunci untuk diagnosis.
+    console.error(
+      `[cctv] stream gagal (asset ${assetId}, stream ${name}, HTTP ${result.failure.status}): ${result.failure.detail}`
+    );
     return NextResponse.json(
-      { message: "Kamera tidak merespons" },
+      {
+        message: describeFailure(result.failure.detail),
+        go2rtcStatus: result.failure.status,
+        detail: result.failure.detail,
+      },
       { status: 502 }
     );
   }
 
-  return new NextResponse(upstream.body, {
+  return new NextResponse(result.response.body, {
     headers: {
       "Content-Type": "video/mp4",
       "Cache-Control": "no-store, no-cache, must-revalidate",
