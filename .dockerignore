@@ -3,6 +3,8 @@
 .next
 .turbo
 node_modules
+# Pola di atas hanya cocok di level root; ini menjangkau subfolder juga.
+**/node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
