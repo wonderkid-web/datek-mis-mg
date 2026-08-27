@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Fragment } from "react";
-import { ChevronLeft, ChevronRight, Images, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Images } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { getLatestObserverAgentRelease } from "@/lib/observerAgentReleaseStorage
 import { compareSemver } from "@/lib/semver";
 import { getCurrentSession } from "@/lib/session";
 import { RequestFullReportCommandForm } from "./RequestFullReportCommandForm";
+import { DeviceSearchForm } from "./DeviceSearchForm";
 
 export const dynamic = "force-dynamic";
 
@@ -385,77 +386,6 @@ export default async function ObserverAgentPage({
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Full Report Commands</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-md border">
-            <Table className="min-w-[1180px]">
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead>Command</TableHead>
-                  <TableHead>Target</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Requested By</TableHead>
-                  <TableHead>Requested</TableHead>
-                  <TableHead>Delivered</TableHead>
-                  <TableHead>Completed</TableHead>
-                  <TableHead>Expires</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {commandHistory.length ? (
-                  commandHistory.map((command) => (
-                    <TableRow key={command.id} className="even:bg-emerald-50/40">
-                      <TableCell>
-                        <div className="font-medium">{command.commandType}</div>
-                        <div className="font-mono text-xs text-muted-foreground">
-                          {command.id}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{command.targetScope}</Badge>
-                        <div className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                          {command.targetDeviceId ?? "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <CommandStatusBadge status={command.status} />
-                      </TableCell>
-                      <TableCell>
-                        <div>{command.requestedBy ?? "-"}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {command.requestedByEmail ?? "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDateTime(command.requestedAt)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDateTime(command.deliveredAt)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDateTime(command.completedAt)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDateTime(command.expiresAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
-                      Belum ada command full report.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>Devices</CardTitle>
@@ -465,39 +395,7 @@ export default async function ObserverAgentPage({
                 : `${derived.length} device terdaftar.`}
             </p>
           </div>
-          <form method="GET" className="flex flex-wrap items-end justify-end gap-2">
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder="Cari hostname, user, IP, MAC, versi…"
-              className="h-9 w-full rounded-md border bg-transparent px-3 text-sm sm:w-72"
-            />
-            <div className="grid gap-1">
-              <label htmlFor="device-group-by" className="text-xs text-muted-foreground">
-                Grouping
-              </label>
-              <select
-                id="device-group-by"
-                name="groupBy"
-                defaultValue={groupBy}
-                className="h-9 rounded-md border bg-transparent px-3 text-sm"
-              >
-                <option value="none">Tanpa grouping</option>
-                <option value="version">Version</option>
-                <option value="location">Location</option>
-              </select>
-            </div>
-            <Button type="submit" size="sm" variant="outline">
-              <Search data-icon="inline-start" />
-              Cari
-            </Button>
-            {query ? (
-              <Button asChild size="sm" variant="ghost">
-                <Link href="/tracker/observer-agent">Reset</Link>
-              </Button>
-            ) : null}
-          </form>
+          <DeviceSearchForm query={query} groupBy={groupBy} />
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
@@ -677,6 +575,77 @@ export default async function ObserverAgentPage({
               </div>
             </div>
           ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Full Report Commands</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border">
+            <Table className="min-w-[1180px]">
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead>Command</TableHead>
+                  <TableHead>Target</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Requested By</TableHead>
+                  <TableHead>Requested</TableHead>
+                  <TableHead>Delivered</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead>Expires</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {commandHistory.length ? (
+                  commandHistory.map((command) => (
+                    <TableRow key={command.id} className="even:bg-emerald-50/40">
+                      <TableCell>
+                        <div className="font-medium">{command.commandType}</div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {command.id}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{command.targetScope}</Badge>
+                        <div className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                          {command.targetDeviceId ?? "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <CommandStatusBadge status={command.status} />
+                      </TableCell>
+                      <TableCell>
+                        <div>{command.requestedBy ?? "-"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {command.requestedByEmail ?? "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.requestedAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.deliveredAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.completedAt)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateTime(command.expiresAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
+                      Belum ada command full report.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
