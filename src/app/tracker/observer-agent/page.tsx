@@ -70,7 +70,8 @@ function CommandStatusBadge({ status }: { status: string }) {
 }
 
 type DeviceRow = Awaited<ReturnType<typeof getObserverDeviceList>>[number];
-type DeviceGroupBy = "none" | "version" | "location";
+type DeviceStatus = ReturnType<typeof computeObserverDeviceStatus>;
+type DeviceGroupBy = "none" | "version" | "location" | "status";
 
 function getDeviceAlias(device: DeviceRow) {
   return device.aliasName?.trim() || null;
@@ -93,12 +94,23 @@ function getDeviceLocation(device: DeviceRow) {
 }
 
 function parseDeviceGroupBy(value: string | undefined): DeviceGroupBy {
-  return value === "version" || value === "location" ? value : "none";
+  return value === "version" || value === "location" || value === "status"
+    ? value
+    : "none";
 }
 
-function getDeviceGroupLabel(device: DeviceRow, groupBy: DeviceGroupBy) {
+function getDeviceGroupLabel(
+  device: DeviceRow,
+  status: DeviceStatus,
+  groupBy: DeviceGroupBy
+) {
   if (groupBy === "version") return getDeviceAgentVersion(device) ?? "Tanpa versi";
   if (groupBy === "location") return getDeviceLocation(device);
+  if (groupBy === "status") {
+    if (status.offline) return "OFFLINE";
+    if (status.online) return "ONLINE";
+    return "UNKNOWN";
+  }
   return null;
 }
 
@@ -274,8 +286,8 @@ export default async function ObserverAgentPage({
     groupBy === "none"
       ? filtered
       : [...filtered].sort((a, b) => {
-          const groupComparison = (getDeviceGroupLabel(a.device, groupBy) ?? "").localeCompare(
-            getDeviceGroupLabel(b.device, groupBy) ?? "",
+          const groupComparison = (getDeviceGroupLabel(a.device, a.status, groupBy) ?? "").localeCompare(
+            getDeviceGroupLabel(b.device, b.status, groupBy) ?? "",
             "id"
           );
           if (groupComparison !== 0) return groupComparison;
@@ -441,9 +453,15 @@ export default async function ObserverAgentPage({
                     const diskVariant = status.diskCritical ? "crit" : status.diskWarning ? "warn" : "ok";
                     const rowBgClass = index % 2 === 0 ? "bg-white" : "bg-emerald-50/40";
                     const stickyStatusBgClass = index % 2 === 0 ? "bg-white" : "bg-emerald-50";
-                    const groupLabel = getDeviceGroupLabel(device, groupBy);
+                    const groupLabel = getDeviceGroupLabel(device, status, groupBy);
                     const previousGroupLabel =
-                      index > 0 ? getDeviceGroupLabel(pageRows[index - 1].device, groupBy) : null;
+                      index > 0
+                        ? getDeviceGroupLabel(
+                            pageRows[index - 1].device,
+                            pageRows[index - 1].status,
+                            groupBy
+                          )
+                        : null;
                     const isGroupStart = groupBy !== "none" && groupLabel !== previousGroupLabel;
 
                     return (

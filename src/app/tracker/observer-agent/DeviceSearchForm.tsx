@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 type DeviceSearchFormProps = {
   query: string;
-  groupBy: "none" | "version" | "location";
+  groupBy: "none" | "version" | "location" | "status";
 };
 
 export function DeviceSearchForm({ query, groupBy }: DeviceSearchFormProps) {
@@ -57,6 +57,7 @@ export function DeviceSearchForm({ query, groupBy }: DeviceSearchFormProps) {
           <option value="none">Tanpa grouping</option>
           <option value="version">Version</option>
           <option value="location">Location</option>
+          <option value="status">Status</option>
         </select>
       </div>
       <Button type="submit" size="sm" variant="outline">
