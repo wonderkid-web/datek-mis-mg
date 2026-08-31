@@ -198,6 +198,7 @@ interface DataTableProps<TData, TValue> {
   manualPagination?: boolean;
   pageCount?: number;
   onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
 }
 
 export function DataTable<TData, TValue>({
@@ -209,6 +210,7 @@ export function DataTable<TData, TValue>({
   manualPagination = false,
   pageCount,
   onRowClick,
+  getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "administrator";
@@ -295,7 +297,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={`even:bg-emerald-50 ${onRowClick ? "cursor-pointer" : ""}`}
+                  className={`even:bg-emerald-50 ${onRowClick ? "cursor-pointer" : ""} ${getRowClassName?.(row.original) ?? ""}`}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => {

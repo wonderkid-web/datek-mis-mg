@@ -68,6 +68,7 @@ export const navigationItems: NavigationItem[] = [
     children: [
       { name: "Office Map", href: "/data-center/office-map" },
       { name: "Data Assets", href: "/data-center/assets" },
+      { name: "Ascend Assets", href: "/data-center/ascend-assets" },
       { name: "Assigned Assets", href: "/data-center/assigned-assets" },
       { name: "IP Address Users", href: "/data-center/ip-address" },
       { name: "Live CCTV", href: "/data-center/cctv-live" },
