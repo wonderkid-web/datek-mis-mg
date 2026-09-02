@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Database, RefreshCw, Search } from "lucide-react";
+import { Database, ExternalLink, RefreshCw, Search } from "lucide-react";
 import {
   getAscendAssetFilterOptions,
   getAscendAssetGroups,
@@ -180,17 +180,29 @@ export default function AscendAssetsPage() {
             dari SQL Server Ascend.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => activeQuery.refetch()}
-          disabled={activeQuery.isFetching}
-        >
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${activeQuery.isFetching ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm">
+            <a
+              href="http://ascend-assets.local"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Buka Ascend Lokal
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => activeQuery.refetch()}
+            disabled={activeQuery.isFetching}
+          >
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${activeQuery.isFetching ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
