@@ -183,7 +183,7 @@ export default function AscendAssetsPage() {
         <div className="flex items-center gap-2">
           <Button asChild size="sm">
             <a
-              href="http://ascend-assets.local"
+              href="http://192.168.26.4:5173"
               target="_blank"
               rel="noopener noreferrer"
             >
