@@ -167,6 +167,9 @@ function DashboardPage() {
   const [assetDialogTitle, setAssetDialogTitle] = useState("");
   const [assetDialogFilters, setAssetDialogFilters] = useState<Record<string, string | boolean | number>>({});
   const [isIpDialogOpen, setIpDialogOpen] = useState(false);
+  const [assetDistributionMode, setAssetDistributionMode] = useState<
+    "employee" | "location"
+  >("employee");
   const [ipDialogTitle, setIpDialogTitle] = useState("");
   const [ipDialogFilters, setIpDialogFilters] = useState<Record<string, string | boolean | number>>({});
 
@@ -248,7 +251,8 @@ function DashboardPage() {
 
   const openAssetBucketDialog = (
     bucket: AssetSummaryBucketKey,
-    company?: string
+    company?: string,
+    companyFilterKey: "company" | "assetLocationCompany" = "company"
   ) => {
     const bucketLabel = assetBucketLabels[bucket];
 
@@ -263,14 +267,15 @@ function DashboardPage() {
           }),
       {
         assetKind: bucket,
-        ...(company ? { company } : {}),
+        ...(company ? { [companyFilterKey]: company } : {}),
       }
     );
   };
 
   const openAssetCategoryDialog = (
     company: string,
-    category: DashboardData["assetDistributionByCompany"][number]["categories"][number]
+    category: DashboardData["assetDistributionByCompany"][number]["categories"][number],
+    companyFilterKey: "company" | "assetLocationCompany" = "company"
   ) => {
     openAssetDialog(
       t("dashboard.dialogs.assetsByCategoryInCompany", {
@@ -278,7 +283,7 @@ function DashboardPage() {
         company,
       }),
       {
-        company,
+        [companyFilterKey]: company,
         categoryId: category.id,
       }
     );
@@ -557,29 +562,81 @@ function DashboardPage() {
           </Card>
 
           <Card className="border-slate-200/80 shadow-sm">
-            <CardHeader>
-              <CardTitle>{t("dashboard.sections.companyAssetMixTitle")}</CardTitle>
-              <CardDescription>
-                {t("dashboard.sections.companyAssetMixDescription")}
-              </CardDescription>
+            <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+              <div className="space-y-1.5">
+                <CardTitle>{t("dashboard.sections.companyAssetMixTitle")}</CardTitle>
+                <CardDescription>
+                  {t("dashboard.sections.companyAssetMixDescription")}
+                </CardDescription>
+              </div>
+              <div
+                role="group"
+                aria-label={
+                  locale === "en"
+                    ? "Asset distribution grouping"
+                    : "Pengelompokan distribusi asset"
+                }
+                className="inline-flex shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-1"
+              >
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={assetDistributionMode === "employee" ? "default" : "ghost"}
+                  className="h-8"
+                  aria-pressed={assetDistributionMode === "employee"}
+                  onClick={() => setAssetDistributionMode("employee")}
+                >
+                  {locale === "en" ? "Employee" : "Karyawan"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={assetDistributionMode === "location" ? "default" : "ghost"}
+                  className="h-8"
+                  aria-pressed={assetDistributionMode === "location"}
+                  onClick={() => setAssetDistributionMode("location")}
+                >
+                  {locale === "en" ? "Location" : "Lokasi"}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <AssetDistributionByCompanyChart
-                data={data.assetDistributionByCompany}
+                data={
+                  assetDistributionMode === "employee"
+                    ? data.assetDistributionByCompany
+                    : data.assetDistributionByAssetLocation
+                }
                 onSelectCompany={(company) =>
                   openAssetDialog(
                     t("dashboard.dialogs.assetsInCompany", {
                       company,
                     }),
                     {
-                      company,
+                      [assetDistributionMode === "employee"
+                        ? "company"
+                        : "assetLocationCompany"]: company,
                     }
                   )
                 }
                 onSelectBucket={(company, bucket) =>
-                  openAssetBucketDialog(bucket, company)
+                  openAssetBucketDialog(
+                    bucket,
+                    company,
+                    assetDistributionMode === "employee"
+                      ? "company"
+                      : "assetLocationCompany"
+                  )
                 }
-                onSelectCategory={openAssetCategoryDialog}
+                onSelectCategory={(company, category) =>
+                  openAssetCategoryDialog(
+                    company,
+                    category,
+                    assetDistributionMode === "employee"
+                      ? "company"
+                      : "assetLocationCompany"
+                  )
+                }
               />
             </CardContent>
           </Card>

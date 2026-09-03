@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const statusAsset = searchParams.get("statusAsset") || undefined;
     const lokasiFisik = searchParams.get("lokasiFisik") || undefined;
     const company = searchParams.get("company") || undefined;
+    const assetLocationCompany =
+      searchParams.get("assetLocationCompany") || undefined;
     const homebase = searchParams.get("homebase") || undefined;
 
     const categoryId   = searchParams.get("categoryId")
@@ -41,6 +43,7 @@ export async function GET(request: NextRequest) {
       statusAsset,
       lokasiFisik,
       company,
+      assetLocationCompany,
       homebase,
       categoryId,
       categorySlug,

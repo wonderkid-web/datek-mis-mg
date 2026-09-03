@@ -7,6 +7,7 @@ import {
   resolveAssetSummaryBucketKey,
 } from "./assetSummaryBuckets";
 import { resolveCanonicalCompanyName } from "./companyResolver";
+import { resolveAssetLocationCompany } from "./assetLocationCompany";
 import { prisma } from "./prisma";
 
 const UNKNOWN_LOCATION = "Tanpa Company";
@@ -198,6 +199,7 @@ export async function getDashboardData() {
           },
           take: 1,
           select: {
+            nomorAsset: true,
             user: {
               select: {
                 lokasiKantor: true,
@@ -443,6 +445,25 @@ export async function getDashboardData() {
       total: number;
     }[]
   >();
+  const assetLocationDistributionMap = new Map<
+    string,
+    {
+      location: string;
+      total: number;
+      laptop: number;
+      intelNuc: number;
+      other: number;
+    }
+  >();
+  const assetLocationCategoryMap = new Map<
+    string,
+    {
+      id: number;
+      slug: string;
+      name: string;
+      total: number;
+    }[]
+  >();
   const assignedAssetCountByLocation = new Map<string, number>();
   const homebasesByLocation = new Map<string, Set<string>>();
 
@@ -475,6 +496,24 @@ export async function getDashboardData() {
     }
     companyAssetDistributionMap.set(location, companyBucket);
 
+    const assetLocation = resolveAssetLocationCompany(latestAssignment?.nomorAsset);
+    const assetLocationBucket = assetLocationDistributionMap.get(assetLocation) ?? {
+      location: assetLocation,
+      total: 0,
+      laptop: 0,
+      intelNuc: 0,
+      other: 0,
+    };
+    assetLocationBucket.total += 1;
+    if (bucketKey === "laptop") {
+      assetLocationBucket.laptop += 1;
+    } else if (bucketKey === "intel-nuc") {
+      assetLocationBucket.intelNuc += 1;
+    } else {
+      assetLocationBucket.other += 1;
+    }
+    assetLocationDistributionMap.set(assetLocation, assetLocationBucket);
+
     assignedAssetCountByLocation.set(
       location,
       (assignedAssetCountByLocation.get(location) ?? 0) + 1
@@ -503,6 +542,22 @@ export async function getDashboardData() {
     }
 
     assignmentLocationCategoryMap.set(location, bucket);
+
+    const assetLocationCategories = assetLocationCategoryMap.get(assetLocation) ?? [];
+    const existingAssetLocationCategory = assetLocationCategories.find(
+      (category) => category.id === asset.category.id
+    );
+    if (existingAssetLocationCategory) {
+      existingAssetLocationCategory.total += 1;
+    } else {
+      assetLocationCategories.push({
+        id: asset.category.id,
+        slug: asset.category.slug,
+        name: categoryName,
+        total: 1,
+      });
+    }
+    assetLocationCategoryMap.set(assetLocation, assetLocationCategories);
   }
 
   const ipCountByLocation = new Map(
@@ -605,6 +660,29 @@ export async function getDashboardData() {
           right.total - left.total || left.name.localeCompare(right.name)
       ),
   }));
+
+  const assetDistributionByAssetLocation = Array.from(
+    assetLocationDistributionMap.values()
+  )
+    .sort(
+      (left, right) =>
+        right.total - left.total ||
+        right.laptop - left.laptop ||
+        right.intelNuc - left.intelNuc ||
+        right.other - left.other
+    )
+    .map((item) => ({
+      ...item,
+      categories: (assetLocationCategoryMap.get(item.location) ?? [])
+        .map((category) => ({
+          ...category,
+          percentage: item.total > 0 ? (category.total / item.total) * 100 : 0,
+        }))
+        .sort(
+          (left, right) =>
+            right.total - left.total || left.name.localeCompare(right.name)
+        ),
+    }));
 
   const operatingSystemTotals = new Map<number, number>();
 
@@ -759,6 +837,7 @@ export async function getDashboardData() {
     assetDistributionByCategory,
     assetDistributionByBucket,
     assetDistributionByCompany,
+    assetDistributionByAssetLocation,
     assetDistributionByLocation,
     operatingSystemDistribution,
     locationSummary: locationSummary.slice(0, 10),

@@ -15,6 +15,11 @@ import {
   type AssetSummaryBucketKey,
 } from "@/lib/assetSummaryBuckets";
 import { getUserFacingAssetError } from "@/lib/errorMessage";
+import {
+  getAssetLocationCodesForCompany,
+  KNOWN_ASSET_LOCATION_CODES,
+  UNKNOWN_ASSET_LOCATION,
+} from "@/lib/assetLocationCompany";
 
 interface CreateAssetData {
   namaAsset: string;
@@ -585,6 +590,7 @@ export async function getPaginatedAssets({
   statusAsset,
   lokasiFisik,
   company,
+  assetLocationCompany,
   homebase,
   categoryId,
   categorySlug,
@@ -600,6 +606,7 @@ export async function getPaginatedAssets({
   statusAsset?: string;
   lokasiFisik?: string;
   company?: string;
+  assetLocationCompany?: string;
   homebase?: string;
   categoryId?: number;
   categorySlug?: string;
@@ -809,6 +816,33 @@ export async function getPaginatedAssets({
             },
           },
         ],
+      });
+    }
+  }
+  if (assetLocationCompany) {
+    const matchingPrefixes = getAssetLocationCodesForCompany(
+      assetLocationCompany
+    ).map((code) => `FF-${code}-`);
+
+    if (assetLocationCompany === UNKNOWN_ASSET_LOCATION) {
+      AND.push({
+        assignments: {
+          none: {
+            OR: KNOWN_ASSET_LOCATION_CODES.map((code) => ({
+              nomorAsset: { startsWith: `FF-${code}-` },
+            })),
+          },
+        },
+      });
+    } else if (matchingPrefixes.length) {
+      AND.push({
+        assignments: {
+          some: {
+            OR: matchingPrefixes.map((prefix) => ({
+              nomorAsset: { startsWith: prefix },
+            })),
+          },
+        },
       });
     }
   }

@@ -20,6 +20,14 @@ import {
   createDateRangeFilter,
   matchesDateRange,
 } from "@/lib/dateRangeFilter";
+import { resolveCanonicalCompanyName } from "@/lib/companyResolver";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 
 const ASSIGNMENT_DATE_OPTIONS = [
@@ -38,6 +46,7 @@ export default function AssignedAssetsPage() {
   const [selectedAssignment, setSelectedAssignment] =
     useState<AssetAssignment | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("all");
   const [dateFilter, setDateFilter] = useState(
     createDateRangeFilter("createdAt")
   );
@@ -239,6 +248,20 @@ export default function AssignedAssetsPage() {
 
   type AssignmentRow = NonNullable<typeof allAssignments>[number];
 
+  const companyOptions = Array.from(
+    new Set(
+      [
+        ...(allAssignments ?? []),
+        ...(pcAssignments ?? []),
+        ...(printerAssignments ?? []),
+      ]
+        .map((assignment) =>
+          resolveCanonicalCompanyName(assignment.user.lokasiKantor)
+        )
+        .filter((company): company is string => Boolean(company))
+    )
+  ).sort((left, right) => left.localeCompare(right, "id"));
+
   const getAssignmentDateValue = (assignment: AssignmentRow) => {
     if (dateFilter.basis === "tanggalPembelian") {
       return assignment.asset.tanggalPembelian;
@@ -254,6 +277,18 @@ export default function AssignedAssetsPage() {
 
     return (data ?? []).filter((assignment) => {
       if (!matchesDateRange(getAssignmentDateValue(assignment), dateFilter)) {
+        return false;
+      }
+
+      const assignmentCompany = resolveCanonicalCompanyName(
+        assignment.user.lokasiKantor
+      );
+      if (
+        selectedCompany !== "all" &&
+        (selectedCompany === "without-company"
+          ? Boolean(assignmentCompany)
+          : assignmentCompany !== selectedCompany)
+      ) {
         return false;
       }
 
@@ -307,12 +342,28 @@ export default function AssignedAssetsPage() {
         )}
       </h1>
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <Input
-          placeholder="Search assignments..."
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex w-full flex-col gap-3 sm:flex-row md:max-w-2xl">
+          <Input
+            placeholder="Search assignments..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="sm:max-w-sm"
+          />
+          <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+            <SelectTrigger className="w-full sm:w-[280px]" aria-label="Filter Company">
+              <SelectValue placeholder="Filter Company" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Company</SelectItem>
+              {companyOptions.map((company) => (
+                <SelectItem key={company} value={company}>
+                  {company}
+                </SelectItem>
+              ))}
+              <SelectItem value="without-company">Tanpa Company</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <DateRangeFilter
           idPrefix="assigned-assets"
           value={dateFilter}
