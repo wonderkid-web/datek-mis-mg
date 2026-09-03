@@ -5,6 +5,8 @@ export const UNKNOWN_ASSET_LOCATION = "Lokasi Asset Tidak Dikenali";
 const ASSET_NUMBER_CODE_ALIASES: Record<string, string> = {
   // Nomor asset lama memakai ISAR, sedangkan master company memakai ISR.
   ISAR: "ISR",
+  // Asset Mahkota Group menggunakan kode MGP pada nomor asset.
+  MGP: "MG",
 };
 
 const companyByCode = new Map(
