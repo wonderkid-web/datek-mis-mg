@@ -586,6 +586,7 @@ export async function updateAssetAndPrinterSpecs(
 export async function getPaginatedAssets({
   page = 1,
   pageSize = 10,
+  search,
   namaAsset,
   statusAsset,
   lokasiFisik,
@@ -602,6 +603,7 @@ export async function getPaginatedAssets({
 }: {
   page?: number;
   pageSize?: number;
+  search?: string;
   namaAsset?: string;
   statusAsset?: string;
   lokasiFisik?: string;
@@ -621,6 +623,56 @@ export async function getPaginatedAssets({
 
   const AND = [];
 
+  if (search) {
+    AND.push({
+      OR: [
+        { namaAsset: { contains: search } },
+        { nomorSeri: { contains: search } },
+        { statusAsset: { contains: search } },
+        { lokasiFisik: { contains: search } },
+        {
+          category: {
+            is: {
+              OR: [
+                { nama: { contains: search } },
+                { slug: { contains: search } },
+              ],
+            },
+          },
+        },
+        {
+          assignments: {
+            some: {
+              OR: [
+                { nomorAsset: { contains: search } },
+                { user: { namaLengkap: { contains: search } } },
+                { user: { lokasiKantor: { contains: search } } },
+              ],
+            },
+          },
+        },
+        {
+          cctvSpecs: {
+            is: {
+              OR: [
+                { sbu: { contains: search } },
+                {
+                  channelCamera: {
+                    is: {
+                      OR: [
+                        { sbu: { contains: search } },
+                        { lokasi: { contains: search } },
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    });
+  }
   if (namaAsset) {
     AND.push({ namaAsset: { contains: namaAsset } });
   }
@@ -943,6 +995,7 @@ export async function getPaginatedAssets({
           orderBy: { createdAt: "desc" },
           take: 1,
           select: {
+            nomorAsset: true,
             user: { select: { namaLengkap: true, lokasiKantor: true } },
           },
         },

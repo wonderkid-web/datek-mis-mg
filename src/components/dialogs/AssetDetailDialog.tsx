@@ -95,6 +95,15 @@ const columns: ColumnDef<Asset>[] = [
     },
   },
   {
+    accessorKey: "assetNumber",
+    header: "Asset Number",
+    cell: ({ row }) =>
+      // @ts-expect-error assignments tersedia pada response API asset.
+      row.original.assignments?.[0]?.nomorAsset || (
+        <span className="text-muted-foreground">-</span>
+      ),
+  },
+  {
     accessorKey: "category.nama",
     header: "Category",
     cell: ({ row }) => row.original.category?.nama || "N/A",
@@ -170,7 +179,7 @@ function AssetTable({
   const queryParams = new URLSearchParams({
     page: (pagination.pageIndex + 1).toString(),
     pageSize: pagination.pageSize.toString(),
-    namaAsset: globalFilter,
+    search: globalFilter,
     ...requestFilters,
   });
 
@@ -195,7 +204,7 @@ function AssetTable({
       const exportParams = new URLSearchParams({
         page: page.toString(),
         pageSize: EXPORT_CHUNK_SIZE.toString(),
-        namaAsset: globalFilter,
+        search: globalFilter,
         ...requestFilters,
       });
 
@@ -217,7 +226,7 @@ function AssetTable({
   const exportSubtitle = useMemo(() => {
     const parts: string[] = [];
     if (globalFilter.trim()) {
-      parts.push(`Nama asset: "${globalFilter.trim()}"`);
+      parts.push(`Pencarian: "${globalFilter.trim()}"`);
     }
     parts.push(
       `Homebase: ${selectedHomebase === "all" ? "Semua" : selectedHomebase}`
@@ -297,7 +306,7 @@ function AssetTable({
       <div className="flex flex-wrap items-start justify-between gap-3 py-4">
         <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_220px]">
           <Input
-            placeholder="Filter by asset name..."
+            placeholder="Cari asset number, nama, serial, user, company..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="max-w-sm xl:max-w-none"

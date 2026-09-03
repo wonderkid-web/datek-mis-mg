@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
 
+    const search      = searchParams.get("search")      || undefined;
     const namaAsset   = searchParams.get("namaAsset")   || undefined;
     const statusAsset = searchParams.get("statusAsset") || undefined;
     const lokasiFisik = searchParams.get("lokasiFisik") || undefined;
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
     const result = await getPaginatedAssets({
       page,
       pageSize,
+      search,
       namaAsset,
       statusAsset,
       lokasiFisik,

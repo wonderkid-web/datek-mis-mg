@@ -2,7 +2,10 @@ import { Asset } from "@/lib/types";
 import { resolveAssetCompanyLabel } from "@/lib/assetCompany";
 
 type AssetWithAssignment = Asset & {
-  assignments?: Array<{ user?: { namaLengkap?: string | null } | null }>;
+  assignments?: Array<{
+    nomorAsset?: string | null;
+    user?: { namaLengkap?: string | null } | null;
+  }>;
 };
 
 // Read-only columns definition for export (Excel & PDF)
@@ -21,6 +24,11 @@ export const exportColumns: Array<{
       row.category?.slug === "cctv"
         ? row.cctvSpecs?.channelCamera?.lokasi ?? row.namaAsset
         : row.namaAsset,
+  },
+  {
+    header: "Asset Number",
+    accessorFn: (row) =>
+      (row as AssetWithAssignment).assignments?.[0]?.nomorAsset || "-",
   },
   {
     header: "Category",
